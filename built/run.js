@@ -242,11 +242,12 @@ define("paging/page-navigator", ["require", "exports"], function (require, expor
 define("ol3-popup", ["require", "exports", "openlayers", "paging/paging", "paging/page-navigator"], function (require, exports, ol, paging_1, PageNavigator) {
     "use strict";
     var classNames = {
-        DETACH: 'detach',
         olPopup: 'ol-popup',
+        olPopupDocker: 'ol-popup-docker',
         olPopupCloser: 'ol-popup-closer',
         olPopupContent: 'ol-popup-content',
-        hidden: 'hidden'
+        hidden: 'hidden',
+        docked: 'docked'
     };
     var eventNames = {
         show: "show",
@@ -351,6 +352,18 @@ define("ol3-popup", ["require", "exports", "openlayers", "paging/paging", "pagin
             var domNode = this.domNode = document.createElement('div');
             domNode.className = classNames.olPopup;
             this.setElement(domNode);
+            if (this.options.dockContainer) {
+                var dockContainer = $(this.options.dockContainer)[0];
+                if (dockContainer) {
+                    var docker = this.docker = document.createElement('button');
+                    docker.className = classNames.olPopupDocker;
+                    domNode.appendChild(docker);
+                    docker.addEventListener('click', function (evt) {
+                        _this.isDocked() ? _this.undock() : _this.dock();
+                        evt.preventDefault();
+                    }, false);
+                }
+            }
             {
                 var closer = this.closer = document.createElement('button');
                 closer.className = classNames.olPopupCloser;
@@ -380,9 +393,22 @@ define("ol3-popup", ["require", "exports", "openlayers", "paging/paging", "pagin
                 this.setPosition = debounce(function (args) { return callback_1.apply(_this, args); }, 50);
             }
         };
+        Popup.prototype.setPosition = function (position) {
+            this.options.position = position;
+            if (!this.isDocked()) {
+                _super.prototype.setPosition.call(this, position);
+            }
+            else {
+                this.options.map.getView().setCenter(position);
+            }
+        };
         Popup.prototype.panIntoView = function () {
-            var _a = this.getPosition(), x = _a[0], y = _a[1];
-            this.setPosition([x, y]);
+            if (!this.isOpened())
+                return;
+            if (this.isDocked())
+                return;
+            var p = this.getPosition();
+            p && this.setPosition(p.map(function (v) { return v; })); // clone p to force change
         };
         Popup.prototype.destroy = function () {
             this.getMap().removeOverlay(this);
@@ -406,29 +432,31 @@ define("ol3-popup", ["require", "exports", "openlayers", "paging/paging", "pagin
             return this;
         };
         Popup.prototype.hide = function () {
-            this.setPosition(undefined);
+            !this.isDocked() && this.setPosition(undefined);
             this.pages.clear();
             this.dispatch(eventNames.hide);
+            this.domNode.classList.add(classNames.hidden);
             return this;
         };
         Popup.prototype.isOpened = function () {
-            return this.domNode.classList.contains(classNames.hidden);
+            return !this.domNode.classList.contains(classNames.hidden);
         };
-        Popup.prototype.detach = function () {
-            var _this = this;
-            var mapContainer = this.getMap().get("target");
-            var parent = this.domNode.parentElement;
-            mapContainer.parentNode.insertBefore(this.domNode, mapContainer.nextElementSibling);
-            this.domNode.classList.add(classNames.DETACH);
-            return {
-                off: function () {
-                    _this.domNode.classList.remove(classNames.DETACH);
-                    parent.appendChild(_this.domNode);
-                }
-            };
+        Popup.prototype.isDocked = function () {
+            return this.domNode.classList.contains(classNames.docked);
         };
-        Popup.prototype.isDetached = function () {
-            return this.domNode.classList.contains(classNames.DETACH);
+        Popup.prototype.dock = function () {
+            var map = this.getMap();
+            this.options.map = map;
+            this.options.parentNode = this.domNode.parentElement;
+            map.removeOverlay(this);
+            this.domNode.classList.add(classNames.docked);
+            $(this.options.dockContainer).append(this.domNode);
+        };
+        Popup.prototype.undock = function () {
+            this.options.parentNode.appendChild(this.domNode);
+            this.domNode.classList.remove(classNames.docked);
+            this.options.map.addOverlay(this);
+            this.setPosition(this.options.position);
         };
         return Popup;
     }(ol.Overlay));
@@ -512,8 +540,10 @@ define("extras/feature-selector", ["require", "exports"], function (require, exp
     }());
     return FeatureSelector;
 });
-define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery"], function (require, exports, ol, Popup, FeatureCreator, FeatureSelector, $) {
+define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery", "xstyle/css!../built/css/ol3-popup.css"], function (require, exports, ol, Popup, FeatureCreator, FeatureSelector, $) {
     "use strict";
+    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    height: calc(100% - 300px);\n}\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    min-width: 200px;\n    min-height: 150px;\n    background: black;\n    color: gold;\n}\n\n.ol-popup:after {\n    bottom: -20px;\n    left: 50px;\n    border-top-color: black;\n}\n\n.ol-popup.docked {\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    pointer-events: all;\n    color: gold;\n    background: black;\n}\n\n.ol-popup.docked:after {\n    display:none;\n}\n\n.ol-popup.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    border-bottom: 1px solid black;\n    display: block;\n}\n\n.ol-popup .pagination {\n    position: absolute;\n    bottom: 0;\n}\n\n";
+    var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
     var sample_content = [
         'The story of the three little pigs...',
         'This little piggy went to market',
@@ -523,8 +553,11 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
         'And this little piggy, <br/>this wee little piggy, <br/>when wee, wee, wee, wee <br/>all the way home!',
     ];
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
-    var mapContainer = document.getElementById("map");
     function run() {
+        $("<style type='text/css'>" + css + "</style>").appendTo('head');
+        $("<div>" + html + "</div>").appendTo('body');
+        var mapContainer = $(".map")[0];
+        var dockContainer = $(".dock-container")[0];
         var map = new ol.Map({
             target: mapContainer,
             layers: [
@@ -543,13 +576,14 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
             autoPanAnimation: {
                 source: null,
                 duration: 2000
-            }
+            },
+            dockContainer: dockContainer
         });
         map.addOverlay(popup);
         popup.on("show", function () { return console.log("show popup"); });
         popup.on("hide", function () { return console.log("hide popup"); });
         popup.pages.on("goto", function () { return console.log("goto page: " + popup.pages.activeIndex); });
-        [1, 2, 3].map(function (i) { return popup.pages.add("Page " + i); });
+        [1, 2, 3].map(function (i) { return popup.pages.add("Page " + i, new ol.geom.Point(center)); });
         popup.pages.goto(0);
         setTimeout(function () {
             popup.show(center, "<div>Click the map to see a popup</div>");
@@ -559,14 +593,14 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
                 if (++pages === 5) {
                     console.log("detaching from map (docking)");
                     clearInterval(h);
-                    var attach_1 = popup.detach();
+                    popup.dock();
                     var h2_1 = popup.on("hide", function () {
                         popup.unByKey(h2_1);
-                        attach_1.off();
+                        popup.undock();
                     });
                     setTimeout(function () {
                         console.log("re-attaching to map (un-docking)");
-                        attach_1.off();
+                        popup.undock();
                         console.log("adding a page with string and dom promise");
                         {
                             var d1_1 = $.Deferred();

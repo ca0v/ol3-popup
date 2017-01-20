@@ -1,9 +1,120 @@
+import "xstyle/css!../built/css/ol3-popup.css";
 import ol = require("openlayers");
 import Popup = require("../ol3-popup");
 import FeatureCreator = require("../extras/feature-creator");
 import FeatureSelector = require("../extras/feature-selector");
 
 import $ = require("jquery");
+
+const css = `
+head, body {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+body { 
+    margin-top: 0;
+    margin-left: 1px;
+}
+
+body * {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: calc(100% - 300px);
+}
+
+.dock-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 200px;
+    height: 300px;
+    border: 1px solid rgba(0,0,0,0.1);
+    display: inline-block;
+    padding: 20px;
+    background: transparent;
+    pointer-events: none;
+}
+
+.ol-popup {
+    min-width: 200px;
+    min-height: 150px;
+    background: black;
+    color: gold;
+}
+
+.ol-popup:after {
+    bottom: -20px;
+    left: 50px;
+    border-top-color: black;
+}
+
+.ol-popup.docked {
+    bottom:0;
+    top:0;
+    left:0;
+    right:0;
+    pointer-events: all;
+    color: gold;
+    background: black;
+}
+
+.ol-popup.docked:after {
+    display:none;
+}
+
+.ol-popup.docked .pages {
+    max-height: inherit;
+    overflow: auto;
+}
+
+.ol-popup .ol-popup-docker {
+    border: none;
+    background: transparent;
+    color: inherit;
+    text-decoration: none;
+    position: absolute;
+    top: 0;
+    right: 20px;
+}
+
+.ol-popup .ol-popup-docker:after {
+    content:'□';
+}
+
+.ol-popup .ol-popup-content {
+    padding: 0;
+}
+
+.ol-popup .ol-popup-content > *:first-child {
+    margin-right: 36px;
+    overflow: hidden;
+    border-bottom: 1px solid black;
+    display: block;
+}
+
+.ol-popup .pagination {
+    position: absolute;
+    bottom: 0;
+}
+
+`;
+
+const html = `
+<div class="map"></div>
+<div class='dock-container'></div>
+`;
 
 const sample_content = [
     'The story of the three little pigs...',
@@ -16,9 +127,15 @@ const sample_content = [
 
 let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
-let mapContainer = document.getElementById("map");
 
 export function run() {
+
+    $(`<style type='text/css'>${css}</style>`).appendTo('head');
+    $(`<div>${html}</div>`).appendTo('body');
+
+    let mapContainer = $(".map")[0];
+    let dockContainer = $(".dock-container")[0];
+
     let map = new ol.Map({
         target: mapContainer,
         layers: [
@@ -38,7 +155,8 @@ export function run() {
         autoPanAnimation: {
             source: null,
             duration: 2000
-        }
+        },
+        dockContainer: dockContainer
     });
 
     map.addOverlay(popup);
@@ -46,7 +164,8 @@ export function run() {
     popup.on("hide", () => console.log(`hide popup`));
     popup.pages.on("goto", () => console.log(`goto page: ${popup.pages.activeIndex}`));
 
-    [1, 2, 3].map(i => popup.pages.add(`Page ${i}`));
+    [1, 2, 3].map(i => popup.pages.add(`Page ${i}`, new ol.geom.Point(center)));
+
     popup.pages.goto(0);
 
     setTimeout(() => {
@@ -57,14 +176,14 @@ export function run() {
             if (++pages === 5) {
                 console.log("detaching from map (docking)");
                 clearInterval(h);
-                let attach = popup.detach();
+                popup.dock();
                 let h2 = popup.on("hide", () => {
                     popup.unByKey(h2);
-                    attach.off();
+                    popup.undock();
                 });
                 setTimeout(() => {
                     console.log("re-attaching to map (un-docking)");
-                    attach.off();
+                    popup.undock();
 
                     console.log("adding a page with string and dom promise");
                     {
