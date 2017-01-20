@@ -6,11 +6,12 @@ import { Paging } from "./paging/paging";
 import PageNavigator = require("./paging/page-navigator");
 
 const classNames = {
-    DETACH: 'detach',
     olPopup: 'ol-popup',
+    olPopupDocker: 'ol-popup-docker',
     olPopupCloser: 'ol-popup-closer',
     olPopupContent: 'ol-popup-content',
-    hidden: 'hidden'
+    hidden: 'hidden',
+    docked: 'docked'
 };
 
 const eventNames = {
@@ -74,7 +75,7 @@ function enableTouchScroll(elm: HTMLElement) {
 /**
  * The constructor options 'must' conform, most interesting is autoPan
  */
-export interface IPopupOptions extends olx.OverlayOptions {
+export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
     // calls panIntoView when position changes
     autoPan?: boolean;
     // when panning into view, passed to the pan animation to track the 'center'
@@ -96,6 +97,13 @@ export interface IPopupOptions extends olx.OverlayOptions {
     // the point coordinate for this overlay
     position?: [number, number];
 };
+
+interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
+    dockContainer?: JQuery | string | HTMLElement;
+}
+
+interface IPopupOptions extends IPopupOptions_2_0_5 {
+}
 
 /**
  * Default options for the popup control so it can be created without any contructor arguments
@@ -124,6 +132,7 @@ export interface IPopup_2_0_5<T> extends IPopup_2_0_4<Popup> {
     isOpened(): boolean;
     destroy(): void;
     panIntoView(): void;
+    isDocked(): boolean;
 }
 
 export interface IPopup extends IPopup_2_0_5<Popup> {
@@ -133,10 +142,11 @@ export interface IPopup extends IPopup_2_0_5<Popup> {
  * The control formerly known as ol.Overlay.Popup 
  */
 export class Popup extends ol.Overlay implements IPopup {
-    options: IPopupOptions;
+    options: IPopupOptions & { map?: ol.Map, parentNode?: HTMLElement };
     content: HTMLDivElement;
     domNode: HTMLDivElement;
     closer: HTMLButtonElement;
+    docker: HTMLButtonElement;
     pages: Paging;
 
     constructor(options = DEFAULT_OPTIONS) {
@@ -160,6 +170,20 @@ export class Popup extends ol.Overlay implements IPopup {
         let domNode = this.domNode = document.createElement('div');
         domNode.className = classNames.olPopup;
         this.setElement(domNode);
+
+        if (this.options.dockContainer) {
+            let dockContainer = $(this.options.dockContainer)[0];
+            if (dockContainer) {
+                let docker = this.docker = document.createElement('button');
+                docker.className = classNames.olPopupDocker;
+                domNode.appendChild(docker);
+
+                docker.addEventListener('click', evt => {
+                    this.isDocked() ? this.undock() : this.dock();
+                    evt.preventDefault();
+                }, false);
+            }
+        }
 
         {
             let closer = this.closer = document.createElement('button');
@@ -196,9 +220,20 @@ export class Popup extends ol.Overlay implements IPopup {
 
     }
 
+    setPosition(position: ol.Coordinate) {
+        this.options.position = <any>position;
+        if (!this.isDocked()) {
+            super.setPosition(position);
+        } else {
+            this.options.map.getView().setCenter(position);
+        }
+    }
+
     panIntoView() {
-        let [x, y] = this.getPosition();
-        this.setPosition([x, y]);
+        if (!this.isOpened()) return;
+        if (this.isDocked()) return;
+        let p = this.getPosition();
+        p && this.setPosition(p.map(v => v)); // clone p to force change
     }
 
     destroy() {
@@ -229,32 +264,36 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     hide() {
-        this.setPosition(undefined);
+        !this.isDocked() && this.setPosition(undefined);
         this.pages.clear();
         this.dispatch(eventNames.hide);
+        this.domNode.classList.add(classNames.hidden);
         return this;
     }
 
     isOpened() {
-        return this.domNode.classList.contains(classNames.hidden);
+        return !this.domNode.classList.contains(classNames.hidden);
     }
 
-    detach() {
-        let mapContainer = <HTMLElement>this.getMap().get("target");
-        let parent = this.domNode.parentElement;
-        mapContainer.parentNode.insertBefore(this.domNode, mapContainer.nextElementSibling);
-        this.domNode.classList.add(classNames.DETACH);
-        return {
-            off: () => {
-                this.domNode.classList.remove(classNames.DETACH);
-                parent.appendChild(this.domNode);
-            }
-        };
-
+    isDocked() {
+        return this.domNode.classList.contains(classNames.docked);
     }
 
-    private isDetached() {
-        return this.domNode.classList.contains(classNames.DETACH);
+    dock() {
+        let map = this.getMap();
+        this.options.map = map;
+        this.options.parentNode = this.domNode.parentElement;
+
+        map.removeOverlay(this);
+        this.domNode.classList.add(classNames.docked);
+        $(this.options.dockContainer).append(this.domNode);
+    }
+
+    undock() {
+        this.options.parentNode.appendChild(this.domNode);
+        this.domNode.classList.remove(classNames.docked);
+        this.options.map.addOverlay(this);
+        this.setPosition(this.options.position);
     }
 
 }
