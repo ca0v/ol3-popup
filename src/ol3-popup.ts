@@ -1,9 +1,68 @@
 /**
  * OpenLayers 3 Popup Overlay.
  */
+import $ = require("jquery");
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
 import PageNavigator = require("./paging/page-navigator");
+
+const css = `
+.ol-popup:after {
+    bottom: -20px;
+    left: 50px;
+    border-top-color: black;
+}
+
+.ol-popup.docked {
+    bottom:0;
+    top:0;
+    left:0;
+    right:0;
+    pointer-events: all;
+    color: gold;
+    background: black;
+}
+
+.ol-popup.docked:after {
+    display:none;
+}
+
+.ol-popup.docked .pages {
+    max-height: inherit;
+    overflow: auto;
+    height: calc(100% - 60px);
+}
+
+.ol-popup .ol-popup-closer {
+    border: none;
+    background: transparent;
+    color: inherit;
+    position: absolute;
+    top: 0;
+    right: 0;
+    text-decoration: none;
+}
+    
+.ol-popup .ol-popup-closer:after {
+    content:'✖';
+}
+
+.ol-popup .ol-popup-docker {
+    border: none;
+    background: transparent;
+    color: inherit;
+    text-decoration: none;
+    position: absolute;
+    top: 0;
+    right: 20px;
+}
+
+.ol-popup .ol-popup-docker:after {
+    content:'□';
+}
+`;
+
+$(`<style type='text/css'>${css}</style>`).appendTo('head');
 
 const classNames = {
     olPopup: 'ol-popup',

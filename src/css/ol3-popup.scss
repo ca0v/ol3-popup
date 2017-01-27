@@ -53,42 +53,14 @@ $popup-offset: -50px;
         display: none;
     }
 
-	&.detach {
-		position: initial;
-		
-		&:after {
-			display: none;
-		}
-		
-		&:before {
-			display: none;
-		}
-			
-		.ol-popup-closer {
-			position: initial;
-		}
-		
-	}
-
     .ol-popup-content {
         white-space: nowrap;
         padding-right: 24px;
         min-width: 170px;
     }
     
-    .ol-popup-closer {
-        @include nobutton;
-        position: absolute;
-        top: 0;
-        right: 0;
-        text-decoration: none;
-        &:after {
-            content: "✖";
-        }
-    }
 
     .pages {
-        max-height: 100px;
         overflow: auto;
     }
 

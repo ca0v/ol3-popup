@@ -22,30 +22,11 @@
     margin-bottom: 30px; }
   .ol-popup.hidden, .ol-popup .hidden {
     display: none; }
-  .ol-popup.detach {
-    position: initial; }
-    .ol-popup.detach:after {
-      display: none; }
-    .ol-popup.detach:before {
-      display: none; }
-    .ol-popup.detach .ol-popup-closer {
-      position: initial; }
   .ol-popup .ol-popup-content {
     white-space: nowrap;
     padding-right: 24px;
     min-width: 170px; }
-  .ol-popup .ol-popup-closer {
-    border: none;
-    background: transparent;
-    color: inherit;
-    position: absolute;
-    top: 0;
-    right: 0;
-    text-decoration: none; }
-    .ol-popup .ol-popup-closer:after {
-      content: "✖"; }
   .ol-popup .pages {
-    max-height: 100px;
     overflow: auto; }
   .ol-popup .pagination {
     padding-top: 4px;
@@ -68,8 +49,6 @@
       /* iOS Safari */
       -webkit-user-select: none;
       /* Chrome/Safari/Opera */
-      -khtml-user-select: none;
-      /* Konqueror */
       -moz-user-select: none;
       /* Firefox */
       -ms-user-select: none;

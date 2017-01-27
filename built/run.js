@@ -239,8 +239,10 @@ define("paging/page-navigator", ["require", "exports"], function (require, expor
     }());
     return PageNavigator;
 });
-define("ol3-popup", ["require", "exports", "openlayers", "paging/paging", "paging/page-navigator"], function (require, exports, ol, paging_1, PageNavigator) {
+define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/paging", "paging/page-navigator"], function (require, exports, $, ol, paging_1, PageNavigator) {
     "use strict";
+    var css = "\n.ol-popup:after {\n    bottom: -20px;\n    left: 50px;\n    border-top-color: black;\n}\n\n.ol-popup.docked {\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    pointer-events: all;\n    color: gold;\n    background: black;\n}\n\n.ol-popup.docked:after {\n    display:none;\n}\n\n.ol-popup.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n    height: calc(100% - 60px);\n}\n\n.ol-popup .ol-popup-closer {\n    border: none;\n    background: transparent;\n    color: inherit;\n    position: absolute;\n    top: 0;\n    right: 0;\n    text-decoration: none;\n}\n    \n.ol-popup .ol-popup-closer:after {\n    content:'\u2716';\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n";
+    $("<style type='text/css'>" + css + "</style>").appendTo('head');
     var classNames = {
         olPopup: 'ol-popup',
         olPopupDocker: 'ol-popup-docker',
@@ -542,7 +544,7 @@ define("extras/feature-selector", ["require", "exports"], function (require, exp
 });
 define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery", "xstyle/css!../built/css/ol3-popup.css"], function (require, exports, ol, Popup, FeatureCreator, FeatureSelector, $) {
     "use strict";
-    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    height: calc(100% - 300px);\n}\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    min-width: 200px;\n    min-height: 150px;\n    background: black;\n    color: gold;\n}\n\n.ol-popup:after {\n    bottom: -20px;\n    left: 50px;\n    border-top-color: black;\n}\n\n.ol-popup.docked {\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    pointer-events: all;\n    color: gold;\n    background: black;\n}\n\n.ol-popup.docked:after {\n    display:none;\n}\n\n.ol-popup.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    border-bottom: 1px solid black;\n    display: block;\n}\n\n.ol-popup .pagination {\n    position: absolute;\n    bottom: 0;\n}\n\n";
+    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    min-width: 100px;\n    min-height: 50px;\n    background: black;\n    color: gold;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    border-bottom: 1px solid black;\n    display: block;\n}\n\n";
     var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
     var sample_content = [
         'The story of the three little pigs...',
@@ -572,10 +574,10 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
         });
         var popup = new Popup.Popup({
             autoPan: true,
-            autoPanMargin: 100,
+            autoPanMargin: 20,
             autoPanAnimation: {
                 source: null,
-                duration: 2000
+                duration: 500
             },
             dockContainer: dockContainer
         });

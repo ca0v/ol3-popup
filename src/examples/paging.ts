@@ -31,7 +31,7 @@ body * {
     top: 0;
     left: 0;
     right: 0;
-    height: calc(100% - 300px);
+    bottom: 0;
 }
 
 .dock-container {
@@ -48,49 +48,10 @@ body * {
 }
 
 .ol-popup {
-    min-width: 200px;
-    min-height: 150px;
+    min-width: 100px;
+    min-height: 50px;
     background: black;
     color: gold;
-}
-
-.ol-popup:after {
-    bottom: -20px;
-    left: 50px;
-    border-top-color: black;
-}
-
-.ol-popup.docked {
-    bottom:0;
-    top:0;
-    left:0;
-    right:0;
-    pointer-events: all;
-    color: gold;
-    background: black;
-}
-
-.ol-popup.docked:after {
-    display:none;
-}
-
-.ol-popup.docked .pages {
-    max-height: inherit;
-    overflow: auto;
-}
-
-.ol-popup .ol-popup-docker {
-    border: none;
-    background: transparent;
-    color: inherit;
-    text-decoration: none;
-    position: absolute;
-    top: 0;
-    right: 20px;
-}
-
-.ol-popup .ol-popup-docker:after {
-    content:'□';
 }
 
 .ol-popup .ol-popup-content {
@@ -102,11 +63,6 @@ body * {
     overflow: hidden;
     border-bottom: 1px solid black;
     display: block;
-}
-
-.ol-popup .pagination {
-    position: absolute;
-    bottom: 0;
 }
 
 `;
@@ -151,10 +107,10 @@ export function run() {
 
     let popup = new Popup.Popup({
         autoPan: true,
-        autoPanMargin: 100,
+        autoPanMargin: 20,
         autoPanAnimation: {
             source: null,
-            duration: 2000
+            duration: 500
         },
         dockContainer: dockContainer
     });
