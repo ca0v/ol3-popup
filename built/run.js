@@ -542,7 +542,7 @@ define("extras/feature-selector", ["require", "exports"], function (require, exp
     }());
     return FeatureSelector;
 });
-define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery", "xstyle/css!../built/css/ol3-popup.css"], function (require, exports, ol, Popup, FeatureCreator, FeatureSelector, $) {
+define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery", "xstyle/css!css/ol3-popup.css"], function (require, exports, ol, Popup, FeatureCreator, FeatureSelector, $) {
     "use strict";
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    min-width: 100px;\n    min-height: 50px;\n    background: black;\n    color: gold;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    border-bottom: 1px solid black;\n    display: block;\n}\n\n";
     var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
