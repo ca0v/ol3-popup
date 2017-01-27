@@ -1,4 +1,4 @@
-import "xstyle/css!../built/css/ol3-popup.css";
+import "xstyle/css!css/ol3-popup.css";
 import ol = require("openlayers");
 import Popup = require("../ol3-popup");
 import FeatureCreator = require("../extras/feature-creator");

@@ -9,6 +9,8 @@
     },
     "files": [
         "./src/ol3-popup.ts",
+        "./src/examples/index.ts",
+        "./src/examples/paging.ts",
         "./typings/index.d.ts"
     ],
     "exclude": [
