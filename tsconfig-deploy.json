@@ -5,7 +5,7 @@
         "declaration": false,
         "noImplicitAny": false,
         "sourceMap": true,
-        "outFile": "./built/popup.js"
+        "outDir": "./built"
     },
     "files": [
         "./src/ol3-popup.ts",
