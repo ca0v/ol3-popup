@@ -1,14 +1,13 @@
 {
   "name": "ol3-popup",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "homepage": "https://github.com/ca0v/ol3-popup",
   "authors": [
     "Corey Alix (https://github.com/ca0v)"
   ],
   "description": "Popup overlay for OpenLayers 3",
   "main": [
-    "built/run.js",
-    "built/css/ol3-popup.css"
+    "built/index.js"
   ],
   "keywords": [
     "openlayers",

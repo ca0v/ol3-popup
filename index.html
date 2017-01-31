@@ -47,7 +47,7 @@
                 }
             ],
 
-            deps: ["built/run"],
+            deps: ["built/index"],
 
             callback: () => {
                 require([getParameterByName("run") || "examples/index"], test => test.run());
