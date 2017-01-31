@@ -60,6 +60,10 @@ const css = `
     content: "⇨"; 
 }
 
+.ol-popup .pagination.hidden {
+    display: none;
+}
+
 .ol-popup .ol-popup-closer {
     border: none;
     background: transparent;
@@ -187,7 +191,7 @@ interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
 }
 
 interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
-    theme?: string; // css file
+    css?: string; // css file
     pointerPosition?: number;
 }
 
@@ -260,6 +264,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
         this.injectCss(css);
         let options = this.options;
+        options.css && this.injectCss(options.css);
 
         let domNode = this.domNode = document.createElement('div');
         domNode.className = classNames.olPopup;
@@ -383,7 +388,8 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     hide() {
-        !this.isDocked() && this.setPosition(undefined);
+        this.isDocked() && this.undock();
+        this.setPosition(undefined);
         this.pages.clear();
         this.dispatch(eventNames.hide);
         this.domNode.classList.add(classNames.hidden);
