@@ -7,10 +7,9 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
     <style>
         @import url('https://cdnjs.cloudflare.com/ajax/libs/ol3/3.20.1/ol.css');
-        @import url('./built/css/ol3-popup.css');
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js"></script>
-    <script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js"></script>
+<script>
         (() => {
             function getParameterByName(name, url = window.location.href) {
                 name = name.replace(/[\[\]]/g, "\\$&");
@@ -26,6 +25,10 @@
             require.config({
 
                 packages: [
+                    {
+                        name: 'ol3-popup',
+                        location: './built'
+                    },
                     {
                         name: 'openlayers',
                         location: 'https://cdnjs.cloudflare.com/ajax/libs/ol3/3.20.1',

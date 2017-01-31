@@ -1,4 +1,4 @@
-import "xstyle/css!../built/css/ol3-popup.css";
+//import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
 import Popup = require("../ol3-popup");
 import FeatureCreator = require("../extras/feature-creator");
@@ -48,10 +48,14 @@ body * {
 }
 
 .ol-popup {
-    min-width: 100px;
+    min-width: 200px;
     min-height: 50px;
-    background: black;
-    color: gold;
+    background: gold;
+    color: green;
+}
+
+.ol-popup:after {
+    border-top-color: gold;
 }
 
 .ol-popup .ol-popup-content {
@@ -86,7 +90,6 @@ let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
 export function run() {
 
-    $(`<style type='text/css'>${css}</style>`).appendTo('head');
     $(`<div>${html}</div>`).appendTo('body');
 
     let mapContainer = $(".map")[0];
@@ -112,8 +115,11 @@ export function run() {
             source: null,
             duration: 500
         },
+        pointerPosition: 100,
         dockContainer: dockContainer
     });
+
+    $(`<style type='text/css'>${css}</style>`).appendTo('head');
 
     map.addOverlay(popup);
     popup.on("show", () => console.log(`show popup`));

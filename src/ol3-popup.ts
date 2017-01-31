@@ -7,20 +7,34 @@ import { Paging } from "./paging/paging";
 import PageNavigator = require("./paging/page-navigator");
 
 const css = `
+.ol-popup {
+    position: absolute;
+    bottom: 12px;
+    left: -50px;
+}
+
 .ol-popup:after {
+    top: auto;
     bottom: -20px;
     left: 50px;
-    border-top-color: black;
+    border: solid transparent;
+    border-top-color: inherit;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+    border-width: 10px;
+    margin-left: -10px;
 }
 
 .ol-popup.docked {
+    position:absolute;
     bottom:0;
     top:0;
     left:0;
     right:0;
     pointer-events: all;
-    color: gold;
-    background: black;
 }
 
 .ol-popup.docked:after {
@@ -31,6 +45,19 @@ const css = `
     max-height: inherit;
     overflow: auto;
     height: calc(100% - 60px);
+}
+
+.ol-popup.docked .pagination {
+    position: absolute;
+    bottom: 0;
+}
+
+.ol-popup .pagination .btn-prev::after {
+    content: "⇦"; 
+}
+
+.ol-popup .pagination .btn-next::after {
+    content: "⇨"; 
 }
 
 .ol-popup .ol-popup-closer {
@@ -61,8 +88,6 @@ const css = `
     content:'□';
 }
 `;
-
-$(`<style type='text/css'>${css}</style>`).appendTo('head');
 
 const classNames = {
     olPopup: 'ol-popup',
@@ -161,7 +186,12 @@ interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
     dockContainer?: JQuery | string | HTMLElement;
 }
 
-interface IPopupOptions extends IPopupOptions_2_0_5 {
+interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
+    theme?: string; // css file
+    pointerPosition?: number;
+}
+
+interface IPopupOptions extends IPopupOptions_2_0_6 {
 }
 
 /**
@@ -175,6 +205,7 @@ const DEFAULT_OPTIONS: IPopupOptions = {
         source: null,
         duration: 250
     },
+    pointerPosition: 50,
     positioning: "top-right", // ol.OverlayPositioning.TOP_RIGHT
     stopEvent: true
 }
@@ -208,6 +239,8 @@ export class Popup extends ol.Overlay implements IPopup {
     docker: HTMLButtonElement;
     pages: Paging;
 
+    private handlers: Array<() => void>;
+
     constructor(options = DEFAULT_OPTIONS) {
 
         options = defaults({}, options, DEFAULT_OPTIONS);
@@ -216,6 +249,7 @@ export class Popup extends ol.Overlay implements IPopup {
          */
         super(options);
         this.options = options;
+        this.handlers = [];
 
         // the internal properties, dom and listeners are in place, time to create the popup
         this.postCreate();
@@ -224,11 +258,16 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private postCreate() {
 
+        this.injectCss(css);
         let options = this.options;
 
         let domNode = this.domNode = document.createElement('div');
         domNode.className = classNames.olPopup;
         this.setElement(domNode);
+
+        if (this.options.pointerPosition) {
+            this.setIndicatorPosition(this.options.pointerPosition);
+        }
 
         if (this.options.dockContainer) {
             let dockContainer = $(this.options.dockContainer)[0];
@@ -279,12 +318,31 @@ export class Popup extends ol.Overlay implements IPopup {
 
     }
 
+    private injectCss(css: string) {
+        let style = $(`<style type='text/css'>${css}</style>`);
+        style.appendTo('head');
+        this.handlers.push(() => style.remove());
+    }
+
+    private setIndicatorPosition(x: number) {
+        let css = `
+.ol-popup { position: absolute; bottom: 12px; left: -${x}px; }
+.ol-popup:after { bottom: -20px; left: ${x}px; }
+`;
+
+        this.injectCss(css);
+    }
+
     setPosition(position: ol.Coordinate) {
         this.options.position = <any>position;
         if (!this.isDocked()) {
             super.setPosition(position);
         } else {
-            this.options.map.getView().setCenter(position);
+            let view = this.options.map.getView();
+            view.animate({
+                center: position
+            });
+
         }
     }
 
@@ -296,6 +354,8 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     destroy() {
+        this.handlers.forEach(h => h());
+        this.handlers = [];
         this.getMap().removeOverlay(this);
         this.dispose();
         this.dispatch("dispose");
