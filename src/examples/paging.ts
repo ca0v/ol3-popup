@@ -34,6 +34,36 @@ body * {
     bottom: 0;
 }
 
+`;
+
+const css_popup = `
+head, body {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+body { 
+    margin-top: 0;
+    margin-left: 1px;
+}
+
+body * {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
 .dock-container {
     position: absolute;
     top: 20px;
@@ -50,12 +80,12 @@ body * {
 .ol-popup {
     min-width: 200px;
     min-height: 50px;
-    background: gold;
-    color: green;
+    background: white;
+    color: black;
 }
 
 .ol-popup:after {
-    border-top-color: gold;
+    border-top-color: white;
 }
 
 .ol-popup .ol-popup-content {
@@ -67,6 +97,11 @@ body * {
     overflow: hidden;
     border-bottom: 1px solid black;
     display: block;
+}
+
+.ol-popup .pagination button {
+    border:none;
+    background:transparent;
 }
 
 `;
@@ -90,6 +125,7 @@ let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
 export function run() {
 
+    $(`<style name="paging" type='text/css'>${css}</style>`).appendTo('head');
     $(`<div>${html}</div>`).appendTo('body');
 
     let mapContainer = $(".map")[0];
@@ -116,10 +152,9 @@ export function run() {
             duration: 500
         },
         pointerPosition: 100,
+        css: css_popup,
         dockContainer: dockContainer
     });
-
-    $(`<style type='text/css'>${css}</style>`).appendTo('head');
 
     map.addOverlay(popup);
     popup.on("show", () => console.log(`show popup`));
