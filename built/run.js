@@ -3,6 +3,29 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+define("examples/flash-style", ["require", "exports"], function (require, exports) {
+    "use strict";
+    var style = [
+        {
+            "circle": {
+                "fill": {
+                    "gradient": {
+                        "type": "radial(25,25,21,25,25,0)",
+                        "stops": "rgba(185,7,126,0.66) 0%;rgba(171,23,222,0.29) 100%"
+                    }
+                },
+                "opacity": 1,
+                "stroke": {
+                    "color": "rgba(5,105,56,0.97)",
+                    "width": 4
+                },
+                "radius": 21,
+                "rotation": 0
+            }
+        }
+    ];
+    return style;
+});
 define("examples/index", ["require", "exports"], function (require, exports) {
     "use strict";
     function run() {
@@ -241,8 +264,7 @@ define("paging/page-navigator", ["require", "exports"], function (require, expor
 });
 define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/paging", "paging/page-navigator"], function (require, exports, $, ol, paging_1, PageNavigator) {
     "use strict";
-    var css = "\n.ol-popup:after {\n    bottom: -20px;\n    left: 50px;\n    border-top-color: black;\n}\n\n.ol-popup.docked {\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    pointer-events: all;\n    color: gold;\n    background: black;\n}\n\n.ol-popup.docked:after {\n    display:none;\n}\n\n.ol-popup.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n    height: calc(100% - 60px);\n}\n\n.ol-popup .ol-popup-closer {\n    border: none;\n    background: transparent;\n    color: inherit;\n    position: absolute;\n    top: 0;\n    right: 0;\n    text-decoration: none;\n}\n    \n.ol-popup .ol-popup-closer:after {\n    content:'\u2716';\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n";
-    $("<style type='text/css'>" + css + "</style>").appendTo('head');
+    var css = "\n.ol-popup {\n    position: absolute;\n    bottom: 12px;\n    left: -50px;\n}\n\n.ol-popup:after {\n    top: auto;\n    bottom: -20px;\n    left: 50px;\n    border: solid transparent;\n    border-top-color: inherit;\n    content: \" \";\n    height: 0;\n    width: 0;\n    position: absolute;\n    pointer-events: none;\n    border-width: 10px;\n    margin-left: -10px;\n}\n\n.ol-popup.docked {\n    position:absolute;\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    pointer-events: all;\n}\n\n.ol-popup.docked:after {\n    display:none;\n}\n\n.ol-popup.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n    height: calc(100% - 60px);\n}\n\n.ol-popup.docked .pagination {\n    position: absolute;\n    bottom: 0;\n}\n\n.ol-popup .pagination .btn-prev::after {\n    content: \"\u21E6\"; \n}\n\n.ol-popup .pagination .btn-next::after {\n    content: \"\u21E8\"; \n}\n\n.ol-popup .ol-popup-closer {\n    border: none;\n    background: transparent;\n    color: inherit;\n    position: absolute;\n    top: 0;\n    right: 0;\n    text-decoration: none;\n}\n    \n.ol-popup .ol-popup-closer:after {\n    content:'\u2716';\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n";
     var classNames = {
         olPopup: 'ol-popup',
         olPopupDocker: 'ol-popup-docker',
@@ -329,6 +351,7 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
             source: null,
             duration: 250
         },
+        pointerPosition: 50,
         positioning: "top-right",
         stopEvent: true
     };
@@ -345,15 +368,20 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
              */
             _super.call(this, options);
             this.options = options;
+            this.handlers = [];
             // the internal properties, dom and listeners are in place, time to create the popup
             this.postCreate();
         }
         Popup.prototype.postCreate = function () {
             var _this = this;
+            this.injectCss(css);
             var options = this.options;
             var domNode = this.domNode = document.createElement('div');
             domNode.className = classNames.olPopup;
             this.setElement(domNode);
+            if (this.options.pointerPosition) {
+                this.setIndicatorPosition(this.options.pointerPosition);
+            }
             if (this.options.dockContainer) {
                 var dockContainer = $(this.options.dockContainer)[0];
                 if (dockContainer) {
@@ -395,13 +423,25 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
                 this.setPosition = debounce(function (args) { return callback_1.apply(_this, args); }, 50);
             }
         };
+        Popup.prototype.injectCss = function (css) {
+            var style = $("<style type='text/css'>" + css + "</style>");
+            style.appendTo('head');
+            this.handlers.push(function () { return style.remove(); });
+        };
+        Popup.prototype.setIndicatorPosition = function (x) {
+            var css = "\n.ol-popup { position: absolute; bottom: 12px; left: -" + x + "px; }\n.ol-popup:after { bottom: -20px; left: " + x + "px; }\n";
+            this.injectCss(css);
+        };
         Popup.prototype.setPosition = function (position) {
             this.options.position = position;
             if (!this.isDocked()) {
                 _super.prototype.setPosition.call(this, position);
             }
             else {
-                this.options.map.getView().setCenter(position);
+                var view = this.options.map.getView();
+                view.animate({
+                    center: position
+                });
             }
         };
         Popup.prototype.panIntoView = function () {
@@ -413,6 +453,8 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
             p && this.setPosition(p.map(function (v) { return v; })); // clone p to force change
         };
         Popup.prototype.destroy = function () {
+            this.handlers.forEach(function (h) { return h(); });
+            this.handlers = [];
             this.getMap().removeOverlay(this);
             this.dispose();
             this.dispatch("dispose");
@@ -542,9 +584,9 @@ define("extras/feature-selector", ["require", "exports"], function (require, exp
     }());
     return FeatureSelector;
 });
-define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery", "xstyle/css!css/ol3-popup.css"], function (require, exports, ol, Popup, FeatureCreator, FeatureSelector, $) {
+define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery"], function (require, exports, ol, Popup, FeatureCreator, FeatureSelector, $) {
     "use strict";
-    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    min-width: 100px;\n    min-height: 50px;\n    background: black;\n    color: gold;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    border-bottom: 1px solid black;\n    display: block;\n}\n\n";
+    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    min-width: 200px;\n    min-height: 50px;\n    background: gold;\n    color: green;\n}\n\n.ol-popup:after {\n    border-top-color: gold;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    border-bottom: 1px solid black;\n    display: block;\n}\n\n";
     var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
     var sample_content = [
         'The story of the three little pigs...',
@@ -556,7 +598,6 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
     ];
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        $("<style type='text/css'>" + css + "</style>").appendTo('head');
         $("<div>" + html + "</div>").appendTo('body');
         var mapContainer = $(".map")[0];
         var dockContainer = $(".dock-container")[0];
@@ -579,8 +620,10 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
                 source: null,
                 duration: 500
             },
+            pointerPosition: 100,
             dockContainer: dockContainer
         });
+        $("<style type='text/css'>" + css + "</style>").appendTo('head');
         map.addOverlay(popup);
         popup.on("show", function () { return console.log("show popup"); });
         popup.on("hide", function () { return console.log("hide popup"); });

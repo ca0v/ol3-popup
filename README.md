@@ -8,5 +8,4 @@ Adds paging to [ol3-popup](https://github.com/walkermatt/ol3-popup).
 
 ## Installation
 
-* `typings install ol3-popup=https://raw.githubusercontent.com/ca0v/ol3-popup/v2.0.6/index.d.ts --save`
 * `bower install ol3-paging-popup#2.0.6 --save`
