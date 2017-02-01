@@ -186,16 +186,20 @@ export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
     position?: [number, number];
 };
 
-interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
+export interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
     dockContainer?: JQuery | string | HTMLElement;
 }
 
-interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
+export interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
     css?: string; // css file
     pointerPosition?: number;
 }
 
-interface IPopupOptions extends IPopupOptions_2_0_6 {
+export interface IPopupOptions_2_0_7 extends IPopupOptions_2_0_6 {
+    yOffset?: number;
+}
+
+export interface IPopupOptions extends IPopupOptions_2_0_7 {
 }
 
 /**
@@ -210,6 +214,7 @@ const DEFAULT_OPTIONS: IPopupOptions = {
         duration: 250
     },
     pointerPosition: 50,
+    yOffset: 0,
     positioning: "top-right", // ol.OverlayPositioning.TOP_RIGHT
     stopEvent: true
 }
@@ -331,7 +336,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private setIndicatorPosition(x: number) {
         let css = `
-.ol-popup { position: absolute; bottom: 12px; left: -${x}px; }
+.ol-popup { position: absolute; bottom: ${this.options.yOffset + 12}px; left: -${x}px; }
 .ol-popup:after { bottom: -20px; left: ${x}px; }
 `;
 

@@ -152,6 +152,7 @@ export function run() {
             duration: 500
         },
         pointerPosition: 100,
+        yOffset: 10,
         css: css_popup,
         dockContainer: dockContainer
     });

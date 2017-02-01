@@ -352,6 +352,7 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
             duration: 250
         },
         pointerPosition: 50,
+        yOffset: 0,
         positioning: "top-right",
         stopEvent: true
     };
@@ -430,7 +431,7 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
             this.handlers.push(function () { return style.remove(); });
         };
         Popup.prototype.setIndicatorPosition = function (x) {
-            var css = "\n.ol-popup { position: absolute; bottom: 12px; left: -" + x + "px; }\n.ol-popup:after { bottom: -20px; left: " + x + "px; }\n";
+            var css = "\n.ol-popup { position: absolute; bottom: " + (this.options.yOffset + 12) + "px; left: -" + x + "px; }\n.ol-popup:after { bottom: -20px; left: " + x + "px; }\n";
             this.injectCss(css);
         };
         Popup.prototype.setPosition = function (position) {
@@ -625,6 +626,7 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
                 duration: 500
             },
             pointerPosition: 100,
+            yOffset: 10,
             css: css_popup,
             dockContainer: dockContainer
         });
@@ -714,4 +716,4 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
     }
     exports.run = run;
 });
-//# sourceMappingURL=run.js.map
+//# sourceMappingURL=index.js.map
