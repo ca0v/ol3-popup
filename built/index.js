@@ -352,6 +352,7 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
             duration: 250
         },
         pointerPosition: 50,
+        xOffset: 0,
         yOffset: 0,
         positioning: "top-right",
         stopEvent: true
@@ -387,7 +388,7 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
             if (this.options.dockContainer) {
                 var dockContainer = $(this.options.dockContainer)[0];
                 if (dockContainer) {
-                    var docker = this.docker = document.createElement('button');
+                    var docker = this.docker = document.createElement('label');
                     docker.className = classNames.olPopupDocker;
                     domNode.appendChild(docker);
                     docker.addEventListener('click', function (evt) {
@@ -397,7 +398,7 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
                 }
             }
             {
-                var closer = this.closer = document.createElement('button');
+                var closer = this.closer = document.createElement('label');
                 closer.className = classNames.olPopupCloser;
                 domNode.appendChild(closer);
                 closer.addEventListener('click', function (evt) {
@@ -431,7 +432,7 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
             this.handlers.push(function () { return style.remove(); });
         };
         Popup.prototype.setIndicatorPosition = function (x) {
-            var css = "\n.ol-popup { position: absolute; bottom: " + (this.options.yOffset + 12) + "px; left: -" + x + "px; }\n.ol-popup:after { bottom: -20px; left: " + x + "px; }\n";
+            var css = "\n.ol-popup { position: absolute; bottom: " + (this.options.yOffset + 12) + "px; left: " + (this.options.xOffset - x) + "px; }\n.ol-popup:after { bottom: -20px; left: " + x + "px; }\n";
             this.injectCss(css);
         };
         Popup.prototype.setPosition = function (position) {
@@ -587,10 +588,10 @@ define("extras/feature-selector", ["require", "exports"], function (require, exp
     }());
     return FeatureSelector;
 });
-define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery"], function (require, exports, ol, Popup, FeatureCreator, FeatureSelector, $) {
+define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery"], function (require, exports, ol, ol3_popup_1, FeatureCreator, FeatureSelector, $) {
     "use strict";
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
-    var css_popup = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    min-width: 200px;\n    min-height: 50px;\n    background: white;\n    color: black;\n}\n\n.ol-popup:after {\n    border-top-color: white;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    border-bottom: 1px solid black;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n";
+    var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
     var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
     var sample_content = [
         'The story of the three little pigs...',
@@ -618,15 +619,16 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "ext
                 zoom: 6
             })
         });
-        var popup = new Popup.Popup({
+        var popup = new ol3_popup_1.Popup({
             autoPan: true,
             autoPanMargin: 20,
             autoPanAnimation: {
                 source: null,
                 duration: 500
             },
-            pointerPosition: 100,
-            yOffset: 10,
+            pointerPosition: 150,
+            xOffset: -4,
+            yOffset: 3,
             css: css_popup,
             dockContainer: dockContainer
         });

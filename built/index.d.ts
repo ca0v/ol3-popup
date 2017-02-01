@@ -101,6 +101,7 @@ declare module "ol3-popup" {
         pointerPosition?: number;
     }
     export interface IPopupOptions_2_0_7 extends IPopupOptions_2_0_6 {
+        xOffset?: number;
         yOffset?: number;
     }
     export interface IPopupOptions extends IPopupOptions_2_0_7 {
@@ -130,8 +131,8 @@ declare module "ol3-popup" {
         };
         content: HTMLDivElement;
         domNode: HTMLDivElement;
-        closer: HTMLButtonElement;
-        docker: HTMLButtonElement;
+        private closer;
+        private docker;
         pages: Paging;
         private handlers;
         constructor(options?: IPopupOptions);
