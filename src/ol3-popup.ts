@@ -34,6 +34,8 @@ const css = `
     top:0;
     left:0;
     right:0;
+    width:auto;
+    height:auto;
     pointer-events: all;
 }
 
@@ -196,6 +198,7 @@ export interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
 }
 
 export interface IPopupOptions_2_0_7 extends IPopupOptions_2_0_6 {
+    xOffset?: number;
     yOffset?: number;
 }
 
@@ -214,6 +217,7 @@ const DEFAULT_OPTIONS: IPopupOptions = {
         duration: 250
     },
     pointerPosition: 50,
+    xOffset: 0,
     yOffset: 0,
     positioning: "top-right", // ol.OverlayPositioning.TOP_RIGHT
     stopEvent: true
@@ -244,8 +248,8 @@ export class Popup extends ol.Overlay implements IPopup {
     options: IPopupOptions & { map?: ol.Map, parentNode?: HTMLElement };
     content: HTMLDivElement;
     domNode: HTMLDivElement;
-    closer: HTMLButtonElement;
-    docker: HTMLButtonElement;
+    private closer: HTMLLabelElement;
+    private docker: HTMLLabelElement;
     pages: Paging;
 
     private handlers: Array<() => void>;
@@ -282,7 +286,7 @@ export class Popup extends ol.Overlay implements IPopup {
         if (this.options.dockContainer) {
             let dockContainer = $(this.options.dockContainer)[0];
             if (dockContainer) {
-                let docker = this.docker = document.createElement('button');
+                let docker = this.docker = document.createElement('label');
                 docker.className = classNames.olPopupDocker;
                 domNode.appendChild(docker);
 
@@ -294,7 +298,7 @@ export class Popup extends ol.Overlay implements IPopup {
         }
 
         {
-            let closer = this.closer = document.createElement('button');
+            let closer = this.closer = document.createElement('label');
             closer.className = classNames.olPopupCloser;
             domNode.appendChild(closer);
 
@@ -336,7 +340,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private setIndicatorPosition(x: number) {
         let css = `
-.ol-popup { position: absolute; bottom: ${this.options.yOffset + 12}px; left: -${x}px; }
+.ol-popup { position: absolute; bottom: ${this.options.yOffset + 12}px; left: ${this.options.xOffset - x}px; }
 .ol-popup:after { bottom: -20px; left: ${x}px; }
 `;
 

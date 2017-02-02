@@ -1,6 +1,6 @@
 //import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
-import Popup = require("../ol3-popup");
+import { Popup } from "../ol3-popup";
 import FeatureCreator = require("../extras/feature-creator");
 import FeatureSelector = require("../extras/feature-selector");
 
@@ -37,32 +37,6 @@ body * {
 `;
 
 const css_popup = `
-head, body {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
-
-body { 
-    margin-top: 0;
-    margin-left: 1px;
-}
-
-body * {
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
-}
-
-.map {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-}
 
 .dock-container {
     position: absolute;
@@ -78,14 +52,16 @@ body * {
 }
 
 .ol-popup {
-    min-width: 200px;
+    width: 300px;
     min-height: 50px;
     background: white;
     color: black;
+    border: 4px solid black;
+    border-radius: 12px;
 }
 
 .ol-popup:after {
-    border-top-color: white;
+    border-top-color: black;
 }
 
 .ol-popup .ol-popup-content {
@@ -95,13 +71,44 @@ body * {
 .ol-popup .ol-popup-content > *:first-child {
     margin-right: 36px;
     overflow: hidden;
-    border-bottom: 1px solid black;
     display: block;
 }
 
 .ol-popup .pagination button {
     border:none;
     background:transparent;
+}
+
+.ol-popup .ol-popup-closer {
+    width: 24px;
+    height: 24px;    
+    text-align: center;
+    border-top-right-radius: 8px;
+}
+
+.ol-popup .ol-popup-docker {
+    width: 24px;
+    height: 24px;
+    text-align: center;
+}
+
+.ol-popup .ol-popup-closer:hover {
+    background-color: red;
+    color: white;
+}
+
+.ol-popup .ol-popup-docker:hover {
+    background-color: #999;
+    color: white;
+}
+
+.ol-popup .ol-popup-content > *:first-child {
+    margin-right: 40px;
+}
+
+.ol-popup .arrow.active:hover {
+    background-color: #999;
+    color: white;    
 }
 
 `;
@@ -144,15 +151,16 @@ export function run() {
         })
     });
 
-    let popup = new Popup.Popup({
+    let popup = new Popup({
         autoPan: true,
         autoPanMargin: 20,
         autoPanAnimation: {
             source: null,
             duration: 500
         },
-        pointerPosition: 100,
-        yOffset: 10,
+        pointerPosition: 150,
+        xOffset: -4, // offset padding
+        yOffset: 3,
         css: css_popup,
         dockContainer: dockContainer
     });
