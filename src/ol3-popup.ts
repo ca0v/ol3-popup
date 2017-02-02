@@ -34,6 +34,8 @@ const css = `
     top:0;
     left:0;
     right:0;
+    width:auto;
+    height:auto;
     pointer-events: all;
 }
 
