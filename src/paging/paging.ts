@@ -54,7 +54,7 @@ export class Paging {
             let page = document.createElement("div");
             page.innerHTML = source;
             this._pages.push({
-                element: <HTMLElement>page.firstChild,
+                element: <HTMLElement>page,
                 location: geom && getInteriorPoint(geom)
             });
         }
@@ -115,39 +115,40 @@ export class Paging {
 
     goto(index: number) {
         let page = this._pages[index];
-        if (page) {
-            let activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
-            if (activeChild) {
-                this.domNode.removeChild(activeChild.element);
-            }
-            let d = $.Deferred();
-            if (page.callback) {
-                let refreshedContent = page.callback();
-                $.when(refreshedContent).then(v => {
-                    if (false) {
-                    } else if (typeof v === "string") {
-                        page.element.innerHTML = v;
-                    } else if (typeof v["innerHTML"] !== "undefined") {
-                        page.element.innerHTML = "";
-                        page.element.appendChild(v);
-                    } else {
-                        throw `invalid callback result: ${v}`;
-                    }
-                    d.resolve();
-                });
-            } else {
-                d.resolve();
-            }
+        if (!page) return;
 
-            d.then(() => {
-                this.domNode.appendChild(page.element);
-                this._activeIndex = index;
-                if (page.location) {
-                    this.options.popup.setPosition(page.location);
+        let activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
+        let d = $.Deferred();
+        if (page.callback) {
+            let refreshedContent = page.callback();
+            $.when(refreshedContent).then(v => {
+                if (false) {
+                } else if (typeof v === "string") {
+                    page.element.innerHTML = v;
+                } else if (typeof v["innerHTML"] !== "undefined") {
+                    page.element.innerHTML = "";
+                    page.element.appendChild(v);
+                } else {
+                    throw `invalid callback result: ${v}`;
                 }
-                this.dispatch("goto");
+                d.resolve();
             });
+        } else {
+            d.resolve();
         }
+
+        d.then(() => {
+            // replace page
+            activeChild && activeChild.element.remove();
+            this._activeIndex = index;
+            this.domNode.appendChild(page.element);
+
+            // position popup
+            if (page.location) {
+                this.options.popup.setPosition(page.location);
+            }
+            this.dispatch("goto");
+        });
     }
 
     next() {

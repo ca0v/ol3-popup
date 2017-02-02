@@ -89,7 +89,7 @@ define("paging/paging", ["require", "exports", "openlayers"], function (require,
                 var page = document.createElement("div");
                 page.innerHTML = source;
                 this._pages.push({
-                    element: page.firstChild,
+                    element: page,
                     location: geom && getInteriorPoint(geom)
                 });
             }
@@ -145,42 +145,42 @@ define("paging/paging", ["require", "exports", "openlayers"], function (require,
         Paging.prototype.goto = function (index) {
             var _this = this;
             var page = this._pages[index];
-            if (page) {
-                var activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
-                if (activeChild) {
-                    this.domNode.removeChild(activeChild.element);
-                }
-                var d_1 = $.Deferred();
-                if (page.callback) {
-                    var refreshedContent = page.callback();
-                    $.when(refreshedContent).then(function (v) {
-                        if (false) {
-                        }
-                        else if (typeof v === "string") {
-                            page.element.innerHTML = v;
-                        }
-                        else if (typeof v["innerHTML"] !== "undefined") {
-                            page.element.innerHTML = "";
-                            page.element.appendChild(v);
-                        }
-                        else {
-                            throw "invalid callback result: " + v;
-                        }
-                        d_1.resolve();
-                    });
-                }
-                else {
-                    d_1.resolve();
-                }
-                d_1.then(function () {
-                    _this.domNode.appendChild(page.element);
-                    _this._activeIndex = index;
-                    if (page.location) {
-                        _this.options.popup.setPosition(page.location);
+            if (!page)
+                return;
+            var activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
+            var d = $.Deferred();
+            if (page.callback) {
+                var refreshedContent = page.callback();
+                $.when(refreshedContent).then(function (v) {
+                    if (false) {
                     }
-                    _this.dispatch("goto");
+                    else if (typeof v === "string") {
+                        page.element.innerHTML = v;
+                    }
+                    else if (typeof v["innerHTML"] !== "undefined") {
+                        page.element.innerHTML = "";
+                        page.element.appendChild(v);
+                    }
+                    else {
+                        throw "invalid callback result: " + v;
+                    }
+                    d.resolve();
                 });
             }
+            else {
+                d.resolve();
+            }
+            d.then(function () {
+                // replace page
+                activeChild && activeChild.element.remove();
+                _this._activeIndex = index;
+                _this.domNode.appendChild(page.element);
+                // position popup
+                if (page.location) {
+                    _this.options.popup.setPosition(page.location);
+                }
+                _this.dispatch("goto");
+            });
         };
         Paging.prototype.next = function () {
             (0 <= this.activeIndex) && (this.activeIndex < this.count) && this.goto(this.activeIndex + 1);
