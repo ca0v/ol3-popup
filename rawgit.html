@@ -49,7 +49,7 @@
                 deps: ["built/index"],
 
                 callback: () => {
-                    require([getParameterByName("run") || "examples/index"], test => test.run());
+                    require([getParameterByName("run") || "ol3-popup/examples/index"], test => test.run());
                 }
             });
 

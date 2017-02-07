@@ -1,29 +1,6 @@
-declare module "examples/flash-style" {
-    let style: {
-        "circle": {
-            "fill": {
-                "gradient": {
-                    "type": string;
-                    "stops": string;
-                };
-            };
-            "opacity": number;
-            "stroke": {
-                "color": string;
-                "width": number;
-            };
-            "radius": number;
-            "rotation": number;
-        };
-    }[];
-    export = style;
-}
-declare module "examples/index" {
-    export function run(): void;
-}
-declare module "paging/paging" {
+declare module "ol3-popup/paging/paging" {
     import ol = require("openlayers");
-    import { Popup } from "ol3-popup";
+    import { Popup } from "ol3-popup/ol3-popup";
     export type SourceType = HTMLElement | string | JQueryDeferred<HTMLElement | string>;
     export type SourceCallback = () => SourceType;
     /**
@@ -50,8 +27,8 @@ declare module "paging/paging" {
         prev(): void;
     }
 }
-declare module "paging/page-navigator" {
-    import { Paging } from "paging/paging";
+declare module "ol3-popup/paging/page-navigator" {
+    import { Paging } from "ol3-popup/paging/paging";
     /**
      * The prior + next paging buttons and current page indicator
      */
@@ -74,9 +51,9 @@ declare module "paging/page-navigator" {
     }
     export = PageNavigator;
 }
-declare module "ol3-popup" {
+declare module "ol3-popup/ol3-popup" {
     import ol = require("openlayers");
-    import { Paging } from "paging/paging";
+    import { Paging } from "ol3-popup/paging/paging";
     /**
      * The constructor options 'must' conform, most interesting is autoPan
      */
@@ -151,7 +128,37 @@ declare module "ol3-popup" {
         undock(): void;
     }
 }
-declare module "extras/feature-creator" {
+declare module "ol3-popup" {
+    /**
+     * forces 'ol3-popup' namespace
+     */
+    import Popup = require("ol3-popup/ol3-popup");
+    export = Popup;
+}
+declare module "ol3-popup/examples/flash-style" {
+    let style: {
+        "circle": {
+            "fill": {
+                "gradient": {
+                    "type": string;
+                    "stops": string;
+                };
+            };
+            "opacity": number;
+            "stroke": {
+                "color": string;
+                "width": number;
+            };
+            "radius": number;
+            "rotation": number;
+        };
+    }[];
+    export = style;
+}
+declare module "ol3-popup/examples/index" {
+    export function run(): void;
+}
+declare module "ol3-popup/extras/feature-creator" {
     import ol = require("openlayers");
     /**
      * Used for testing, will create features when Alt+Clicking the map
@@ -166,9 +173,9 @@ declare module "extras/feature-creator" {
     }
     export = FeatureCreator;
 }
-declare module "extras/feature-selector" {
+declare module "ol3-popup/extras/feature-selector" {
     import ol = require("openlayers");
-    import { Popup } from "ol3-popup";
+    import { Popup } from "ol3-popup/ol3-popup";
     /**
      * Interaction which opens the popup when zero or more features are clicked
      */
@@ -186,6 +193,6 @@ declare module "extras/feature-selector" {
     }
     export = FeatureSelector;
 }
-declare module "examples/paging" {
+declare module "ol3-popup/examples/paging" {
     export function run(): void;
 }
