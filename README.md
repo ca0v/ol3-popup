@@ -14,5 +14,5 @@ Adds paging to [ol3-popup](https://github.com/walkermatt/ol3-popup).
 
 ## Consume
 
-* `typings install ol3-popup=github:ca0v/ol3-popup/built/index.d.ts#v2.0.7 --save`
+* `typings install ol3-popup=github:ca0v/ol3-popup/built/index.d.ts#v2.0.7 --global --save`
 * `bower install ol3-popup=git://github.com/ca0v/ol3-popup.git#v2.0.7 --save`
