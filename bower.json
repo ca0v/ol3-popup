@@ -1,41 +1,84 @@
 {
+  /*
+  The name of the package as stored in the registry.
+  */
   "name": "ol3-popup",
-  "version": "2.0.7",
-  "homepage": "https://github.com/ca0v/ol3-popup",
-  "authors": [
-    "Corey Alix (https://github.com/ca0v)"
-  ],
+  /*
+  Help users identify and search for your package with a brief description. 
+  Describe what your package does, rather than what it's made of. 
+  Will be displayed in search/lookup results on the CLI and the website that can be used to search for packages.
+  */
   "description": "Popup overlay for OpenLayers 3",
+  "homepage": "https://github.com/ca0v/ol3-popup",
+  /*
+  The entry-point files necessary to use your package. Only one file per filetype.
+  Use source files with module exports and imports over pre-built distribution files
+  */
   "main": [
+    "ol3-popup.ts",
     "built/index.js"
   ],
+  /*
+  Dependencies that are only needed for development of the package, e.g., test framework or building documentation.
+  */
+  "devDependencies": {},
+  /*
+  Dependencies are specified with a simple hash of package name to a semver compatible identifier or URL.
+  */
+  "dependencies": {
+    "openlayers": "https://github.com/openlayers/ol3/releases/download/v3.20.1/v3.20.1-dist.zip",
+    "requirejs": "^2.2.0",
+    "jquery": "^3.1.0",
+    "xstyle": "^0.3.2"
+  },
+  /*
+  The type of module defined in the main JavaScript file
+  */
+  "moduleType": [
+    "amd"
+  ],
+  /*
+  Used for search by keyword. Helps make your package easier to discover without people needing to know its name.
+  */
   "keywords": [
     "openlayers",
-    "ol3",
-    "overlay",
     "popup",
-    "info"
+    "overlay"
   ],
+  "authors": [
+    "Corey Alix <coreyalix@outlook.com>"
+  ],
+  /*
+  "homepage": URL to learn more about the package. 
+  Falls back to GitHub project if not specified and it’s a GitHub endpoint.
+  */
+  /*
+  license
+  */
   "license": "MIT",
+  /*
+  A list of files for Bower to ignore when installing your package.
+  */
   "ignore": [
     "**/.*",
     "node_modules",
     "bower_components",
     "typings",
-    "examples",
-    "util",
-    "test",
-    "*.json"
+    "ol3-popup/examples/**",
+    "ol3-popup/extras/**",
+    "*.html",
+    "*.md",
+    "*.yml"
   ],
+  /*
+  If set to true, Bower will refuse to publish it. This is a way to prevent accidental publication of private repositories.
+  */
+  "private": true,
   "typescript": {
     "definition": "index.d.ts"
   },
-  "devDependencies": {
-    "openlayers": "https://github.com/openlayers/ol3/releases/download/v3.20.1/v3.20.1-dist.zip",
-    "requirejs": "^2.2.0",
-    "jquery": "^3.1.0"
-  },
-  "dependencies": {
-    "xstyle": "^0.3.2"
-  }
+  /*
+  Use git or svn tags instead. This field is ignored by Bower.
+  */
+  "version": "3.20.1"
 }
