@@ -3,48 +3,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-define("examples/flash-style", ["require", "exports"], function (require, exports) {
-    "use strict";
-    var style = [
-        {
-            "circle": {
-                "fill": {
-                    "gradient": {
-                        "type": "radial(25,25,21,25,25,0)",
-                        "stops": "rgba(185,7,126,0.66) 0%;rgba(171,23,222,0.29) 100%"
-                    }
-                },
-                "opacity": 1,
-                "stroke": {
-                    "color": "rgba(5,105,56,0.97)",
-                    "width": 4
-                },
-                "radius": 21,
-                "rotation": 0
-            }
-        }
-    ];
-    return style;
-});
-define("examples/index", ["require", "exports"], function (require, exports) {
-    "use strict";
-    function run() {
-        var l = window.location;
-        var path = "" + l.origin + l.pathname + "?run=examples/";
-        var labs = "\n    paging\n    index\n    ";
-        document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
-        document.writeln(labs
-            .split(/ /)
-            .map(function (v) { return v.trim(); })
-            .filter(function (v) { return !!v; })
-            .sort()
-            .map(function (lab) { return ("<a href=" + path + lab + "&debug=1>" + lab + "</a>"); })
-            .join("<br/>"));
-    }
-    exports.run = run;
-    ;
-});
-define("paging/paging", ["require", "exports", "openlayers"], function (require, exports, ol) {
+define("ol3-popup/paging/paging", ["require", "exports", "openlayers"], function (require, exports, ol) {
     "use strict";
     function getInteriorPoint(geom) {
         if (geom["getInteriorPoint"])
@@ -192,7 +151,7 @@ define("paging/paging", ["require", "exports", "openlayers"], function (require,
     }());
     exports.Paging = Paging;
 });
-define("paging/page-navigator", ["require", "exports"], function (require, exports) {
+define("ol3-popup/paging/page-navigator", ["require", "exports"], function (require, exports) {
     "use strict";
     var classNames = {
         prev: 'btn-prev',
@@ -262,7 +221,7 @@ define("paging/page-navigator", ["require", "exports"], function (require, expor
     }());
     return PageNavigator;
 });
-define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/paging", "paging/page-navigator"], function (require, exports, $, ol, paging_1, PageNavigator) {
+define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator"], function (require, exports, $, ol, paging_1, PageNavigator) {
     "use strict";
     var css = "\n.ol-popup {\n    position: absolute;\n    bottom: 12px;\n    left: -50px;\n}\n\n.ol-popup:after {\n    top: auto;\n    bottom: -20px;\n    left: 50px;\n    border: solid transparent;\n    border-top-color: inherit;\n    content: \" \";\n    height: 0;\n    width: 0;\n    position: absolute;\n    pointer-events: none;\n    border-width: 10px;\n    margin-left: -10px;\n}\n\n.ol-popup.docked {\n    position:absolute;\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    width:auto;\n    height:auto;\n    pointer-events: all;\n}\n\n.ol-popup.docked:after {\n    display:none;\n}\n\n.ol-popup.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n    height: calc(100% - 60px);\n}\n\n.ol-popup.docked .pagination {\n    position: absolute;\n    bottom: 0;\n}\n\n.ol-popup .pagination .btn-prev::after {\n    content: \"\u21E6\"; \n}\n\n.ol-popup .pagination .btn-next::after {\n    content: \"\u21E8\"; \n}\n\n.ol-popup .pagination.hidden {\n    display: none;\n}\n\n.ol-popup .ol-popup-closer {\n    border: none;\n    background: transparent;\n    color: inherit;\n    position: absolute;\n    top: 0;\n    right: 0;\n    text-decoration: none;\n}\n    \n.ol-popup .ol-popup-closer:after {\n    content:'\u2716';\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n";
     var classNames = {
@@ -510,7 +469,52 @@ define("ol3-popup", ["require", "exports", "jquery", "openlayers", "paging/pagin
     }(ol.Overlay));
     exports.Popup = Popup;
 });
-define("extras/feature-creator", ["require", "exports", "openlayers"], function (require, exports, ol) {
+define("ol3-popup", ["require", "exports", "ol3-popup/ol3-popup"], function (require, exports, Popup) {
+    "use strict";
+    return Popup;
+});
+define("ol3-popup/examples/flash-style", ["require", "exports"], function (require, exports) {
+    "use strict";
+    var style = [
+        {
+            "circle": {
+                "fill": {
+                    "gradient": {
+                        "type": "radial(25,25,21,25,25,0)",
+                        "stops": "rgba(185,7,126,0.66) 0%;rgba(171,23,222,0.29) 100%"
+                    }
+                },
+                "opacity": 1,
+                "stroke": {
+                    "color": "rgba(5,105,56,0.97)",
+                    "width": 4
+                },
+                "radius": 21,
+                "rotation": 0
+            }
+        }
+    ];
+    return style;
+});
+define("ol3-popup/examples/index", ["require", "exports"], function (require, exports) {
+    "use strict";
+    function run() {
+        var l = window.location;
+        var path = "" + l.origin + l.pathname + "?run=ol3-popup/examples/";
+        var labs = "\n    paging\n    index\n    ";
+        document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
+        document.writeln(labs
+            .split(/ /)
+            .map(function (v) { return v.trim(); })
+            .filter(function (v) { return !!v; })
+            .sort()
+            .map(function (lab) { return ("<a href=\"" + path + lab + "&debug=1\">" + lab + "</a>"); })
+            .join("<br/>"));
+    }
+    exports.run = run;
+    ;
+});
+define("ol3-popup/extras/feature-creator", ["require", "exports", "openlayers"], function (require, exports, ol) {
     "use strict";
     /**
      * Used for testing, will create features when Alt+Clicking the map
@@ -559,7 +563,7 @@ define("extras/feature-creator", ["require", "exports", "openlayers"], function 
     }());
     return FeatureCreator;
 });
-define("extras/feature-selector", ["require", "exports"], function (require, exports) {
+define("ol3-popup/extras/feature-selector", ["require", "exports"], function (require, exports) {
     "use strict";
     /**
      * Interaction which opens the popup when zero or more features are clicked
@@ -588,7 +592,7 @@ define("extras/feature-selector", ["require", "exports"], function (require, exp
     }());
     return FeatureSelector;
 });
-define("examples/paging", ["require", "exports", "openlayers", "ol3-popup", "extras/feature-creator", "extras/feature-selector", "jquery"], function (require, exports, ol, ol3_popup_1, FeatureCreator, FeatureSelector, $) {
+define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/extras/feature-creator", "ol3-popup/extras/feature-selector", "jquery"], function (require, exports, ol, ol3_popup_1, FeatureCreator, FeatureSelector, $) {
     "use strict";
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
