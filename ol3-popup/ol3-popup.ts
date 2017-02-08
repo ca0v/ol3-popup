@@ -106,8 +106,7 @@ const classNames = {
 
 const eventNames = {
     show: "show",
-    hide: "hide",
-    next: "next-page"
+    hide: "hide"
 };
 
 /**

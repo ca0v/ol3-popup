@@ -16,6 +16,11 @@ declare module "ol3-popup/paging/paging" {
         constructor(options: {
             popup: Popup;
         });
+        readonly activePage: {
+            callback?: SourceCallback;
+            element: HTMLElement;
+            location: ol.geom.Geometry;
+        };
         readonly activeIndex: number;
         readonly count: number;
         dispatch(name: string): void;
@@ -194,5 +199,8 @@ declare module "ol3-popup/extras/feature-selector" {
     export = FeatureSelector;
 }
 declare module "ol3-popup/examples/paging" {
+    export function run(): void;
+}
+declare module "ol3-popup/examples/style-offset" {
     export function run(): void;
 }

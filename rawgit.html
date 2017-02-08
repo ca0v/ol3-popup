@@ -46,7 +46,10 @@
                     }
                 ],
 
-                deps: ["built/index"],
+                deps: [
+                    "https://rawgit.com/ca0v/ol3-symbolizer/v3.20.1/built/index.js",
+                    "built/index"
+                ],
 
                 callback: () => {
                     require([getParameterByName("run") || "ol3-popup/examples/index"], test => test.run());

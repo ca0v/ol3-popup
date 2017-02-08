@@ -19,16 +19,19 @@ class FeatureSelector {
             let popup = options.popup;
             let coord = event.coordinate;
             popup.hide();
-            popup.show(coord, `<label>${this.options.title}</label>`);
 
-            let pageNum = 1;
+            let pageNum = 0;
             map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
                 let page = document.createElement('p');
-                page.innerHTML = `Page ${pageNum++} ${feature.getGeometryName()}`;
+                page.innerHTML = `Page ${++pageNum} ${feature.getGeometryName()}`;
                 popup.pages.add(page, feature.getGeometry());
             });
 
-            popup.pages.goto(0);
+            if (!pageNum) {
+                popup.show(coord, `<label>${this.options.title}</label>`);
+            } else {
+                popup.pages.goto(0);
+            }
         });
 
     }

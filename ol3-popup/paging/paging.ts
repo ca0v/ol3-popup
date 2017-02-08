@@ -9,6 +9,17 @@ function getInteriorPoint(geom: ol.geom.Geometry) {
 export type SourceType = HTMLElement | string | JQueryDeferred<HTMLElement | string>;
 export type SourceCallback = () => SourceType;
 
+const classNames = {
+    pages: "pages",
+    page: "page"
+}
+
+const eventNames = {
+    add: "add",
+    clear: "clear",
+    goto: "goto"
+}
+
 /**
  * Collection of "pages"
  */
@@ -17,7 +28,7 @@ export class Paging {
     private _pages: Array<{
         callback?: SourceCallback;
         element: HTMLElement;
-        location: ol.Coordinate;
+        location: ol.geom.Geometry;
     }>;
 
     private _activeIndex: number;
@@ -26,8 +37,12 @@ export class Paging {
     constructor(public options: { popup: Popup }) {
         this._pages = [];
         this.domNode = document.createElement("div");
-        this.domNode.classList.add("pages");
+        this.domNode.classList.add(classNames.pages);
         options.popup.domNode.appendChild(this.domNode);
+    }
+
+    get activePage() {
+        return this._pages[this._activeIndex];
     }
 
     get activeIndex() {
@@ -55,26 +70,26 @@ export class Paging {
             page.innerHTML = source;
             this._pages.push({
                 element: <HTMLElement>page,
-                location: geom && getInteriorPoint(geom)
+                location: geom
             });
         }
 
         else if (source["appendChild"]) {
             let page = <HTMLElement>source;
-            page.classList.add("page");
+            page.classList.add(classNames.page);
             this._pages.push({
                 element: page,
-                location: geom && getInteriorPoint(geom)
+                location: geom
             });
         }
 
         else if (source["then"]) {
             let d = <JQueryDeferred<HTMLElement | string>>source;
             let page = document.createElement("div");
-            page.classList.add("page");
+            page.classList.add(classNames.page);
             this._pages.push({
                 element: page,
-                location: geom && getInteriorPoint(geom)
+                location: geom
             });
             $.when(d).then(v => {
                 if (typeof v === "string") {
@@ -92,7 +107,7 @@ export class Paging {
             this._pages.push({
                 callback: <SourceCallback>source,
                 element: page,
-                location: geom && getInteriorPoint(geom)
+                location: geom
             });
         }
 
@@ -100,7 +115,7 @@ export class Paging {
             throw `invalid source value: ${source}`;
         }
 
-        this.dispatch("add");
+        this.dispatch(eventNames.add);
     }
 
     clear() {
@@ -109,7 +124,7 @@ export class Paging {
         this._pages = [];
         if (activeChild) {
             this.domNode.removeChild(activeChild.element);
-            this.dispatch("clear");
+            this.dispatch(eventNames.clear);
         }
     }
 
@@ -145,9 +160,9 @@ export class Paging {
 
             // position popup
             if (page.location) {
-                this.options.popup.setPosition(page.location);
+                this.options.popup.setPosition(getInteriorPoint(page.location));
             }
-            this.dispatch("goto");
+            this.dispatch(eventNames.goto);
         });
     }
 
