@@ -47,7 +47,10 @@
                 }
             ],
 
-            deps: ["built/index"],
+            deps: [
+                "./bower_components/ol3-symbolizer/built/index.js",
+                "./built/index"
+                ],
 
             callback: () => {
                 require([getParameterByName("run") || "ol3-popup/examples/index"], test => test.run());
