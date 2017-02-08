@@ -3,7 +3,7 @@ Adds paging to [ol3-popup](https://github.com/walkermatt/ol3-popup).
 
 ## Examples
 
-* [2.0.7](https://rawgit.com/ca0v/ol3-popup/v3.20.1/rawgit.html)
+* [v3.20.1](https://rawgit.com/ca0v/ol3-popup/v3.20.1/rawgit.html)
 * [master](https://rawgit.com/ca0v/ol3-popup/master/rawgit.html)
 
 ## Build
