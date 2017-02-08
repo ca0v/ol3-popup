@@ -86,7 +86,9 @@ declare module "ol3-popup/ol3-popup" {
         xOffset?: number;
         yOffset?: number;
     }
-    export interface IPopupOptions extends IPopupOptions_2_0_7 {
+    export interface IPopupOptions_3_20_1 extends IPopupOptions_2_0_7 {
+    }
+    export interface IPopupOptions extends IPopupOptions_3_20_1 {
     }
     /**
      * This is the contract that will not break between versions
@@ -95,13 +97,15 @@ declare module "ol3-popup/ol3-popup" {
         show(position: ol.Coordinate, markup: string): T;
         hide(): T;
     }
-    export interface IPopup_2_0_5<T> extends IPopup_2_0_4<Popup> {
+    export interface IPopup_2_0_5<T> extends IPopup_2_0_4<T> {
         isOpened(): boolean;
         destroy(): void;
         panIntoView(): void;
         isDocked(): boolean;
     }
-    export interface IPopup extends IPopup_2_0_5<Popup> {
+    export interface IPopup_3_20_1<T> extends IPopup_2_0_5<T> {
+    }
+    export interface IPopup extends IPopup_3_20_1<Popup> {
     }
     /**
      * The control formerly known as ol.Overlay.Popup
