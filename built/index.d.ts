@@ -71,7 +71,7 @@ declare module "ol3-popup/ol3-popup" {
         autoPanMargin?: number;
         insertFirst?: boolean;
         stopEvent?: boolean;
-        offset?: number[];
+        offset?: [number, number];
         positioning?: string;
         position?: [number, number];
     }
@@ -104,6 +104,8 @@ declare module "ol3-popup/ol3-popup" {
         isDocked(): boolean;
     }
     export interface IPopup_3_20_1<T> extends IPopup_2_0_5<T> {
+        applyOffset([x, y]: [number, number]): any;
+        setIndicatorPosition(offset: number): any;
     }
     export interface IPopup extends IPopup_3_20_1<Popup> {
     }
@@ -124,7 +126,7 @@ declare module "ol3-popup/ol3-popup" {
         constructor(options?: IPopupOptions);
         private postCreate();
         private injectCss(css);
-        private setIndicatorPosition(x);
+        setIndicatorPosition(offset: number): void;
         setPosition(position: ol.Coordinate): void;
         panIntoView(): void;
         destroy(): void;
@@ -135,6 +137,7 @@ declare module "ol3-popup/ol3-popup" {
         isDocked(): boolean;
         dock(): void;
         undock(): void;
+        applyOffset([x, y]: [number, number]): void;
     }
 }
 declare module "ol3-popup" {

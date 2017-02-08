@@ -180,7 +180,7 @@ export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
     // determines which container to use, if true then event propagation is stopped meaning mousedown and touchstart events don't reach the map.
     stopEvent?: boolean;
     // the pixel offset when computing the rendered position
-    offset?: number[];
+    offset?: [number, number];
     // one of (bottom|center|top)*(left|center|right), css positioning when updating the rendered position
     positioning?: string;
     // the point coordinate for this overlay
@@ -243,6 +243,8 @@ export interface IPopup_2_0_5<T> extends IPopup_2_0_4<T> {
 }
 
 export interface IPopup_3_20_1<T> extends IPopup_2_0_5<T> {
+    applyOffset([x, y]: [number, number]);
+    setIndicatorPosition(offset: number);
 }
 
 export interface IPopup extends IPopup_3_20_1<Popup> {
@@ -274,7 +276,6 @@ export class Popup extends ol.Overlay implements IPopup {
         // the internal properties, dom and listeners are in place, time to create the popup
         this.postCreate();
     }
-
 
     private postCreate() {
 
@@ -345,7 +346,7 @@ export class Popup extends ol.Overlay implements IPopup {
         this.handlers.push(() => style.remove());
     }
 
-    private setIndicatorPosition(x: number) {
+    setIndicatorPosition(offset: number) {
         // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
         let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
 
@@ -367,15 +368,15 @@ export class Popup extends ol.Overlay implements IPopup {
             case "center":
                 break;
             case "left":
-                css.push(`.ol-popup { left: auto; right: ${this.options.xOffset - x - 10}px; }`);
-                css.push(`.ol-popup:after { left: auto; right: ${x}px; }`);
+                css.push(`.ol-popup { left: auto; right: ${this.options.xOffset - offset - 10}px; }`);
+                css.push(`.ol-popup:after { left: auto; right: ${offset}px; }`);
                 break;
             case "right":
-                css.push(`.ol-popup { left: ${this.options.xOffset - x}px; right: auto; }`);
-                css.push(`.ol-popup:after { left: ${x}px; right: auto; }`);
+                css.push(`.ol-popup { left: ${this.options.xOffset - offset}px; right: auto; }`);
+                css.push(`.ol-popup:after { left: ${offset}px; right: auto; }`);
                 break;
         }
-        
+
         css.forEach(css => this.injectCss(css));
     }
 
@@ -462,4 +463,20 @@ export class Popup extends ol.Overlay implements IPopup {
         this.setPosition(this.options.position);
     }
 
+    applyOffset([x, y]: [number, number]) {
+        switch (this.getPositioning()) {
+            case "bottom-left":
+                this.setOffset([x, -y]);
+                break;
+            case "bottom-right":
+                this.setOffset([-x, -y]);
+                break;
+            case "top-left":
+                this.setOffset([x, y]);
+                break;
+            case "top-right":
+                this.setOffset([-x, y]);
+                break;
+        }
+    }
 }

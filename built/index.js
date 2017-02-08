@@ -405,7 +405,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             style.appendTo('head');
             this.handlers.push(function () { return style.remove(); });
         };
-        Popup.prototype.setIndicatorPosition = function (x) {
+        Popup.prototype.setIndicatorPosition = function (offset) {
             var _this = this;
             // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
             var _a = this.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
@@ -426,12 +426,12 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 case "center":
                     break;
                 case "left":
-                    css.push(".ol-popup { left: auto; right: " + (this.options.xOffset - x - 10) + "px; }");
-                    css.push(".ol-popup:after { left: auto; right: " + x + "px; }");
+                    css.push(".ol-popup { left: auto; right: " + (this.options.xOffset - offset - 10) + "px; }");
+                    css.push(".ol-popup:after { left: auto; right: " + offset + "px; }");
                     break;
                 case "right":
-                    css.push(".ol-popup { left: " + (this.options.xOffset - x) + "px; right: auto; }");
-                    css.push(".ol-popup:after { left: " + x + "px; right: auto; }");
+                    css.push(".ol-popup { left: " + (this.options.xOffset - offset) + "px; right: auto; }");
+                    css.push(".ol-popup:after { left: " + offset + "px; right: auto; }");
                     break;
             }
             css.forEach(function (css) { return _this.injectCss(css); });
@@ -506,6 +506,23 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             this.domNode.classList.remove(classNames.docked);
             this.options.map.addOverlay(this);
             this.setPosition(this.options.position);
+        };
+        Popup.prototype.applyOffset = function (_a) {
+            var x = _a[0], y = _a[1];
+            switch (this.getPositioning()) {
+                case "bottom-left":
+                    this.setOffset([x, -y]);
+                    break;
+                case "bottom-right":
+                    this.setOffset([-x, -y]);
+                    break;
+                case "top-left":
+                    this.setOffset([x, y]);
+                    break;
+                case "top-right":
+                    this.setOffset([-x, y]);
+                    break;
+            }
         };
         return Popup;
     }(ol.Overlay));
@@ -804,7 +821,8 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 duration: 500
             },
             pointerPosition: 20,
-            positioning: "bottom-left",
+            positioning: "top-left",
+            offset: [0, -10],
             css: "\n        .ol-popup {\n            background-color: white;\n            border: 1px solid black;\n            padding: 4px;\n            width: 200px;\n        }\n        "
         });
         map.addOverlay(popup);
@@ -824,9 +842,8 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         var circleFeature = new ol.Feature();
         circleFeature.setGeometry(new ol.geom.Point(center));
         setStyle(circleFeature, {
-            "popup": {
-                "offset-x": 0,
-                "offset-y": -10
+            popup: {
+                offset: [0, -10]
             },
             "circle": {
                 "fill": {
@@ -843,19 +860,12 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         var svgFeature = new ol.Feature();
         svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
         setStyle(svgFeature, {
-            "popup": {
-                "offset-x": 0,
-                "offset-y": -18
+            popup: {
+                offset: [0, -18]
             },
             "image": {
-                "imgSize": [
-                    36,
-                    36
-                ],
-                "anchor": [
-                    32,
-                    32
-                ],
+                "imgSize": [36, 36],
+                "anchor": [32, 32],
                 "stroke": {
                     "color": "rgba(255,25,0,0.8)",
                     "width": 10
@@ -866,9 +876,9 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         var markerFeature = new ol.Feature();
         markerFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1] + 1000]));
         setStyle(markerFeature, {
-            "popup": {
-                "offset-x": 0,
-                "offset-y": -64
+            popup: {
+                offset: [0, -64],
+                positioning: "bottom-left"
             },
             "circle": {
                 "fill": {
@@ -892,35 +902,25 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 "src": "http://openlayers.org/en/v3.20.1/examples/data/icon.png"
             }
         });
-        popup.on("show", function () {
-            popup.setOffset(popup.options.offset || [0, 0]);
-        });
+        popup.on("show", function () { return popup.applyOffset(popup.options.offset || [0, 0]); });
         popup.pages.on("goto", function () {
             var geom = popup.pages.activePage.location;
             var popupInfo = geom.get("popup-info");
             if (popupInfo) {
-                var _a = [popupInfo["offset-x"] || 0, popupInfo["offset-y"] || 0], x = _a[0], y = _a[1];
-                switch (popup.getPositioning()) {
-                    case "bottom-left":
-                        popup.setOffset([x, -y]);
-                        break;
-                    case "bottom-right":
-                        popup.setOffset([-x, -y]);
-                        break;
-                    case "top-left":
-                        popup.setOffset([x, y]);
-                        break;
-                    case "top-right":
-                        popup.setOffset([-x, y]);
-                        break;
+                if (popupInfo.positioning) {
+                    var p_1 = popup.getPositioning();
+                    if (p_1 !== popupInfo.positioning) {
+                        popup.setPositioning(popupInfo.positioning);
+                        popup.setIndicatorPosition(popup.options.pointerPosition);
+                        var h_1 = popup.on("hide", function () {
+                            popup.unByKey(h_1);
+                            popup.setPositioning(p_1);
+                            popup.setIndicatorPosition(popup.options.pointerPosition);
+                        });
+                    }
                 }
-                popup.panIntoView();
-                if (popupInfo.cssName) {
-                    var h_1 = popup.on("hide", function () {
-                        popup.unByKey(h_1);
-                        popup.domNode.classList.remove(popupInfo.cssName);
-                    });
-                    popup.domNode.classList.add(popupInfo.cssName);
+                if (popupInfo.offset) {
+                    popup.applyOffset(popupInfo.offset);
                 }
             }
             else {

@@ -7,9 +7,8 @@ import Symbolizer = require("ol3-symbolizer");
 import $ = require("jquery");
 
 interface IPopupInfo {
-    "offset-x"?: number;
-    "offset-y"?: number;
-    cssName?: string;
+    offset?: [number, number];
+    positioning?: ol.OverlayPositioning;
 }
 
 const symbolizer = new Symbolizer.StyleConverter();
@@ -86,7 +85,8 @@ export function run() {
             duration: 500
         },
         pointerPosition: 20,
-        positioning: "bottom-left",
+        positioning: "top-left",
+        offset: [0, -10],
         css: `
         .ol-popup {
             background-color: white;
@@ -120,9 +120,8 @@ export function run() {
     circleFeature.setGeometry(new ol.geom.Point(center));
 
     setStyle(circleFeature, {
-        "popup": {
-            "offset-x": 0,
-            "offset-y": -10
+        popup: {
+            offset: [0, -10]
         },
         "circle": {
             "fill": {
@@ -140,19 +139,12 @@ export function run() {
     let svgFeature = new ol.Feature();
     svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
     setStyle(svgFeature, {
-        "popup": {
-            "offset-x": 0,
-            "offset-y": -18
+        popup: {
+            offset: [0, -18]
         },
         "image": {
-            "imgSize": [
-                36,
-                36
-            ],
-            "anchor": [
-                32,
-                32
-            ],
+            "imgSize": [36, 36],
+            "anchor": [32, 32],
             "stroke": {
                 "color": "rgba(255,25,0,0.8)",
                 "width": 10
@@ -164,9 +156,9 @@ export function run() {
     let markerFeature = new ol.Feature();
     markerFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1] + 1000]));
     setStyle(markerFeature, {
-        "popup": {
-            "offset-x": 0,
-            "offset-y": -64
+        popup: {
+            offset: [0, -64],
+            positioning: "bottom-left"
         },
         "circle": {
             "fill": {
@@ -191,36 +183,26 @@ export function run() {
         }
     });
 
-    popup.on("show", () => {
-        popup.setOffset(popup.options.offset || [0, 0]);
-    });
+    popup.on("show", () => popup.applyOffset(popup.options.offset || [0, 0]));
 
     popup.pages.on("goto", () => {
         let geom = popup.pages.activePage.location;
         let popupInfo = <IPopupInfo>geom.get("popup-info");
         if (popupInfo) {
-            let [x, y] = [popupInfo["offset-x"] || 0, popupInfo["offset-y"] || 0];
-            switch (popup.getPositioning()) {
-                case "bottom-left":
-                    popup.setOffset([x, -y]);
-                    break;
-                case "bottom-right":
-                    popup.setOffset([-x, -y]);
-                    break;
-                case "top-left":
-                    popup.setOffset([x, y]);
-                    break;
-                case "top-right":
-                    popup.setOffset([-x, y]);
-                    break;
+            if (popupInfo.positioning) {
+                let p = popup.getPositioning();
+                if (p !== popupInfo.positioning) {
+                    popup.setPositioning(popupInfo.positioning);
+                    popup.setIndicatorPosition(popup.options.pointerPosition);
+                    let h = popup.on("hide", () => {
+                        popup.unByKey(h);
+                        popup.setPositioning(p);
+                        popup.setIndicatorPosition(popup.options.pointerPosition);
+                    });
+                }
             }
-            popup.panIntoView();
-            if (popupInfo.cssName) {
-                let h = popup.on("hide", () => {
-                    popup.unByKey(h);
-                    popup.domNode.classList.remove(popupInfo.cssName);
-                });
-                popup.domNode.classList.add(popupInfo.cssName);
+            if (popupInfo.offset) {
+                popup.applyOffset(popupInfo.offset);
             }
         } else {
             popup.setOffset(popup.options.offset || [0, 0]);
