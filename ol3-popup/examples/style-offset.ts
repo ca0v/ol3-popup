@@ -90,6 +90,8 @@ export function run() {
         css: `
         .ol-popup {
             background-color: white;
+            border: 1px solid black;
+            padding: 4px;
             width: 200px;
         }
         `
