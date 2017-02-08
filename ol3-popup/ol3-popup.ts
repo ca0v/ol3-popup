@@ -372,8 +372,8 @@ export class Popup extends ol.Overlay implements IPopup {
                 css.push(`.ol-popup:after { left: auto; right: ${offset}px; }`);
                 break;
             case "right":
-                css.push(`.ol-popup { left: ${this.options.xOffset - offset}px; right: auto; }`);
-                css.push(`.ol-popup:after { left: ${offset}px; right: auto; }`);
+                css.push(`.ol-popup { left: ${this.options.xOffset - offset - 10}px; right: auto; }`);
+                css.push(`.ol-popup:after { left: ${10 + offset}px; right: auto; }`);
                 break;
         }
 

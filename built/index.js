@@ -430,8 +430,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     css.push(".ol-popup:after { left: auto; right: " + offset + "px; }");
                     break;
                 case "right":
-                    css.push(".ol-popup { left: " + (this.options.xOffset - offset) + "px; right: auto; }");
-                    css.push(".ol-popup:after { left: " + offset + "px; right: auto; }");
+                    css.push(".ol-popup { left: " + (this.options.xOffset - offset - 10) + "px; right: auto; }");
+                    css.push(".ol-popup:after { left: " + (10 + offset) + "px; right: auto; }");
                     break;
             }
             css.forEach(function (css) { return _this.injectCss(css); });
@@ -843,7 +843,9 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         circleFeature.setGeometry(new ol.geom.Point(center));
         setStyle(circleFeature, {
             popup: {
-                offset: [0, -10]
+                offset: [0, -10],
+                pointerPosition: -1,
+                positioning: "top-right"
             },
             "circle": {
                 "fill": {
@@ -861,7 +863,9 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
         setStyle(svgFeature, {
             popup: {
-                offset: [0, -18]
+                offset: [0, -18],
+                pointerPosition: -1,
+                positioning: "top-left"
             },
             "image": {
                 "imgSize": [36, 36],
@@ -878,6 +882,7 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         setStyle(markerFeature, {
             popup: {
                 offset: [0, -64],
+                pointerPosition: -1,
                 positioning: "bottom-left"
             },
             "circle": {
@@ -902,7 +907,30 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 "src": "http://openlayers.org/en/v3.20.1/examples/data/icon.png"
             }
         });
-        popup.on("show", function () { return popup.applyOffset(popup.options.offset || [0, 0]); });
+        var markerFeature2 = new ol.Feature();
+        markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
+        setStyle(markerFeature2, {
+            popup: {
+                offset: [0, -36],
+                pointerPosition: -1,
+                positioning: "bottom-right"
+            },
+            "circle": {
+                "fill": {
+                    color: "rgba(100,100,100,0.5)"
+                },
+                "opacity": 1,
+                "stroke": {
+                    "color": "rgba(100,100,100,1)",
+                    "width": 8
+                },
+                "radius": 32
+            }
+        });
+        popup.on("show", function () {
+            popup.applyOffset(popup.options.offset || [0, 0]);
+            popup.setIndicatorPosition(popup.options.pointerPosition);
+        });
         popup.pages.on("goto", function () {
             var geom = popup.pages.activePage.location;
             var popupInfo = geom.get("popup-info");
@@ -911,23 +939,22 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                     var p_1 = popup.getPositioning();
                     if (p_1 !== popupInfo.positioning) {
                         popup.setPositioning(popupInfo.positioning);
-                        popup.setIndicatorPosition(popup.options.pointerPosition);
                         var h_1 = popup.on("hide", function () {
                             popup.unByKey(h_1);
                             popup.setPositioning(p_1);
-                            popup.setIndicatorPosition(popup.options.pointerPosition);
                         });
                     }
                 }
                 if (popupInfo.offset) {
                     popup.applyOffset(popupInfo.offset);
                 }
+                popup.setIndicatorPosition(popupInfo.pointerPosition || popup.options.pointerPosition);
             }
             else {
                 popup.setOffset(popup.options.offset || [0, 0]);
             }
         });
-        vectorSource.addFeatures([circleFeature, svgFeature, markerFeature]);
+        vectorSource.addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
     }
     exports.run = run;
 });
