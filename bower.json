@@ -1,20 +1,28 @@
 {
   "name": "ol3-popup",
-  "version": "2.0.7",
-  "homepage": "https://github.com/ca0v/ol3-popup",
-  "authors": [
-    "Corey Alix (https://github.com/ca0v)"
-  ],
   "description": "Popup overlay for OpenLayers 3",
+  "homepage": "https://github.com/ca0v/ol3-popup",
   "main": [
+    "ol3-popup.ts",
     "built/index.js"
+  ],
+  "devDependencies": {},
+  "dependencies": {
+    "openlayers": "https://github.com/openlayers/ol3/releases/download/v3.20.1/v3.20.1-dist.zip",
+    "requirejs": "^2.2.0",
+    "jquery": "^3.1.0",
+    "xstyle": "^0.3.2"
+  },
+  "moduleType": [
+    "amd"
   ],
   "keywords": [
     "openlayers",
-    "ol3",
-    "overlay",
     "popup",
-    "info"
+    "overlay"
+  ],
+  "authors": [
+    "Corey Alix <coreyalix@outlook.com>"
   ],
   "license": "MIT",
   "ignore": [
@@ -22,20 +30,15 @@
     "node_modules",
     "bower_components",
     "typings",
-    "examples",
-    "util",
-    "test",
-    "*.json"
+    "ol3-popup/examples/**",
+    "ol3-popup/extras/**",
+    "*.html",
+    "*.md",
+    "*.yml"
   ],
+  "private": true,
   "typescript": {
-    "definition": "index.d.ts"
+    "definition": "built/index.d.ts"
   },
-  "devDependencies": {
-    "openlayers": "https://github.com/openlayers/ol3/releases/download/v3.20.1/v3.20.1-dist.zip",
-    "requirejs": "^2.2.0",
-    "jquery": "^3.1.0"
-  },
-  "dependencies": {
-    "xstyle": "^0.3.2"
-  }
+  "version": "3.20.1"
 }

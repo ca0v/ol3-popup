@@ -1,28 +1,4 @@
 {
   "name": "ol3-popup",
-  "version": "2.0.7",
-  "description": "Popup overlay for OpenLayers 3",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ca0v/ol3-popup.git"
-  },
-  "author": "Matt Walker (http://longwayaround.org.uk)",
-  "contributors": [
-    "Corey Alix <coreyalix@gmail.com>",
-    "Avi Kelman <patcherton.fixesthings@gmail.com>"
-  ],
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ca0v/ol3-popup/issues"
-  },
-  "scripts": {
-    "sass": "node-sass src/css -o built/css",
-    "tsc": "tsc",
-    "deploy": "tsc -p tsconfig-deploy.json",    
-    "build": "npm run sass & npm run tsc"
-  },
-  "typescript": {
-    "definition": "index.d.ts"
-  }
-
+  "version": "3.20.1"
 }
