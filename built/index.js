@@ -804,7 +804,7 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 duration: 500
             },
             pointerPosition: 20,
-            positioning: "top-right",
+            positioning: "bottom-left",
             css: "\n        .ol-popup {\n            background-color: white;\n            width: 200px;\n        }\n        "
         });
         map.addOverlay(popup);

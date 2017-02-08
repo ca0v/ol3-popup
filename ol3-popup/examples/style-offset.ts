@@ -86,7 +86,7 @@ export function run() {
             duration: 500
         },
         pointerPosition: 20,
-        positioning: "top-right",
+        positioning: "bottom-left",
         css: `
         .ol-popup {
             background-color: white;
