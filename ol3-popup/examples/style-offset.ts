@@ -9,6 +9,7 @@ import $ = require("jquery");
 interface IPopupInfo {
     "offset-x"?: number;
     "offset-y"?: number;
+    cssName?: string;
 }
 
 const symbolizer = new Symbolizer.StyleConverter();
@@ -54,21 +55,12 @@ const html = `
 <div class="map"></div>
 `;
 
-const sample_content = [
-    'The story of the three little pigs...',
-    'This little piggy went to market',
-    'This little piggy stayed home',
-    'This little piggy had roast beef',
-    'This little piggy had none',
-    'And this little piggy, <br/>this wee little piggy, <br/>when wee, wee, wee, wee <br/>all the way home!',
-];
-
 let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
 
 export function run() {
 
-    $(`<style name="paging" type='text/css'>${css}</style>`).appendTo('head');
+    $(`<style name="style-offset" type='text/css'>${css}</style>`).appendTo('head');
     $(`<div>${html}</div>`).appendTo('body');
 
     let mapContainer = $(".map")[0];
@@ -93,10 +85,14 @@ export function run() {
             source: null,
             duration: 500
         },
-        pointerPosition: 150,
+        pointerPosition: 20,
+        positioning: "bottom-left",
         css: `
         .ol-popup {
             background-color: white;
+            border: 1px solid black;
+            padding: 4px;
+            width: 200px;
         }
         `
     });
@@ -115,10 +111,7 @@ export function run() {
 
     let vectorLayer = new ol.layer.Vector({
         source: vectorSource,
-        style: (f: ol.Feature, res: number) => {
-            debugger;
-            return f.getStyle();
-        }
+        style: (f: ol.Feature, res: number) => <ol.style.Style>f.getStyle()
     });
 
     map.addLayer(vectorLayer);
@@ -148,13 +141,17 @@ export function run() {
     svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
     setStyle(svgFeature, {
         "popup": {
-            "offset-x": 12,
-            "offset-y": -53
+            "offset-x": 0,
+            "offset-y": -18
         },
         "image": {
             "imgSize": [
-                48,
-                48
+                36,
+                36
+            ],
+            "anchor": [
+                32,
+                32
             ],
             "stroke": {
                 "color": "rgba(255,25,0,0.8)",
@@ -202,8 +199,29 @@ export function run() {
         let geom = popup.pages.activePage.location;
         let popupInfo = <IPopupInfo>geom.get("popup-info");
         if (popupInfo) {
-            popup.setOffset([popupInfo["offset-x"] || 0, popupInfo["offset-y"] || 0]);
+            let [x, y] = [popupInfo["offset-x"] || 0, popupInfo["offset-y"] || 0];
+            switch (popup.getPositioning()) {
+                case "bottom-left":
+                    popup.setOffset([x, -y]);
+                    break;
+                case "bottom-right":
+                    popup.setOffset([-x, -y]);
+                    break;
+                case "top-left":
+                    popup.setOffset([x, y]);
+                    break;
+                case "top-right":
+                    popup.setOffset([-x, y]);
+                    break;
+            }
             popup.panIntoView();
+            if (popupInfo.cssName) {
+                let h = popup.on("hide", () => {
+                    popup.unByKey(h);
+                    popup.domNode.classList.remove(popupInfo.cssName);
+                });
+                popup.domNode.classList.add(popupInfo.cssName);
+            }
         } else {
             popup.setOffset(popup.options.offset || [0, 0]);
         }

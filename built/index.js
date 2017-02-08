@@ -356,7 +356,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             var domNode = this.domNode = document.createElement('div');
             domNode.className = classNames.olPopup;
             this.setElement(domNode);
-            if (this.options.pointerPosition) {
+            if (typeof this.options.pointerPosition === "number") {
                 this.setIndicatorPosition(this.options.pointerPosition);
             }
             if (this.options.dockContainer) {
@@ -406,8 +406,35 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             this.handlers.push(function () { return style.remove(); });
         };
         Popup.prototype.setIndicatorPosition = function (x) {
-            var css = "\n.ol-popup { position: absolute; bottom: " + (this.options.yOffset + 12) + "px; left: " + (this.options.xOffset - x) + "px; }\n.ol-popup:after { bottom: -20px; left: " + x + "px; }\n";
-            this.injectCss(css);
+            var _this = this;
+            // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
+            var _a = this.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
+            var css = [];
+            switch (verticalPosition) {
+                case "bottom":
+                    css.push(".ol-popup { top: " + (10 + this.options.yOffset) + "px; bottom: auto; }");
+                    css.push(".ol-popup:after {  top: -20px; bottom: auto; transform: rotate(180deg);}");
+                    break;
+                case "center":
+                    break;
+                case "top":
+                    css.push(".ol-popup { top: auto; bottom: " + (10 + this.options.yOffset) + "px; }");
+                    css.push(".ol-popup:after {  top: auto; bottom: -20px; transform: rotate(0deg);}");
+                    break;
+            }
+            switch (horizontalPosition) {
+                case "center":
+                    break;
+                case "left":
+                    css.push(".ol-popup { left: auto; right: " + (this.options.xOffset - x - 10) + "px; }");
+                    css.push(".ol-popup:after { left: auto; right: " + x + "px; }");
+                    break;
+                case "right":
+                    css.push(".ol-popup { left: " + (this.options.xOffset - x) + "px; right: auto; }");
+                    css.push(".ol-popup:after { left: " + x + "px; right: auto; }");
+                    break;
+            }
+            css.forEach(function (css) { return _this.injectCss(css); });
         };
         Popup.prototype.setPosition = function (position) {
             this.options.position = position;
@@ -752,17 +779,9 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
     }
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var html = "\n<div class=\"map\"></div>\n";
-    var sample_content = [
-        'The story of the three little pigs...',
-        'This little piggy went to market',
-        'This little piggy stayed home',
-        'This little piggy had roast beef',
-        'This little piggy had none',
-        'And this little piggy, <br/>this wee little piggy, <br/>when wee, wee, wee, wee <br/>all the way home!',
-    ];
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        $("<style name=\"paging\" type='text/css'>" + css + "</style>").appendTo('head');
+        $("<style name=\"style-offset\" type='text/css'>" + css + "</style>").appendTo('head');
         $("<div>" + html + "</div>").appendTo('body');
         var mapContainer = $(".map")[0];
         var map = new ol.Map({
@@ -784,8 +803,9 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 source: null,
                 duration: 500
             },
-            pointerPosition: 150,
-            css: "\n        .ol-popup {\n            background-color: white;\n        }\n        "
+            pointerPosition: 20,
+            positioning: "bottom-left",
+            css: "\n        .ol-popup {\n            background-color: white;\n            border: 1px solid black;\n            padding: 4px;\n            width: 200px;\n        }\n        "
         });
         map.addOverlay(popup);
         var selector = new FeatureSelector({
@@ -798,10 +818,7 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         });
         var vectorLayer = new ol.layer.Vector({
             source: vectorSource,
-            style: function (f, res) {
-                debugger;
-                return f.getStyle();
-            }
+            style: function (f, res) { return f.getStyle(); }
         });
         map.addLayer(vectorLayer);
         var circleFeature = new ol.Feature();
@@ -827,13 +844,17 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
         setStyle(svgFeature, {
             "popup": {
-                "offset-x": 12,
-                "offset-y": -53
+                "offset-x": 0,
+                "offset-y": -18
             },
             "image": {
                 "imgSize": [
-                    48,
-                    48
+                    36,
+                    36
+                ],
+                "anchor": [
+                    32,
+                    32
                 ],
                 "stroke": {
                     "color": "rgba(255,25,0,0.8)",
@@ -878,8 +899,29 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
             var geom = popup.pages.activePage.location;
             var popupInfo = geom.get("popup-info");
             if (popupInfo) {
-                popup.setOffset([popupInfo["offset-x"] || 0, popupInfo["offset-y"] || 0]);
+                var _a = [popupInfo["offset-x"] || 0, popupInfo["offset-y"] || 0], x = _a[0], y = _a[1];
+                switch (popup.getPositioning()) {
+                    case "bottom-left":
+                        popup.setOffset([x, -y]);
+                        break;
+                    case "bottom-right":
+                        popup.setOffset([-x, -y]);
+                        break;
+                    case "top-left":
+                        popup.setOffset([x, y]);
+                        break;
+                    case "top-right":
+                        popup.setOffset([-x, y]);
+                        break;
+                }
                 popup.panIntoView();
+                if (popupInfo.cssName) {
+                    var h_1 = popup.on("hide", function () {
+                        popup.unByKey(h_1);
+                        popup.domNode.classList.remove(popupInfo.cssName);
+                    });
+                    popup.domNode.classList.add(popupInfo.cssName);
+                }
             }
             else {
                 popup.setOffset(popup.options.offset || [0, 0]);

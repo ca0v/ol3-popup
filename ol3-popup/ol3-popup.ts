@@ -197,11 +197,16 @@ export interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
 }
 
 export interface IPopupOptions_2_0_7 extends IPopupOptions_2_0_6 {
+    // indicator position
     xOffset?: number;
+    // indicator position
     yOffset?: number;
 }
 
-export interface IPopupOptions extends IPopupOptions_2_0_7 {
+export interface IPopupOptions_3_20_1 extends IPopupOptions_2_0_7 {
+}
+
+export interface IPopupOptions extends IPopupOptions_3_20_1 {
 }
 
 /**
@@ -230,14 +235,17 @@ export interface IPopup_2_0_4<T> {
     hide(): T;
 }
 
-export interface IPopup_2_0_5<T> extends IPopup_2_0_4<Popup> {
+export interface IPopup_2_0_5<T> extends IPopup_2_0_4<T> {
     isOpened(): boolean;
     destroy(): void;
     panIntoView(): void;
     isDocked(): boolean;
 }
 
-export interface IPopup extends IPopup_2_0_5<Popup> {
+export interface IPopup_3_20_1<T> extends IPopup_2_0_5<T> {
+}
+
+export interface IPopup extends IPopup_3_20_1<Popup> {
 }
 
 /**
@@ -278,7 +286,7 @@ export class Popup extends ol.Overlay implements IPopup {
         domNode.className = classNames.olPopup;
         this.setElement(domNode);
 
-        if (this.options.pointerPosition) {
+        if (typeof this.options.pointerPosition === "number") {
             this.setIndicatorPosition(this.options.pointerPosition);
         }
 
@@ -338,12 +346,37 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     private setIndicatorPosition(x: number) {
-        let css = `
-.ol-popup { position: absolute; bottom: ${this.options.yOffset + 12}px; left: ${this.options.xOffset - x}px; }
-.ol-popup:after { bottom: -20px; left: ${x}px; }
-`;
+        // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
+        let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
 
-        this.injectCss(css);
+        let css = <string[]>[];
+        switch (verticalPosition) {
+            case "bottom":
+                css.push(`.ol-popup { top: ${10 + this.options.yOffset}px; bottom: auto; }`);
+                css.push(`.ol-popup:after {  top: -20px; bottom: auto; transform: rotate(180deg);}`);
+                break;
+            case "center":
+                break;
+            case "top":
+                css.push(`.ol-popup { top: auto; bottom: ${10 + this.options.yOffset}px; }`);
+                css.push(`.ol-popup:after {  top: auto; bottom: -20px; transform: rotate(0deg);}`);
+                break;
+        }
+
+        switch (horizontalPosition) {
+            case "center":
+                break;
+            case "left":
+                css.push(`.ol-popup { left: auto; right: ${this.options.xOffset - x - 10}px; }`);
+                css.push(`.ol-popup:after { left: auto; right: ${x}px; }`);
+                break;
+            case "right":
+                css.push(`.ol-popup { left: ${this.options.xOffset - x}px; right: auto; }`);
+                css.push(`.ol-popup:after { left: ${x}px; right: auto; }`);
+                break;
+        }
+        
+        css.forEach(css => this.injectCss(css));
     }
 
     setPosition(position: ol.Coordinate) {
