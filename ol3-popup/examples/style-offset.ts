@@ -2,7 +2,7 @@
 import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
 import FeatureSelector = require("../extras/feature-selector");
-import Symbolizer = require("ol3-symbolizer");
+import Symbolizer = require("bower/ol3-symbolizer/ol3-symbolizer");
 
 import $ = require("jquery");
 

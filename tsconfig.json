@@ -5,7 +5,14 @@
         "declaration": true,
         "noImplicitAny": false,
         "outFile": "built/index.js",
-        "sourceMap": true
+        "sourceMap": true,
+        "moduleResolution": "node",
+        "baseUrl": "./",
+        "paths": {
+            "bower/*": [
+                "./bower_components/*"
+            ]
+        }
     },
     "exclude": [
         "bower_components",
