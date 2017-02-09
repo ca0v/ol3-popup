@@ -404,7 +404,6 @@ export class Popup extends ol.Overlay implements IPopup {
         this.handlers.forEach(h => h());
         this.handlers = [];
         this.getMap().removeOverlay(this);
-        this.dispose();
         this.dispatch("dispose");
     }
 
