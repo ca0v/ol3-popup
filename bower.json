@@ -6,13 +6,14 @@
     "ol3-popup.ts",
     "built/index.js"
   ],
-  "devDependencies": {},
+  "devDependencies": {
+    "ol3-symbolizer": "git://github.com/ca0v/ol3-symbolizer.git#v3.20.1"
+  },
   "dependencies": {
     "openlayers": "https://github.com/openlayers/ol3/releases/download/v3.20.1/v3.20.1-dist.zip",
     "requirejs": "^2.2.0",
     "jquery": "^3.1.0",
-    "xstyle": "^0.3.2",
-    "ol3-symbolizer": "git://github.com/ca0v/ol3-symbolizer.git#v3.20.1"
+    "xstyle": "^0.3.2"
   },
   "moduleType": [
     "amd"
