@@ -21,7 +21,7 @@ class FeatureSelector {
             popup.hide();
 
             let pageNum = 0;
-            map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
+            map.forEachFeatureAtPixel(event.pixel, (feature: ol.Feature, layer) => {
                 let page = document.createElement('p');
                 page.innerHTML = `Page ${++pageNum} ${feature.getGeometryName()}`;
                 popup.pages.add(page, feature.getGeometry());
