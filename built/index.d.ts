@@ -56,7 +56,25 @@ declare module "ol3-popup/paging/page-navigator" {
     }
     export = PageNavigator;
 }
+declare module "bower_components/ol3-fun/ol3-fun/common" {
+    export function parse<T>(v: string, type: T): T;
+    export function getQueryParameters(options: any, url?: string): void;
+    export function getParameterByName(name: string, url?: string): string;
+    export function doif<T>(v: T, cb: (v: T) => void): void;
+    export function mixin<A extends any, B extends any>(a: A, b: B): A & B;
+    export function defaults<A extends any, B extends any>(a: A, ...b: B[]): A & B;
+    export function cssin(name: string, css: string): () => void;
+    export function debounce(func: () => void, wait?: number): () => void;
+    /**
+     * poor $(html) substitute due to being
+     * unable to create <td>, <tr> elements
+     */
+    export function html(html: string): HTMLElement;
+}
 declare module "ol3-popup/ol3-popup" {
+    /**
+     * OpenLayers 3 Popup Overlay.
+     */
     import ol = require("openlayers");
     import { Paging } from "ol3-popup/paging/paging";
     /**
@@ -76,7 +94,7 @@ declare module "ol3-popup/ol3-popup" {
         position?: [number, number];
     }
     export interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
-        dockContainer?: JQuery | string | HTMLElement;
+        dockContainer?: HTMLElement;
     }
     export interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
         css?: string;
@@ -140,7 +158,7 @@ declare module "ol3-popup/ol3-popup" {
         applyOffset([x, y]: [number, number]): void;
     }
 }
-declare module "ol3-popup" {
+declare module "index" {
     /**
      * forces 'ol3-popup' namespace
      */

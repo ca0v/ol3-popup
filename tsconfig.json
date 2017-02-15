@@ -7,12 +7,7 @@
         "outFile": "built/index.js",
         "sourceMap": true,
         "moduleResolution": "node",
-        "baseUrl": "./",
-        "paths": {
-            "bower/*": [
-                "./bower_components/*"
-            ]
-        }
+        "baseUrl": "./bower_components"
     },
     "exclude": [
         "bower_components",

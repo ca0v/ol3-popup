@@ -1,10 +1,10 @@
 /**
  * OpenLayers 3 Popup Overlay.
  */
-import $ = require("jquery");
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
 import PageNavigator = require("./paging/page-navigator");
+import { defaults, html } from "ol3-fun/ol3-fun/common";
 
 const css = `
 .ol-popup {
@@ -110,16 +110,6 @@ const eventNames = {
 };
 
 /**
- * extends the base object without replacing defined attributes
- */
-function defaults<A, B>(a: A, ...b: B[]): A & B {
-    b.forEach(b => {
-        Object.keys(b).filter(k => a[k] === undefined).forEach(k => a[k] = b[k]);
-    });
-    return <A & B>a;
-}
-
-/**
  * debounce: wait until it hasn't been called for a while before executing the callback
  */
 function debounce<T extends Function>(func: T, wait = 20, immediate = false): T {
@@ -188,7 +178,7 @@ export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
 };
 
 export interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
-    dockContainer?: JQuery | string | HTMLElement;
+    dockContainer?: HTMLElement;
 }
 
 export interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
@@ -292,7 +282,7 @@ export class Popup extends ol.Overlay implements IPopup {
         }
 
         if (this.options.dockContainer) {
-            let dockContainer = $(this.options.dockContainer)[0];
+            let dockContainer = this.options.dockContainer;
             if (dockContainer) {
                 let docker = this.docker = document.createElement('label');
                 docker.className = classNames.olPopupDocker;
@@ -341,8 +331,8 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     private injectCss(css: string) {
-        let style = $(`<style type='text/css'>${css}</style>`);
-        style.appendTo('head');
+        let style = html(`<style type='text/css'>${css}</style>`);
+        document.head.appendChild(style);
         this.handlers.push(() => style.remove());
     }
 
@@ -452,7 +442,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
         map.removeOverlay(this);
         this.domNode.classList.add(classNames.docked);
-        $(this.options.dockContainer).append(this.domNode);
+        this.options.dockContainer.appendChild(this.domNode);
     }
 
     undock() {

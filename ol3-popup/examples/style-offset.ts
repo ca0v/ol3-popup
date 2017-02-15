@@ -2,9 +2,8 @@
 import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
 import FeatureSelector = require("../extras/feature-selector");
-import Symbolizer = require("bower/ol3-symbolizer/ol3-symbolizer");
-
-import $ = require("jquery");
+import Symbolizer = require("ol3-symbolizer/ol3-symbolizer");
+import { html as asHtml } from "ol3-fun/ol3-fun/common";
 
 interface IPopupInfo {
     offset?: [number, number];
@@ -60,10 +59,10 @@ let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
 export function run() {
 
-    $(`<style name="style-offset" type='text/css'>${css}</style>`).appendTo('head');
-    $(`<div>${html}</div>`).appendTo('body');
+    document.head.appendChild(asHtml(`<style name="style-offset" type='text/css'>${css}</style>`));
+    document.body.appendChild(asHtml(`<div>${html}</div>`));
 
-    let mapContainer = $(".map")[0];
+    let mapContainer = document.getElementsByClassName("map")[0];
 
     let map = new ol.Map({
         target: mapContainer,
