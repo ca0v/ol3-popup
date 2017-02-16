@@ -529,7 +529,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
     }(ol.Overlay));
     exports.Popup = Popup;
 });
-define("ol3-popup", ["require", "exports", "ol3-popup/ol3-popup"], function (require, exports, Popup) {
+define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require, exports, Popup) {
     "use strict";
     return Popup;
 });
@@ -1239,11 +1239,7 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
     }());
     exports.StyleConverter = StyleConverter;
 });
-define("bower_components/ol3-symbolizer/ol3-symbolizer", ["require", "exports", "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, Symbolizer) {
-    "use strict";
-    return Symbolizer;
-});
-define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/extras/feature-selector", "bower_components/ol3-symbolizer/ol3-symbolizer", "jquery"], function (require, exports, ol, ol3_popup_2, FeatureSelector, Symbolizer, $) {
+define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/extras/feature-selector", "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", "jquery"], function (require, exports, ol, ol3_popup_2, FeatureSelector, Symbolizer, $) {
     "use strict";
     var symbolizer = new Symbolizer.StyleConverter();
     function setStyle(feature, json) {

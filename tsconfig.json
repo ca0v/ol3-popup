@@ -7,15 +7,11 @@
         "outFile": "built/index.js",
         "sourceMap": true,
         "moduleResolution": "node",
-        "baseUrl": "./",
-        "paths": {
-            "bower/*": [
-                "./bower_components/*"
-            ]
-        }
+        "baseUrl": "./bower_components"
     },
-    "exclude": [
-        "bower_components",
-        "built"
+    "include": [
+        "index.ts",
+        "ol3-popup",
+        "typings/index.d.ts"
     ]
 }

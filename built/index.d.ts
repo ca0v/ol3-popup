@@ -140,10 +140,7 @@ declare module "ol3-popup/ol3-popup" {
         applyOffset([x, y]: [number, number]): void;
     }
 }
-declare module "ol3-popup" {
-    /**
-     * forces 'ol3-popup' namespace
-     */
+declare module "index" {
     import Popup = require("ol3-popup/ol3-popup");
     export = Popup;
 }
@@ -350,10 +347,6 @@ declare module "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbol
         private deserializeLinearGradient(json);
         private deserializeRadialGradient(json);
     }
-}
-declare module "bower_components/ol3-symbolizer/ol3-symbolizer" {
-    import Symbolizer = require("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer");
-    export = Symbolizer;
 }
 declare module "ol3-popup/examples/style-offset" {
     export function run(): void;
