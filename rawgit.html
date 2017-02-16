@@ -3,13 +3,13 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>OpenLayers 3 - Popup</title>
+    <title>OpenLayers Popup</title>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
     <style>
-        @import url('https://cdnjs.cloudflare.com/ajax/libs/ol3/3.20.1/ol.css');
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.0.1/ol.css');
     </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js"></script>
-<script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.2/require.min.js"></script>
+    <script>
         (() => {
             function getParameterByName(name, url = window.location.href) {
                 name = name.replace(/[\[\]]/g, "\\$&");
@@ -21,6 +21,7 @@
             }
 
             let debug = getParameterByName("debug") === "1";
+            let localhost = window.location.hostname === "localhost";            
 
             require.config({
 
@@ -31,17 +32,17 @@
                     },
                     {
                         name: 'openlayers',
-                        location: 'https://cdnjs.cloudflare.com/ajax/libs/ol3/3.20.1',
+                        location: localhost ? "./bower_components/openlayers" : 'https://cdnjs.cloudflare.com/ajax/libs/openlayers/4.0.1',
                         main: debug ? 'ol-debug' : 'ol'
                     },
                     {
                         name: 'xstyle',
-                        location: 'https://cdn.rawgit.com/kriszyp/xstyle/v0.3.2',
+                        location: localhost ? "./bower_components/xstyle" : 'https://cdn.rawgit.com/kriszyp/xstyle/v0.3.2',
                         main: debug ? 'xstyle' : 'xstyle'
                     },
                     {
                         name: 'jquery',
-                        location: 'https://code.jquery.com',
+                        location: localhost ? "./bower_components/jquery/dist" : 'https://code.jquery.com',
                         main: debug ? 'jquery-3.1.0' : 'jquery-3.1.0.min'
                     }
                 ],

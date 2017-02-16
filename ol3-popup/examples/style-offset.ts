@@ -223,7 +223,7 @@ export function run() {
                 if (p !== popupInfo.positioning) {
                     popup.setPositioning(popupInfo.positioning);
                     let h = popup.on("hide", () => {
-                        popup.unByKey(h);
+                        ol.Observable.unByKey(h);
                         popup.setPositioning(p);
                     });
                 }

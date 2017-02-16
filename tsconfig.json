@@ -9,8 +9,9 @@
         "moduleResolution": "node",
         "baseUrl": "./bower_components"
     },
-    "exclude": [
-        "bower_components",
-        "built"
+    "include": [
+        "index.ts",
+        "ol3-popup",
+        "typings/index.d.ts"
     ]
 }

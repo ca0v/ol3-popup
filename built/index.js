@@ -805,7 +805,7 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
                     clearInterval(h);
                     popup.dock();
                     var h2_1 = popup.on("hide", function () {
-                        popup.unByKey(h2_1);
+                        ol.Observable.unByKey(h2_1);
                         popup.undock();
                     });
                     setTimeout(function () {
@@ -1487,7 +1487,7 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                     if (p_1 !== popupInfo.positioning) {
                         popup.setPositioning(popupInfo.positioning);
                         var h_1 = popup.on("hide", function () {
-                            popup.unByKey(h_1);
+                            ol.Observable.unByKey(h_1);
                             popup.setPositioning(p_1);
                         });
                     }

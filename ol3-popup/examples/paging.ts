@@ -184,7 +184,7 @@ export function run() {
                 clearInterval(h);
                 popup.dock();
                 let h2 = popup.on("hide", () => {
-                    popup.unByKey(h2);
+                    ol.Observable.unByKey(h2);
                     popup.undock();
                 });
                 setTimeout(() => {
