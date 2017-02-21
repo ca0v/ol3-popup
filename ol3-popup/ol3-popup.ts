@@ -267,17 +267,29 @@ export class Popup extends ol.Overlay implements IPopup {
     static create(map: ol.Map, options?: IPopupOptions) {
         options = defaults(options || {}, {
             autoPopup: true,
-            css: `.ol-popup .ol-popup-content {
-            overflow: auto;
-            padding-top: 24px;
-            background-color: white;
-            border: 1px solid black;
-            padding: 4px;
-            min-width: 120px;
-            max-width: 360px;
-            min-height: 80px;
-            max-height: 240px;
-            padding-top: 24px;}`
+            autoClose: false,
+            css: `
+.ol-popup {
+    background-color: white;
+    border: 1px solid black;
+    padding: 4px;
+    padding-top: 24px;
+}
+.ol-popup .ol-popup-content {
+    overflow: auto;
+    min-width: 120px;
+    max-width: 360px;
+    max-height: 240px;
+}
+.ol-popup .pages {
+    overflow: auto;
+    max-width: 360px;
+    max-height: 240px;
+}
+.ol-popup .ol-popup-closer {
+    right: 4px;
+}
+`.trim()
         }, DEFAULT_OPTIONS);
 
         let popup = new Popup(options);
@@ -530,12 +542,25 @@ export class DefaultHandler {
 
     static create(popup: Popup, asContent = DefaultHandler.asContent) {
         let map = popup.getMap();
+
         map.on("click", (args: ol.MapBrowserPointerEvent) => {
-            let found = map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
-                popup.show(args.coordinate, asContent(feature));
-                return true;
+            if (popup.options.autoClose || !ol.events.condition.shiftKeyOnly(args)) {
+                popup.hide();
+            }
+            let count = 0;
+            map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
+                count++;
+                if (!popup.isOpened()) {
+                    popup.show(args.coordinate, asContent(feature));
+                } else {
+                    popup.content.innerHTML = "";
+                    popup.pages.add(asContent(feature), feature.getGeometry());
+                }
             });
-            if (!found) {
+            if (count) {
+                popup.pages.goto(popup.pages.count - 1);
+            } else {
+                popup.pages.clear();
                 popup.show(args.coordinate, `<table>
                 <tr><td>lon</td><td>${args.coordinate[0].toFixed(5)}</td></tr>
                 <tr><td>lat</td><td>${args.coordinate[1].toFixed(5)}</td></tr>
