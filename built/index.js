@@ -19,9 +19,6 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
         clear: "clear",
         goto: "goto"
     };
-    /**
-     * Collection of "pages"
-     */
     var Paging = (function () {
         function Paging(options) {
             this.options = options;
@@ -94,7 +91,6 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 });
             }
             else if (typeof source === "function") {
-                // response can be a DOM, string or promise            
                 var page = document.createElement("div");
                 page.classList.add("page");
                 this._pages.push({
@@ -146,11 +142,9 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 d.resolve();
             }
             d.then(function () {
-                // replace page
                 activeChild && activeChild.element.remove();
                 _this._activeIndex = index;
                 _this.domNode.appendChild(page.element);
-                // position popup
                 if (page.location) {
                     _this.options.popup.setPosition(getInteriorPoint(page.location));
                 }
@@ -183,9 +177,6 @@ define("ol3-popup/paging/page-navigator", ["require", "exports"], function (requ
         prev: "prev",
         next: "next"
     };
-    /**
-     * The prior + next paging buttons and current page indicator
-     */
     var PageNavigator = (function () {
         function PageNavigator(options) {
             var _this = this;
@@ -324,10 +315,6 @@ define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], functi
         };
     }
     exports.debounce = debounce;
-    /**
-     * poor $(html) substitute due to being
-     * unable to create <td>, <tr> elements
-     */
     function html(html) {
         var d = document;
         var a = d.createElement("div");
@@ -354,9 +341,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         show: "show",
         hide: "hide"
     };
-    /**
-     * debounce: wait until it hasn't been called for a while before executing the callback
-     */
     function debounce(func, wait, immediate) {
         var _this = this;
         if (wait === void 0) { wait = 20; }
@@ -389,10 +373,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         }
         return isTouchDevice();
     };
-    /**
-     * Apply workaround to enable scrolling of overflowing content within an
-     * element. Adapted from https://gist.github.com/chrismbarr/4107472
-     */
     function enableTouchScroll(elm) {
         var scrollStartPos = 0;
         elm.addEventListener("touchstart", function (event) {
@@ -403,11 +383,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         }, false);
     }
     ;
-    /**
-     * Default options for the popup control so it can be created without any contructor arguments
-     */
     var DEFAULT_OPTIONS = {
-        // determines if this should be the first (or last) element in its container
         insertFirst: true,
         autoPan: true,
         autoPanAnimation: {
@@ -420,28 +396,31 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         positioning: "top-right",
         stopEvent: true
     };
-    /**
-     * The control formerly known as ol.Overlay.Popup
-     */
     var Popup = (function (_super) {
         __extends(Popup, _super);
         function Popup(options) {
             if (options === void 0) { options = DEFAULT_OPTIONS; }
             var _this = this;
             options = common_1.defaults({}, options, DEFAULT_OPTIONS);
-            /**
-             * overlays have a map, element, offset, position, positioning
-             */
             _this = _super.call(this, options) || this;
             _this.options = options;
             _this.handlers = [];
-            // the internal properties, dom and listeners are in place, time to create the popup
             _this.postCreate();
             return _this;
         }
+        Popup.create = function (map, options) {
+            options = common_1.defaults(options || {}, {
+                autoPopup: true,
+                autoClose: false,
+                css: "\n.ol-popup {\n    background-color: white;\n    border: 1px solid black;\n    padding: 4px;\n    padding-top: 24px;\n}\n.ol-popup .ol-popup-content {\n    overflow: auto;\n    min-width: 120px;\n    max-width: 360px;\n    max-height: 240px;\n}\n.ol-popup .pages {\n    overflow: auto;\n    max-width: 360px;\n    max-height: 240px;\n}\n.ol-popup .ol-popup-closer {\n    right: 4px;\n}\n".trim()
+            }, DEFAULT_OPTIONS);
+            var popup = new Popup(options);
+            map.addOverlay(popup);
+            return popup;
+        };
         Popup.prototype.postCreate = function () {
             var _this = this;
-            this.injectCss(css);
+            common_1.cssin("ol3-popup", css);
             var options = this.options;
             options.css && this.injectCss(options.css);
             var domNode = this.domNode = document.createElement('div');
@@ -475,7 +454,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
                 var content = this.content = document.createElement('div');
                 content.className = classNames.olPopupContent;
                 this.domNode.appendChild(content);
-                // Apply workaround to enable scrolling of content div on touch devices
                 isTouchDevice() && enableTouchScroll(content);
             }
             {
@@ -491,6 +469,12 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
                 this.setPosition = debounce(function (args) { return callback_1.apply(_this, args); }, 50);
             }
         };
+        Popup.prototype.setMap = function (map) {
+            _super.prototype.setMap.call(this, map);
+            if (this.options.autoPopup) {
+                DefaultHandler.create(this);
+            }
+        };
         Popup.prototype.injectCss = function (css) {
             var style = common_1.html("<style type='text/css'>" + css + "</style>");
             document.head.appendChild(style);
@@ -498,7 +482,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         };
         Popup.prototype.setIndicatorPosition = function (offset) {
             var _this = this;
-            // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
             var _a = this.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
             var css = [];
             switch (verticalPosition) {
@@ -545,7 +528,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             if (this.isDocked())
                 return;
             var p = this.getPosition();
-            p && this.setPosition(p.map(function (v) { return v; })); // clone p to force change
+            p && this.setPosition(p.map(function (v) { return v; }));
         };
         Popup.prototype.destroy = function () {
             this.handlers.forEach(function (h) { return h(); });
@@ -617,6 +600,53 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         return Popup;
     }(ol.Overlay));
     exports.Popup = Popup;
+    var DefaultHandler = (function () {
+        function DefaultHandler() {
+        }
+        DefaultHandler.asContent = function (feature) {
+            var div = document.createElement("div");
+            var keys = Object.keys(feature.getProperties()).filter(function (key) {
+                var v = feature.get(key);
+                if (typeof v === "string")
+                    return true;
+                if (typeof v === "number")
+                    return true;
+                return false;
+            });
+            div.title = feature.getGeometryName();
+            div.innerHTML = "<table>" + keys.map(function (k) { return "<tr><td>" + k + "</td><td>" + feature.get(k) + "</td></tr>"; }).join("") + "</table>";
+            return div;
+        };
+        DefaultHandler.create = function (popup, asContent) {
+            if (asContent === void 0) { asContent = DefaultHandler.asContent; }
+            var map = popup.getMap();
+            map.on("click", function (args) {
+                if (popup.options.autoClose || !ol.events.condition.shiftKeyOnly(args)) {
+                    popup.hide();
+                }
+                var count = 0;
+                map.forEachFeatureAtPixel(args.pixel, function (feature, layer) {
+                    count++;
+                    if (!popup.isOpened()) {
+                        popup.show(args.coordinate, asContent(feature));
+                    }
+                    else {
+                        popup.content.innerHTML = "";
+                        popup.pages.add(asContent(feature), feature.getGeometry());
+                    }
+                });
+                if (count) {
+                    popup.pages.goto(popup.pages.count - 1);
+                }
+                else {
+                    popup.pages.clear();
+                    popup.show(args.coordinate, "<table>\n                <tr><td>lon</td><td>" + args.coordinate[0].toFixed(5) + "</td></tr>\n                <tr><td>lat</td><td>" + args.coordinate[1].toFixed(5) + "</td></tr>\n                </table>");
+                }
+            });
+        };
+        return DefaultHandler;
+    }());
+    exports.DefaultHandler = DefaultHandler;
 });
 define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require, exports, Popup) {
     "use strict";
@@ -650,7 +680,7 @@ define("ol3-popup/examples/index", ["require", "exports"], function (require, ex
     function run() {
         var l = window.location;
         var path = "" + l.origin + l.pathname + "?run=ol3-popup/examples/";
-        var labs = "\n    paging\n    style-offset\n    index\n    ";
+        var labs = "\n    simple\n    paging\n    style-offset\n    index\n    ";
         document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
         document.writeln(labs
             .split(/ /)
@@ -665,9 +695,6 @@ define("ol3-popup/examples/index", ["require", "exports"], function (require, ex
 });
 define("ol3-popup/extras/feature-creator", ["require", "exports", "openlayers"], function (require, exports, ol) {
     "use strict";
-    /**
-     * Used for testing, will create features when Alt+Clicking the map
-     */
     var FeatureCreator = (function () {
         function FeatureCreator(options) {
             this.options = options;
@@ -714,9 +741,6 @@ define("ol3-popup/extras/feature-creator", ["require", "exports", "openlayers"],
 });
 define("ol3-popup/extras/feature-selector", ["require", "exports"], function (require, exports) {
     "use strict";
-    /**
-     * Interaction which opens the popup when zero or more features are clicked
-     */
     var FeatureSelector = (function () {
         function FeatureSelector(options) {
             var _this = this;
@@ -897,9 +921,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
         StyleConverter.prototype.toJson = function (style) {
             return this.serializeStyle(style);
         };
-        /**
-         * uses the interior point of a polygon when rendering a 'point' style
-         */
         StyleConverter.prototype.setGeometry = function (feature) {
             var geom = feature.getGeometry();
             if (geom instanceof ol.geom.Polygon) {
@@ -908,7 +929,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
             return geom;
         };
         StyleConverter.prototype.assign = function (obj, prop, value) {
-            //let getter = prop[0].toUpperCase() + prop.substring(1);
             if (value === null)
                 return;
             if (value === undefined)
@@ -980,7 +1000,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
                     _this.assign(s, k, style[k + "_"]);
                 });
             }
-            // "svg"
             if (style.path) {
                 if (style.path)
                     this.assign(s, "path", style.path);
@@ -991,15 +1010,14 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
                 if (style.fill)
                     this.assign(s, "fill", style.fill);
                 if (style.scale)
-                    this.assign(s, "scale", style.scale); // getScale and getImgSize are modified in deserializer               
+                    this.assign(s, "scale", style.scale);
                 if (style.imgSize)
                     this.assign(s, "imgSize", style.imgSize);
             }
-            // "icon"
             if (style.getSrc)
                 this.assign(s, "src", style.getSrc());
             if (s.points && s.radius !== s.radius2)
-                s.points /= 2; // ol3 defect doubles point count when r1 <> r2  
+                s.points /= 2;
             return s;
         };
         StyleConverter.prototype.serializeColor = function (color) {
@@ -1116,7 +1134,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
                 anchorOrigin: json.anchorOrigin || "top-left",
                 anchorXUnits: json.anchorXUnits || "fraction",
                 anchorYUnits: json.anchorYUnits || "fraction",
-                //crossOrigin?: string;
                 img: undefined,
                 imgSize: undefined,
                 offset: json.offset,
@@ -1142,7 +1159,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
                     throw "unable to find svg element: " + json.img;
                 }
                 if (symbol) {
-                    // but just grab the path is probably good enough
                     var path = (symbol.getElementsByTagName("path")[0]);
                     if (path) {
                         if (symbol.viewBox) {
@@ -1157,7 +1173,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
             var canvas = document.createElement("canvas");
             if (json.path) {
                 {
-                    // rotate a rectangle and get the resulting extent
                     _a = json.imgSize.map(function (v) { return v * json.scale; }), canvas.width = _a[0], canvas.height = _a[1];
                     if (json.stroke && json.stroke.width) {
                         var dx = 2 * json.stroke.width * json.scale;
@@ -1167,7 +1182,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
                 }
                 var ctx = canvas.getContext('2d');
                 var path2d = new Path2D(json.path);
-                // rotate  before it is in the canvas (avoids pixelation)
                 ctx.translate(canvas.width / 2, canvas.height / 2);
                 ctx.scale(json.scale, json.scale);
                 ctx.translate(-json.imgSize[0] / 2, -json.imgSize[1] / 2);
@@ -1190,7 +1204,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
                 anchorOrigin: json.anchorOrigin,
                 anchorXUnits: json.anchorXUnits || "pixels",
                 anchorYUnits: json.anchorYUnits || "pixels",
-                //crossOrigin?: string;
                 offset: json.offset,
                 offsetOrigin: json.offsetOrigin,
                 opacity: json.opacity,
@@ -1238,7 +1251,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
                     gradient_1 = this.deserializeRadialGradient(fill.gradient);
                 }
                 if (fill.gradient.stops) {
-                    // preserve
                     mixin(gradient_1, {
                         stops: fill.gradient.stops
                     });
@@ -1300,7 +1312,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
             var rx = /\w+\((.*)\)/m;
             var _a = JSON.parse(json.type.replace(rx, "[$1]")), x0 = _a[0], y0 = _a[1], x1 = _a[2], y1 = _a[3];
             var canvas = document.createElement('canvas');
-            // not correct, assumes points reside on edge
             canvas.width = Math.max(x0, x1);
             canvas.height = Math.max(y0, y1);
             var context = canvas.getContext('2d');
@@ -1314,7 +1325,6 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
             var rx = /radial\((.*)\)/m;
             var _a = JSON.parse(json.type.replace(rx, "[$1]")), x0 = _a[0], y0 = _a[1], r0 = _a[2], x1 = _a[3], y1 = _a[4], r1 = _a[5];
             var canvas = document.createElement('canvas');
-            // not correct, assumes radial centered
             canvas.width = 2 * Math.max(x0, x1);
             canvas.height = 2 * Math.max(y0, y1);
             var context = canvas.getContext('2d');
@@ -1328,16 +1338,15 @@ define("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", [
     }());
     exports.StyleConverter = StyleConverter;
 });
-define("bower_components/ol3-symbolizer/ol3-symbolizer", ["require", "exports", "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, Symbolizer) {
+define("bower_components/ol3-symbolizer/index", ["require", "exports", "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, Symbolizer) {
     "use strict";
     return Symbolizer;
 });
-define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/extras/feature-selector", "bower_components/ol3-symbolizer/ol3-symbolizer", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, ol3_popup_2, FeatureSelector, Symbolizer, common_3) {
+define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, ol3_popup_2, Symbolizer, common_3) {
     "use strict";
     var symbolizer = new Symbolizer.StyleConverter();
     function setStyle(feature, json) {
         var style = symbolizer.fromJson(json);
-        feature.getGeometry().set("popup-info", json.popup);
         feature.setStyle(style);
         return style;
     }
@@ -1345,7 +1354,7 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
     var html = "\n<div class=\"map\"></div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        document.head.appendChild(common_3.html("<style name=\"style-offset\" type='text/css'>" + css + "</style>"));
+        common_3.cssin("simple", css);
         document.body.appendChild(common_3.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
@@ -1360,7 +1369,132 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 zoom: 16
             })
         });
-        var popup = new ol3_popup_2.Popup({
+        ol3_popup_2.Popup.create(map);
+        var vectorSource = new ol.source.Vector({
+            features: []
+        });
+        var vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            style: function (f, res) { return f.getStyle(); }
+        });
+        map.addLayer(vectorLayer);
+        var circleFeature = new ol.Feature({
+            id: 123,
+            foo: "foo",
+            bar: "bar",
+        });
+        circleFeature.setGeometry(new ol.geom.Point(center));
+        setStyle(circleFeature, {
+            "circle": {
+                "fill": {
+                    "color": "rgba(255,0,0,0.90)"
+                },
+                "opacity": 1,
+                "stroke": {
+                    "color": "rgba(0,0,0,0.5)",
+                    "width": 2
+                },
+                "radius": 10
+            }
+        });
+        var svgFeature = new ol.Feature({
+            id: 123,
+            foo: "foo",
+            bar: "bar",
+        });
+        svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
+        setStyle(svgFeature, {
+            "image": {
+                "imgSize": [36, 36],
+                "anchor": [32, 32],
+                "stroke": {
+                    "color": "rgba(255,25,0,0.8)",
+                    "width": 10
+                },
+                "path": "M23 2 L23 23 L43 16.5 L23 23 L35 40 L23 23 L11 40 L23 23 L3 17 L23 23 L23 2 Z"
+            }
+        });
+        var markerFeature = new ol.Feature({
+            id: 123,
+            foo: "foo",
+            bar: "bar",
+        });
+        markerFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1] + 1000]));
+        setStyle(markerFeature, {
+            "circle": {
+                "fill": {
+                    "gradient": {
+                        "type": "linear(32,32,96,96)",
+                        "stops": "rgba(0,255,0,0.1) 0%;rgba(0,255,0,0.8) 100%"
+                    }
+                },
+                "opacity": 1,
+                "stroke": {
+                    "color": "rgba(0,255,0,1)",
+                    "width": 1
+                },
+                "radius": 64
+            },
+            "image": {
+                "anchor": [16, 48],
+                "imgSize": [32, 48],
+                "anchorXUnits": "pixels",
+                "anchorYUnits": "pixels",
+                "src": "http://openlayers.org/en/v3.20.1/examples/data/icon.png"
+            }
+        });
+        var markerFeature2 = new ol.Feature({
+            id: 123,
+            foo: "foo",
+            UserIdentification: "foo.bar@foobar.org",
+        });
+        markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
+        setStyle(markerFeature2, {
+            "circle": {
+                "fill": {
+                    color: "rgba(100,100,100,0.5)"
+                },
+                "opacity": 1,
+                "stroke": {
+                    "color": "rgba(100,100,100,1)",
+                    "width": 8
+                },
+                "radius": 32
+            }
+        });
+        vectorSource.addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
+    }
+    exports.run = run;
+});
+define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/extras/feature-selector", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, ol3_popup_3, FeatureSelector, Symbolizer, common_4) {
+    "use strict";
+    var symbolizer = new Symbolizer.StyleConverter();
+    function setStyle(feature, json) {
+        var style = symbolizer.fromJson(json);
+        feature.getGeometry().set("popup-info", json.popup);
+        feature.setStyle(style);
+        return style;
+    }
+    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
+    var html = "\n<div class=\"map\"></div>\n";
+    var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
+    function run() {
+        document.head.appendChild(common_4.html("<style name=\"style-offset\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(common_4.html("<div>" + html + "</div>"));
+        var mapContainer = document.getElementsByClassName("map")[0];
+        var map = new ol.Map({
+            target: mapContainer,
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: center,
+                zoom: 16
+            })
+        });
+        var popup = new ol3_popup_3.Popup({
             autoPan: true,
             autoPanMargin: 20,
             autoPanAnimation: {

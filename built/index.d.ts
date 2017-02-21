@@ -3,9 +3,6 @@ declare module "ol3-popup/paging/paging" {
     import { Popup } from "ol3-popup/ol3-popup";
     export type SourceType = HTMLElement | string | JQueryDeferred<HTMLElement | string>;
     export type SourceCallback = () => SourceType;
-    /**
-     * Collection of "pages"
-     */
     export class Paging {
         options: {
             popup: Popup;
@@ -34,9 +31,6 @@ declare module "ol3-popup/paging/paging" {
 }
 declare module "ol3-popup/paging/page-navigator" {
     import { Paging } from "ol3-popup/paging/paging";
-    /**
-     * The prior + next paging buttons and current page indicator
-     */
     class PageNavigator {
         options: {
             pages: Paging;
@@ -65,21 +59,11 @@ declare module "bower_components/ol3-fun/ol3-fun/common" {
     export function defaults<A extends any, B extends any>(a: A, ...b: B[]): A & B;
     export function cssin(name: string, css: string): () => void;
     export function debounce(func: () => void, wait?: number): () => void;
-    /**
-     * poor $(html) substitute due to being
-     * unable to create <td>, <tr> elements
-     */
     export function html(html: string): HTMLElement;
 }
 declare module "ol3-popup/ol3-popup" {
-    /**
-     * OpenLayers 3 Popup Overlay.
-     */
     import ol = require("openlayers");
     import { Paging } from "ol3-popup/paging/paging";
-    /**
-     * The constructor options 'must' conform, most interesting is autoPan
-     */
     export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
         autoPan?: boolean;
         autoPanAnimation?: {
@@ -106,11 +90,12 @@ declare module "ol3-popup/ol3-popup" {
     }
     export interface IPopupOptions_3_20_1 extends IPopupOptions_2_0_7 {
     }
-    export interface IPopupOptions extends IPopupOptions_3_20_1 {
+    export interface IPopupOptions_4_0_1 extends IPopupOptions_3_20_1 {
     }
-    /**
-     * This is the contract that will not break between versions
-     */
+    export interface IPopupOptions extends IPopupOptions_4_0_1 {
+        autoPopup?: boolean;
+        autoClose?: boolean;
+    }
     export interface IPopup_2_0_4<T> {
         show(position: ol.Coordinate, markup: string): T;
         hide(): T;
@@ -125,11 +110,10 @@ declare module "ol3-popup/ol3-popup" {
         applyOffset([x, y]: [number, number]): any;
         setIndicatorPosition(offset: number): any;
     }
-    export interface IPopup extends IPopup_3_20_1<Popup> {
+    export interface IPopup_4_0_1<T> extends IPopup_3_20_1<T> {
     }
-    /**
-     * The control formerly known as ol.Overlay.Popup
-     */
+    export interface IPopup extends IPopup_4_0_1<Popup> {
+    }
     export class Popup extends ol.Overlay implements IPopup {
         options: IPopupOptions & {
             map?: ol.Map;
@@ -141,8 +125,10 @@ declare module "ol3-popup/ol3-popup" {
         private docker;
         pages: Paging;
         private handlers;
+        static create(map: ol.Map, options?: IPopupOptions): Popup;
         constructor(options?: IPopupOptions);
         private postCreate();
+        setMap(map: ol.Map): void;
         private injectCss(css);
         setIndicatorPosition(offset: number): void;
         setPosition(position: ol.Coordinate): void;
@@ -157,11 +143,12 @@ declare module "ol3-popup/ol3-popup" {
         undock(): void;
         applyOffset([x, y]: [number, number]): void;
     }
+    export class DefaultHandler {
+        static asContent(feature: ol.Feature): HTMLDivElement;
+        static create(popup: Popup, asContent?: typeof DefaultHandler.asContent): void;
+    }
 }
 declare module "index" {
-    /**
-     * forces 'ol3-popup' namespace
-     */
     import Popup = require("ol3-popup/ol3-popup");
     export = Popup;
 }
@@ -190,9 +177,6 @@ declare module "ol3-popup/examples/index" {
 }
 declare module "ol3-popup/extras/feature-creator" {
     import ol = require("openlayers");
-    /**
-     * Used for testing, will create features when Alt+Clicking the map
-     */
     class FeatureCreator {
         options: {
             map: ol.Map;
@@ -206,9 +190,6 @@ declare module "ol3-popup/extras/feature-creator" {
 declare module "ol3-popup/extras/feature-selector" {
     import ol = require("openlayers");
     import { Popup } from "ol3-popup/ol3-popup";
-    /**
-     * Interaction which opens the popup when zero or more features are clicked
-     */
     class FeatureSelector {
         options: {
             map: ol.Map;
@@ -227,9 +208,6 @@ declare module "ol3-popup/examples/paging" {
     export function run(): void;
 }
 declare module "bower_components/ol3-symbolizer/ol3-symbolizer/format/base" {
-    /**
-     * implemented by all style serializers
-     */
     export interface IConverter<T> {
         fromJson: (json: T) => ol.style.Style;
         toJson(style: ol.style.Style): T;
@@ -348,9 +326,6 @@ declare module "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbol
     export class StyleConverter implements Serializer.IConverter<Format.Style> {
         fromJson(json: Format.Style): ol.style.Style;
         toJson(style: ol.style.Style): Format.Style;
-        /**
-         * uses the interior point of a polygon when rendering a 'point' style
-         */
         setGeometry(feature: ol.Feature): ol.geom.Geometry;
         private assign(obj, prop, value);
         private serializeStyle(style);
@@ -369,9 +344,12 @@ declare module "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbol
         private deserializeRadialGradient(json);
     }
 }
-declare module "bower_components/ol3-symbolizer/ol3-symbolizer" {
+declare module "bower_components/ol3-symbolizer/index" {
     import Symbolizer = require("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer");
     export = Symbolizer;
+}
+declare module "ol3-popup/examples/simple" {
+    export function run(): void;
 }
 declare module "ol3-popup/examples/style-offset" {
     export function run(): void;
