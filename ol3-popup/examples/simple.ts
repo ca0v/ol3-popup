@@ -68,7 +68,7 @@ export function run() {
         })
     });
 
-    Popup.create(map);
+Popup.create(map);
 
     let vectorSource = new ol.source.Vector({
         features: []
@@ -109,13 +109,15 @@ export function run() {
     });
     svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
     setStyle(svgFeature, {
-        "imgSize": [36, 36],
-        "anchor": [32, 32],
-        "stroke": {
-            "color": "rgba(255,25,0,0.8)",
-            "width": 10
-        },
-        "path": "M23 2 L23 23 L43 16.5 L23 23 L35 40 L23 23 L11 40 L23 23 L3 17 L23 23 L23 2 Z"
+        "image": {
+            "imgSize": [36, 36],
+            "anchor": [32, 32],
+            "stroke": {
+                "color": "rgba(255,25,0,0.8)",
+                "width": 10
+            },
+            "path": "M23 2 L23 23 L43 16.5 L23 23 L35 40 L23 23 L11 40 L23 23 L3 17 L23 23 L23 2 Z"
+        }
     });
 
     let markerFeature = new ol.Feature({
