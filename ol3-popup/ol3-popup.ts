@@ -547,25 +547,17 @@ export class DefaultHandler {
             if (popup.options.autoClose || !ol.events.condition.shiftKeyOnly(args)) {
                 popup.hide();
             }
-            let count = 0;
-            map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
-                count++;
-                if (!popup.isOpened()) {
-                    popup.show(args.coordinate, asContent(feature));
-                } else {
-                    popup.content.innerHTML = "";
-                    popup.pages.add(asContent(feature), feature.getGeometry());
-                }
+            let found = map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
+                popup.pages.add(asContent(feature), new ol.geom.Point(args.coordinate));
+                return true;
             });
-            if (count) {
-                popup.pages.goto(popup.pages.count - 1);
-            } else {
-                popup.pages.clear();
-                popup.show(args.coordinate, `<table>
+            if (!found) {
+                popup.pages.add(`<table>
                 <tr><td>lon</td><td>${args.coordinate[0].toFixed(5)}</td></tr>
                 <tr><td>lat</td><td>${args.coordinate[1].toFixed(5)}</td></tr>
-                </table>`);
+                </table>`, new ol.geom.Point(args.coordinate));
             }
+            popup.pages.goto(popup.pages.count - 1);
         });
     }
 
