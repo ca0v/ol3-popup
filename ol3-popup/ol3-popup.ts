@@ -1,10 +1,10 @@
 /**
  * OpenLayers 3 Popup Overlay.
  */
-import $ = require("jquery");
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
 import PageNavigator = require("./paging/page-navigator");
+import { cssin, defaults, html } from "ol3-fun/ol3-fun/common";
 
 const css = `
 .ol-popup {
@@ -110,16 +110,6 @@ const eventNames = {
 };
 
 /**
- * extends the base object without replacing defined attributes
- */
-function defaults<A, B>(a: A, ...b: B[]): A & B {
-    b.forEach(b => {
-        Object.keys(b).filter(k => a[k] === undefined).forEach(k => a[k] = b[k]);
-    });
-    return <A & B>a;
-}
-
-/**
  * debounce: wait until it hasn't been called for a while before executing the callback
  */
 function debounce<T extends Function>(func: T, wait = 20, immediate = false): T {
@@ -180,7 +170,7 @@ export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
     // determines which container to use, if true then event propagation is stopped meaning mousedown and touchstart events don't reach the map.
     stopEvent?: boolean;
     // the pixel offset when computing the rendered position
-    offset?: number[];
+    offset?: [number, number];
     // one of (bottom|center|top)*(left|center|right), css positioning when updating the rendered position
     positioning?: string;
     // the point coordinate for this overlay
@@ -188,7 +178,7 @@ export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
 };
 
 export interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
-    dockContainer?: JQuery | string | HTMLElement;
+    dockContainer?: HTMLElement;
 }
 
 export interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
@@ -206,7 +196,15 @@ export interface IPopupOptions_2_0_7 extends IPopupOptions_2_0_6 {
 export interface IPopupOptions_3_20_1 extends IPopupOptions_2_0_7 {
 }
 
-export interface IPopupOptions extends IPopupOptions_3_20_1 {
+export interface IPopupOptions_4_0_1 extends IPopupOptions_3_20_1 {
+
+}
+
+export interface IPopupOptions extends IPopupOptions_4_0_1 {
+    // automatically listen for map click event and open popup
+    autoPopup?: boolean;
+    // allow multiple popups or automatically close before re-opening?
+    autoClose?: boolean;
 }
 
 /**
@@ -243,9 +241,14 @@ export interface IPopup_2_0_5<T> extends IPopup_2_0_4<T> {
 }
 
 export interface IPopup_3_20_1<T> extends IPopup_2_0_5<T> {
+    applyOffset([x, y]: [number, number]);
+    setIndicatorPosition(offset: number);
 }
 
-export interface IPopup extends IPopup_3_20_1<Popup> {
+export interface IPopup_4_0_1<T> extends IPopup_3_20_1<T> {
+}
+
+export interface IPopup extends IPopup_4_0_1<Popup> {
 }
 
 /**
@@ -261,6 +264,39 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private handlers: Array<() => void>;
 
+    static create(map: ol.Map, options?: IPopupOptions) {
+        options = defaults(options || {}, {
+            autoPopup: true,
+            autoClose: false,
+            css: `
+.ol-popup {
+    background-color: white;
+    border: 1px solid black;
+    padding: 4px;
+    padding-top: 24px;
+}
+.ol-popup .ol-popup-content {
+    overflow: auto;
+    min-width: 120px;
+    max-width: 360px;
+    max-height: 240px;
+}
+.ol-popup .pages {
+    overflow: auto;
+    max-width: 360px;
+    max-height: 240px;
+}
+.ol-popup .ol-popup-closer {
+    right: 4px;
+}
+`.trim()
+        }, DEFAULT_OPTIONS);
+
+        let popup = new Popup(options);
+        map.addOverlay(popup);
+        return popup;
+    }
+
     constructor(options = DEFAULT_OPTIONS) {
 
         options = defaults({}, options, DEFAULT_OPTIONS);
@@ -275,10 +311,10 @@ export class Popup extends ol.Overlay implements IPopup {
         this.postCreate();
     }
 
-
     private postCreate() {
 
-        this.injectCss(css);
+        cssin("ol3-popup", css);
+
         let options = this.options;
         options.css && this.injectCss(options.css);
 
@@ -291,7 +327,7 @@ export class Popup extends ol.Overlay implements IPopup {
         }
 
         if (this.options.dockContainer) {
-            let dockContainer = $(this.options.dockContainer)[0];
+            let dockContainer = this.options.dockContainer;
             if (dockContainer) {
                 let docker = this.docker = document.createElement('label');
                 docker.className = classNames.olPopupDocker;
@@ -339,13 +375,20 @@ export class Popup extends ol.Overlay implements IPopup {
 
     }
 
+    setMap(map: ol.Map) {
+        super.setMap(map);
+        if (this.options.autoPopup) {
+            DefaultHandler.create(this);
+        }
+    }
+
     private injectCss(css: string) {
-        let style = $(`<style type='text/css'>${css}</style>`);
-        style.appendTo('head');
+        let style = html(`<style type='text/css'>${css}</style>`);
+        document.head.appendChild(style);
         this.handlers.push(() => style.remove());
     }
 
-    private setIndicatorPosition(x: number) {
+    setIndicatorPosition(offset: number) {
         // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
         let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
 
@@ -367,15 +410,15 @@ export class Popup extends ol.Overlay implements IPopup {
             case "center":
                 break;
             case "left":
-                css.push(`.ol-popup { left: auto; right: ${this.options.xOffset - x - 10}px; }`);
-                css.push(`.ol-popup:after { left: auto; right: ${x}px; }`);
+                css.push(`.ol-popup { left: auto; right: ${this.options.xOffset - offset - 10}px; }`);
+                css.push(`.ol-popup:after { left: auto; right: ${offset}px; }`);
                 break;
             case "right":
-                css.push(`.ol-popup { left: ${this.options.xOffset - x}px; right: auto; }`);
-                css.push(`.ol-popup:after { left: ${x}px; right: auto; }`);
+                css.push(`.ol-popup { left: ${this.options.xOffset - offset - 10}px; right: auto; }`);
+                css.push(`.ol-popup:after { left: ${10 + offset}px; right: auto; }`);
                 break;
         }
-        
+
         css.forEach(css => this.injectCss(css));
     }
 
@@ -403,7 +446,6 @@ export class Popup extends ol.Overlay implements IPopup {
         this.handlers.forEach(h => h());
         this.handlers = [];
         this.getMap().removeOverlay(this);
-        this.dispose();
         this.dispatch("dispose");
     }
 
@@ -452,7 +494,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
         map.removeOverlay(this);
         this.domNode.classList.add(classNames.docked);
-        $(this.options.dockContainer).append(this.domNode);
+        this.options.dockContainer.appendChild(this.domNode);
     }
 
     undock() {
@@ -460,6 +502,71 @@ export class Popup extends ol.Overlay implements IPopup {
         this.domNode.classList.remove(classNames.docked);
         this.options.map.addOverlay(this);
         this.setPosition(this.options.position);
+    }
+
+    applyOffset([x, y]: [number, number]) {
+        switch (this.getPositioning()) {
+            case "bottom-left":
+                this.setOffset([x, -y]);
+                break;
+            case "bottom-right":
+                this.setOffset([-x, -y]);
+                break;
+            case "top-left":
+                this.setOffset([x, y]);
+                break;
+            case "top-right":
+                this.setOffset([-x, y]);
+                break;
+        }
+    }
+}
+
+// see ./extras/feature-selector
+export class DefaultHandler {
+
+    static asContent(feature: ol.Feature) {
+        let div = document.createElement("div");
+
+        let keys = Object.keys(feature.getProperties()).filter(key => {
+            let v = feature.get(key);
+            if (typeof v === "string") return true;
+            if (typeof v === "number") return true;
+            return false;
+        });
+        div.title = feature.getGeometryName();
+        div.innerHTML = `<table>${keys.map(k => `<tr><td>${k}</td><td>${feature.get(k)}</td></tr>`).join("")}</table>`;
+
+        return div;
+    }
+
+    static create(popup: Popup, asContent = DefaultHandler.asContent) {
+        let map = popup.getMap();
+
+        map.on("click", (args: ol.MapBrowserPointerEvent) => {
+            if (popup.options.autoClose || !ol.events.condition.shiftKeyOnly(args)) {
+                popup.hide();
+            }
+            let count = 0;
+            map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
+                count++;
+                if (!popup.isOpened()) {
+                    popup.show(args.coordinate, asContent(feature));
+                } else {
+                    popup.content.innerHTML = "";
+                    popup.pages.add(asContent(feature), feature.getGeometry());
+                }
+            });
+            if (count) {
+                popup.pages.goto(popup.pages.count - 1);
+            } else {
+                popup.pages.clear();
+                popup.show(args.coordinate, `<table>
+                <tr><td>lon</td><td>${args.coordinate[0].toFixed(5)}</td></tr>
+                <tr><td>lat</td><td>${args.coordinate[1].toFixed(5)}</td></tr>
+                </table>`);
+            }
+        });
     }
 
 }

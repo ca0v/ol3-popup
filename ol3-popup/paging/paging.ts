@@ -1,5 +1,6 @@
 import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
+import $ = require("jquery");
 
 function getInteriorPoint(geom: ol.geom.Geometry) {
     if (geom["getInteriorPoint"]) return (<ol.geom.Point>geom["getInteriorPoint"]()).getCoordinates();

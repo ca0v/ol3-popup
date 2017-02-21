@@ -3,7 +3,7 @@ import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
 import FeatureCreator = require("../extras/feature-creator");
 import FeatureSelector = require("../extras/feature-selector");
-
+import { defaults, html as asHtml } from "ol3-fun/ol3-fun/common";
 import $ = require("jquery");
 
 const css = `
@@ -132,11 +132,11 @@ let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
 export function run() {
 
-    $(`<style name="paging" type='text/css'>${css}</style>`).appendTo('head');
-    $(`<div>${html}</div>`).appendTo('body');
+    document.head.appendChild(asHtml(`<style name="paging" type='text/css'>${css}</style>`));
+    document.body.appendChild(asHtml(`<div>${html}</div>`));
 
-    let mapContainer = $(".map")[0];
-    let dockContainer = $(".dock-container")[0];
+    let mapContainer = <HTMLDivElement>document.getElementsByClassName("map")[0];
+    let dockContainer = <HTMLDivElement>document.getElementsByClassName("dock-container")[0];
 
     let map = new ol.Map({
         target: mapContainer,
@@ -184,7 +184,7 @@ export function run() {
                 clearInterval(h);
                 popup.dock();
                 let h2 = popup.on("hide", () => {
-                    popup.unByKey(h2);
+                    ol.Observable.unByKey(h2);
                     popup.undock();
                 });
                 setTimeout(() => {

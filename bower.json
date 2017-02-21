@@ -1,18 +1,20 @@
 {
   "name": "ol3-popup",
-  "description": "Popup overlay for OpenLayers 3",
+  "description": "OpenLayers Popup Overlay",
   "homepage": "https://github.com/ca0v/ol3-popup",
   "main": [
-    "ol3-popup.ts",
+    "index.ts",
     "built/index.js"
   ],
-  "devDependencies": {},
+  "devDependencies": {
+    "ol3-symbolizer": "git://github.com/ca0v/ol3-symbolizer.git#v3.20.1"
+  },
   "dependencies": {
-    "openlayers": "https://github.com/openlayers/ol3/releases/download/v3.20.1/v3.20.1-dist.zip",
+    "openlayers": "https://github.com/openlayers/openlayers/releases/download/v4.0.1/v4.0.1-dist.zip",
     "requirejs": "^2.2.0",
     "jquery": "^3.1.0",
     "xstyle": "^0.3.2",
-    "ol3-symbolizer": "git://github.com/ca0v/ol3-symbolizer.git#v3.20.1"
+    "ol3-fun": "git://github.com/ca0v/ol3-fun.git#v4.0.1"
   },
   "moduleType": [
     "amd"
@@ -40,6 +42,5 @@
   "private": true,
   "typescript": {
     "definition": "built/index.d.ts"
-  },
-  "version": "3.20.1"
+  }
 }

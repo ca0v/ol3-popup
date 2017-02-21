@@ -3,9 +3,6 @@ declare module "ol3-popup/paging/paging" {
     import { Popup } from "ol3-popup/ol3-popup";
     export type SourceType = HTMLElement | string | JQueryDeferred<HTMLElement | string>;
     export type SourceCallback = () => SourceType;
-    /**
-     * Collection of "pages"
-     */
     export class Paging {
         options: {
             popup: Popup;
@@ -34,9 +31,6 @@ declare module "ol3-popup/paging/paging" {
 }
 declare module "ol3-popup/paging/page-navigator" {
     import { Paging } from "ol3-popup/paging/paging";
-    /**
-     * The prior + next paging buttons and current page indicator
-     */
     class PageNavigator {
         options: {
             pages: Paging;
@@ -56,12 +50,20 @@ declare module "ol3-popup/paging/page-navigator" {
     }
     export = PageNavigator;
 }
+declare module "bower_components/ol3-fun/ol3-fun/common" {
+    export function parse<T>(v: string, type: T): T;
+    export function getQueryParameters(options: any, url?: string): void;
+    export function getParameterByName(name: string, url?: string): string;
+    export function doif<T>(v: T, cb: (v: T) => void): void;
+    export function mixin<A extends any, B extends any>(a: A, b: B): A & B;
+    export function defaults<A extends any, B extends any>(a: A, ...b: B[]): A & B;
+    export function cssin(name: string, css: string): () => void;
+    export function debounce(func: () => void, wait?: number): () => void;
+    export function html(html: string): HTMLElement;
+}
 declare module "ol3-popup/ol3-popup" {
     import ol = require("openlayers");
     import { Paging } from "ol3-popup/paging/paging";
-    /**
-     * The constructor options 'must' conform, most interesting is autoPan
-     */
     export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
         autoPan?: boolean;
         autoPanAnimation?: {
@@ -71,12 +73,12 @@ declare module "ol3-popup/ol3-popup" {
         autoPanMargin?: number;
         insertFirst?: boolean;
         stopEvent?: boolean;
-        offset?: number[];
+        offset?: [number, number];
         positioning?: string;
         position?: [number, number];
     }
     export interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
-        dockContainer?: JQuery | string | HTMLElement;
+        dockContainer?: HTMLElement;
     }
     export interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
         css?: string;
@@ -88,11 +90,12 @@ declare module "ol3-popup/ol3-popup" {
     }
     export interface IPopupOptions_3_20_1 extends IPopupOptions_2_0_7 {
     }
-    export interface IPopupOptions extends IPopupOptions_3_20_1 {
+    export interface IPopupOptions_4_0_1 extends IPopupOptions_3_20_1 {
     }
-    /**
-     * This is the contract that will not break between versions
-     */
+    export interface IPopupOptions extends IPopupOptions_4_0_1 {
+        autoPopup?: boolean;
+        autoClose?: boolean;
+    }
     export interface IPopup_2_0_4<T> {
         show(position: ol.Coordinate, markup: string): T;
         hide(): T;
@@ -104,12 +107,13 @@ declare module "ol3-popup/ol3-popup" {
         isDocked(): boolean;
     }
     export interface IPopup_3_20_1<T> extends IPopup_2_0_5<T> {
+        applyOffset([x, y]: [number, number]): any;
+        setIndicatorPosition(offset: number): any;
     }
-    export interface IPopup extends IPopup_3_20_1<Popup> {
+    export interface IPopup_4_0_1<T> extends IPopup_3_20_1<T> {
     }
-    /**
-     * The control formerly known as ol.Overlay.Popup
-     */
+    export interface IPopup extends IPopup_4_0_1<Popup> {
+    }
     export class Popup extends ol.Overlay implements IPopup {
         options: IPopupOptions & {
             map?: ol.Map;
@@ -121,10 +125,12 @@ declare module "ol3-popup/ol3-popup" {
         private docker;
         pages: Paging;
         private handlers;
+        static create(map: ol.Map, options?: IPopupOptions): Popup;
         constructor(options?: IPopupOptions);
         private postCreate();
+        setMap(map: ol.Map): void;
         private injectCss(css);
-        private setIndicatorPosition(x);
+        setIndicatorPosition(offset: number): void;
         setPosition(position: ol.Coordinate): void;
         panIntoView(): void;
         destroy(): void;
@@ -135,12 +141,14 @@ declare module "ol3-popup/ol3-popup" {
         isDocked(): boolean;
         dock(): void;
         undock(): void;
+        applyOffset([x, y]: [number, number]): void;
+    }
+    export class DefaultHandler {
+        static asContent(feature: ol.Feature): HTMLDivElement;
+        static create(popup: Popup, asContent?: typeof DefaultHandler.asContent): void;
     }
 }
-declare module "ol3-popup" {
-    /**
-     * forces 'ol3-popup' namespace
-     */
+declare module "index" {
     import Popup = require("ol3-popup/ol3-popup");
     export = Popup;
 }
@@ -169,9 +177,6 @@ declare module "ol3-popup/examples/index" {
 }
 declare module "ol3-popup/extras/feature-creator" {
     import ol = require("openlayers");
-    /**
-     * Used for testing, will create features when Alt+Clicking the map
-     */
     class FeatureCreator {
         options: {
             map: ol.Map;
@@ -185,9 +190,6 @@ declare module "ol3-popup/extras/feature-creator" {
 declare module "ol3-popup/extras/feature-selector" {
     import ol = require("openlayers");
     import { Popup } from "ol3-popup/ol3-popup";
-    /**
-     * Interaction which opens the popup when zero or more features are clicked
-     */
     class FeatureSelector {
         options: {
             map: ol.Map;
@@ -203,6 +205,150 @@ declare module "ol3-popup/extras/feature-selector" {
     export = FeatureSelector;
 }
 declare module "ol3-popup/examples/paging" {
+    export function run(): void;
+}
+declare module "bower_components/ol3-symbolizer/ol3-symbolizer/format/base" {
+    export interface IConverter<T> {
+        fromJson: (json: T) => ol.style.Style;
+        toJson(style: ol.style.Style): T;
+    }
+}
+declare module "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer" {
+    import ol = require("openlayers");
+    import Serializer = require("bower_components/ol3-symbolizer/ol3-symbolizer/format/base");
+    export namespace Format {
+        type Color = number[] | string;
+        type Size = number[];
+        type Offset = number[];
+        type LineDash = number[];
+        interface Fill {
+            color?: string;
+        }
+        interface Stroke {
+            color?: string;
+            width?: number;
+            lineCap?: string;
+            lineJoin?: string;
+            lineDash?: LineDash;
+            miterLimit?: number;
+        }
+        interface Style {
+            fill?: Fill;
+            image?: Image;
+            stroke?: Stroke;
+            text?: Text;
+            zIndex?: number;
+        }
+        interface Image {
+            opacity?: number;
+            rotateWithView?: boolean;
+            rotation?: number;
+            scale?: number;
+            snapToPixel?: boolean;
+        }
+        interface Circle {
+            radius: number;
+            stroke?: Stroke;
+            fill?: Fill;
+            snapToPixel?: boolean;
+        }
+        interface Star extends Image {
+            angle?: number;
+            fill?: Fill;
+            points?: number;
+            stroke?: Stroke;
+            radius?: number;
+            radius2?: number;
+        }
+        interface Icon extends Image {
+            anchor?: Offset;
+            anchorOrigin?: "bottom-left" | "bottom-right" | "top-left" | "top-right";
+            anchorXUnits?: "fraction" | "pixels";
+            anchorYUnits?: "fraction" | "pixels";
+            color?: Color;
+            crossOrigin?: string;
+            src?: string;
+            offset?: Offset;
+            offsetOrigin?: 'top_left' | 'top_right' | 'bottom-left' | 'bottom-right';
+            size?: Size;
+        }
+        interface Text {
+            fill?: Fill;
+            font?: string;
+            offsetX?: number;
+            offsetY?: number;
+            rotation?: number;
+            scale?: number;
+            stroke?: Stroke;
+            text?: string;
+            textAlign?: string;
+            textBaseline?: string;
+        }
+    }
+    export namespace Format {
+        interface Style {
+            image?: Icon & Svg;
+            icon?: Icon;
+            svg?: Svg;
+            star?: Star;
+            circle?: Circle;
+            text?: Text;
+            fill?: Fill;
+            stroke?: Stroke;
+        }
+        interface Icon {
+            "anchor-x"?: number;
+            "anchor-y"?: number;
+        }
+        interface Text {
+            "offset-x"?: number;
+            "offset-y"?: number;
+        }
+        interface Circle {
+            opacity?: number;
+        }
+        interface Svg {
+            anchor?: Offset;
+            anchorOrigin?: "bottom-left" | "bottom-right" | "top-left" | "top-right";
+            anchorXUnits?: string;
+            anchorYUnits?: string;
+            color?: Color;
+            crossOrigin?: string;
+            img?: string;
+            imgSize?: Size;
+            offset?: Offset;
+            offsetOrigin?: 'top_left' | 'top_right' | 'bottom-left' | 'bottom-right';
+            path?: string;
+            stroke?: Stroke;
+            fill?: Fill;
+        }
+    }
+    export class StyleConverter implements Serializer.IConverter<Format.Style> {
+        fromJson(json: Format.Style): ol.style.Style;
+        toJson(style: ol.style.Style): Format.Style;
+        setGeometry(feature: ol.Feature): ol.geom.Geometry;
+        private assign(obj, prop, value);
+        private serializeStyle(style);
+        private serializeColor(color);
+        private serializeFill(fill);
+        private deserializeStyle(json);
+        private deserializeText(json);
+        private deserializeCircle(json);
+        private deserializeStar(json);
+        private deserializeIcon(json);
+        private deserializeSvg(json);
+        private deserializeFill(json);
+        private deserializeStroke(json);
+        private deserializeColor(fill);
+        private deserializeLinearGradient(json);
+        private deserializeRadialGradient(json);
+    }
+}
+declare module "bower_components/ol3-symbolizer/index" {
+    import Symbolizer = require("bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer");
+    export = Symbolizer;
+}
+declare module "ol3-popup/examples/simple" {
     export function run(): void;
 }
 declare module "ol3-popup/examples/style-offset" {
