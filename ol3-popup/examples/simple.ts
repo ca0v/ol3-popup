@@ -1,21 +1,12 @@
-//import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
-import FeatureSelector = require("../extras/feature-selector");
 import Symbolizer = require("ol3-symbolizer");
-import { html as asHtml } from "ol3-fun/ol3-fun/common";
-
-interface IPopupInfo {
-    offset?: [number, number];
-    positioning?: ol.OverlayPositioning;
-    pointerPosition?: number;
-}
+import { cssin, html as asHtml } from "ol3-fun/ol3-fun/common";
 
 const symbolizer = new Symbolizer.StyleConverter();
 
-function setStyle(feature: ol.Feature, json: Symbolizer.Format.Style & { popup: IPopupInfo }) {
+function setStyle(feature: ol.Feature, json: Symbolizer.Format.Style) {
     let style = symbolizer.fromJson(json);
-    feature.getGeometry().set("popup-info", json.popup);
     feature.setStyle(style);
     return style;
 }
@@ -59,7 +50,7 @@ let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
 export function run() {
 
-    document.head.appendChild(asHtml(`<style name="style-offset" type='text/css'>${css}</style>`));
+    cssin("simple", css);
     document.body.appendChild(asHtml(`<div>${html}</div>`));
 
     let mapContainer = document.getElementsByClassName("map")[0];
@@ -77,33 +68,7 @@ export function run() {
         })
     });
 
-    let popup = new Popup({
-        autoPan: true,
-        autoPanMargin: 20,
-        autoPanAnimation: {
-            source: null,
-            duration: 500
-        },
-        pointerPosition: 20,
-        positioning: "top-left",
-        offset: [0, -10],
-        css: `
-        .ol-popup {
-            background-color: white;
-            border: 1px solid black;
-            padding: 4px;
-            width: 200px;
-        }
-        `
-    });
-
-    map.addOverlay(popup);
-
-    let selector = new FeatureSelector({
-        map: map,
-        popup: popup,
-        title: "<b>Alt+Click</b> creates markers",
-    });
+    Popup.create(map);
 
     let vectorSource = new ol.source.Vector({
         features: []
@@ -116,15 +81,14 @@ export function run() {
 
     map.addLayer(vectorLayer);
 
-    let circleFeature = new ol.Feature();
+    let circleFeature = new ol.Feature({
+        id: 123,
+        foo: "foo",
+        bar: "bar",
+    });
     circleFeature.setGeometry(new ol.geom.Point(center));
 
     setStyle(circleFeature, {
-        popup: {
-            offset: [0, -10],
-            pointerPosition: -1,
-            positioning: "top-right"
-        },
         "circle": {
             "fill": {
                 "color": "rgba(255,0,0,0.90)"
@@ -138,14 +102,13 @@ export function run() {
         }
     });
 
-    let svgFeature = new ol.Feature();
+    let svgFeature = new ol.Feature({
+        id: 123,
+        foo: "foo",
+        bar: "bar",
+    });
     svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
     setStyle(svgFeature, {
-        popup: {
-            offset: [0, -18],
-            pointerPosition: -1,
-            positioning: "top-left"
-        },
         "image": {
             "imgSize": [36, 36],
             "anchor": [32, 32],
@@ -157,14 +120,13 @@ export function run() {
         }
     });
 
-    let markerFeature = new ol.Feature();
+    let markerFeature = new ol.Feature({
+        id: 123,
+        foo: "foo",
+        bar: "bar",
+    });
     markerFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1] + 1000]));
     setStyle(markerFeature, {
-        popup: {
-            offset: [0, -64],
-            pointerPosition: -1,
-            positioning: "bottom-left"
-        },
         "circle": {
             "fill": {
                 "gradient": {
@@ -188,14 +150,13 @@ export function run() {
         }
     });
 
-    let markerFeature2 = new ol.Feature();
+    let markerFeature2 = new ol.Feature({
+        id: 123,
+        foo: "foo",
+        UserIdentification: "foo.bar@foobar.org",
+    });
     markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
     setStyle(markerFeature2, {
-        popup: {
-            offset: [0, -36],
-            pointerPosition: -1,
-            positioning: "bottom-right"
-        },
         "circle": {
             "fill": {
                 color: "rgba(100,100,100,0.5)"
@@ -206,34 +167,6 @@ export function run() {
                 "width": 8
             },
             "radius": 32
-        }
-    });
-
-    popup.on("show", () => {
-        popup.applyOffset(popup.options.offset || [0, 0]);
-        popup.setIndicatorPosition(popup.options.pointerPosition);
-    });
-
-    popup.pages.on("goto", () => {
-        let geom = popup.pages.activePage.location;
-        let popupInfo = <IPopupInfo>geom.get("popup-info");
-        if (popupInfo) {
-            if (popupInfo.positioning) {
-                let p = popup.getPositioning();
-                if (p !== popupInfo.positioning) {
-                    popup.setPositioning(popupInfo.positioning);
-                    let h = popup.on("hide", () => {
-                        ol.Observable.unByKey(h);
-                        popup.setPositioning(p);
-                    });
-                }
-            }
-            if (popupInfo.offset) {
-                popup.applyOffset(popupInfo.offset);
-            }
-            popup.setIndicatorPosition(popupInfo.pointerPosition || popup.options.pointerPosition);
-        } else {
-            popup.setOffset(popup.options.offset || [0, 0]);
         }
     });
 

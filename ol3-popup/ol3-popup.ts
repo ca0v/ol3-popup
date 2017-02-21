@@ -4,7 +4,7 @@
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
 import PageNavigator = require("./paging/page-navigator");
-import { defaults, html } from "ol3-fun/ol3-fun/common";
+import { cssin, defaults, html } from "ol3-fun/ol3-fun/common";
 
 const css = `
 .ol-popup {
@@ -196,7 +196,15 @@ export interface IPopupOptions_2_0_7 extends IPopupOptions_2_0_6 {
 export interface IPopupOptions_3_20_1 extends IPopupOptions_2_0_7 {
 }
 
-export interface IPopupOptions extends IPopupOptions_3_20_1 {
+export interface IPopupOptions_4_0_1 extends IPopupOptions_3_20_1 {
+
+}
+
+export interface IPopupOptions extends IPopupOptions_4_0_1 {
+    // automatically listen for map click event and open popup
+    autoPopup?: boolean;
+    // allow multiple popups or automatically close before re-opening?
+    autoClose?: boolean;
 }
 
 /**
@@ -237,7 +245,10 @@ export interface IPopup_3_20_1<T> extends IPopup_2_0_5<T> {
     setIndicatorPosition(offset: number);
 }
 
-export interface IPopup extends IPopup_3_20_1<Popup> {
+export interface IPopup_4_0_1<T> extends IPopup_3_20_1<T> {
+}
+
+export interface IPopup extends IPopup_4_0_1<Popup> {
 }
 
 /**
@@ -252,6 +263,27 @@ export class Popup extends ol.Overlay implements IPopup {
     pages: Paging;
 
     private handlers: Array<() => void>;
+
+    static create(map: ol.Map, options?: IPopupOptions) {
+        options = defaults(options || {}, {
+            autoPopup: true,
+            css: `.ol-popup .ol-popup-content {
+            overflow: auto;
+            padding-top: 24px;
+            background-color: white;
+            border: 1px solid black;
+            padding: 4px;
+            min-width: 120px;
+            max-width: 360px;
+            min-height: 80px;
+            max-height: 240px;
+            padding-top: 24px;}`
+        }, DEFAULT_OPTIONS);
+
+        let popup = new Popup(options);
+        map.addOverlay(popup);
+        return popup;
+    }
 
     constructor(options = DEFAULT_OPTIONS) {
 
@@ -269,7 +301,8 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private postCreate() {
 
-        this.injectCss(css);
+        cssin("ol3-popup", css);
+
         let options = this.options;
         options.css && this.injectCss(options.css);
 
@@ -328,6 +361,13 @@ export class Popup extends ol.Overlay implements IPopup {
             this.setPosition = debounce(args => callback.apply(this, args), 50);
         }
 
+    }
+
+    setMap(map: ol.Map) {
+        super.setMap(map);
+        if (this.options.autoPopup) {
+            DefaultHandler.create(this);
+        }
     }
 
     private injectCss(css: string) {
@@ -468,4 +508,40 @@ export class Popup extends ol.Overlay implements IPopup {
                 break;
         }
     }
+}
+
+// see ./extras/feature-selector
+export class DefaultHandler {
+
+    static asContent(feature: ol.Feature) {
+        let div = document.createElement("div");
+
+        let keys = Object.keys(feature.getProperties()).filter(key => {
+            let v = feature.get(key);
+            if (typeof v === "string") return true;
+            if (typeof v === "number") return true;
+            return false;
+        });
+        div.title = feature.getGeometryName();
+        div.innerHTML = `<table>${keys.map(k => `<tr><td>${k}</td><td>${feature.get(k)}</td></tr>`).join("")}</table>`;
+
+        return div;
+    }
+
+    static create(popup: Popup, asContent = DefaultHandler.asContent) {
+        let map = popup.getMap();
+        map.on("click", (args: ol.MapBrowserPointerEvent) => {
+            let found = map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
+                popup.show(args.coordinate, asContent(feature));
+                return true;
+            });
+            if (!found) {
+                popup.show(args.coordinate, `<table>
+                <tr><td>lon</td><td>${args.coordinate[0].toFixed(5)}</td></tr>
+                <tr><td>lat</td><td>${args.coordinate[1].toFixed(5)}</td></tr>
+                </table>`);
+            }
+        });
+    }
+
 }

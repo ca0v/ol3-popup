@@ -2,6 +2,7 @@ export function run() {
     let l = window.location;
     let path = `${l.origin}${l.pathname}?run=ol3-popup/examples/`;
     let labs = `
+    simple
     paging
     style-offset
     index
