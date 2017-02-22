@@ -1,0 +1,22 @@
+{
+  "name": "ol3-popup",
+  "version": "4.0.1",
+  "description": "OpenLayers Popup",
+  "main": "built/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ca0v/ol3-popup.git"
+  },
+  "keywords": [
+    "OpenLayers"
+  ],
+  "author": "coreyalix@hotmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ca0v/ol3-popup/issues"
+  },
+  "homepage": "https://github.com/ca0v/ol3-popup#readme"
+}
