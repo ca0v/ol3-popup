@@ -41,7 +41,7 @@ export class SelectInteraction {
         this.handlers = [];
 
         let h = map.on("click", (args: ol.MapBrowserPointerEvent) => {
-            if (popup.options.autoClose || !options.addCondition(args)) {
+            if (!popup.options.multi || !options.addCondition(args)) {
                 popup.hide();
             }
 
@@ -52,7 +52,7 @@ export class SelectInteraction {
                         searchCoordinate: args.coordinate
                     });
                     found = true;
-                    return !options.multi;
+                    return !popup.options.multi;
                 });
 
                 if (!found && options.showCoordinates) {

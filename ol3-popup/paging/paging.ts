@@ -74,17 +74,27 @@ export class Paging extends ol.Observable {
     addFeature(feature: ol.Feature, options: {
         searchCoordinate: ol.Coordinate
     }) {
+
+        // if click location intersects with geometry then
+        // use it as the page location otherwise use closest point        
+        let geom = feature.getGeometry();
+        if (geom.intersectsCoordinate(options.searchCoordinate)) {
+            geom = new ol.geom.Point(options.searchCoordinate);
+        } else {
+            geom = new ol.geom.Point(geom.getClosestPoint(options.searchCoordinate));
+        }
+
         let page = {
             element: document.createElement("div"),
             feature: feature,
-            location: new ol.geom.Point(options.searchCoordinate)
+            location: geom
         };
         this._pages.push(page);
         this.dispatchEvent({
             type: eventNames.add,
             element: page.element,
             feature: page.feature,
-            geom: options.searchCoordinate,
+            geom: page.location,
             pageIndex: this._pages.length - 1,
         });
     }

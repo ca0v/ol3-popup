@@ -5,12 +5,6 @@ import { cssin, html as asHtml } from "ol3-fun/ol3-fun/common";
 
 const symbolizer = new Symbolizer.StyleConverter();
 
-function setStyle(feature: ol.Feature, json: Symbolizer.Format.Style) {
-    let style = symbolizer.fromJson(json);
-    feature.setStyle(style);
-    return style;
-}
-
 const css = `
 head, body {
     position: absolute;
@@ -41,72 +35,38 @@ body * {
 
 `;
 
+const popupCss = `
+.ol-popup {
+    background-color: white;
+    padding: 4px;
+    padding-top: 24px;
+    border: 1px solid rgba(0, 0, 0, 1);
+}
+.pagination {
+    min-width: 160px;
+}
+.pagination .page-num {
+    min-width: 100px;
+    display: inline-block;
+    text-align: center; 
+}
+.pagination .arrow.btn-next {
+    float: right;
+}`;
+
 const html = `
 <div class="map"></div>
 `;
 
-let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
+const center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
+function setStyle(feature: ol.Feature, json: Symbolizer.Format.Style) {
+    let style = symbolizer.fromJson(json);
+    feature.setStyle(style);
+    return style;
+}
 
-export function run() {
-
-    cssin("simple", css);
-    document.body.appendChild(asHtml(`<div>${html}</div>`));
-
-    let mapContainer = document.getElementsByClassName("map")[0];
-
-    let map = new ol.Map({
-        target: mapContainer,
-        layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM()
-            })
-        ],
-        view: new ol.View({
-            center: center,
-            zoom: 16
-        })
-    });
-
-    Popup.create({
-        map: map,
-        pagingStyle: (feature: ol.Feature, resolution: number, pageIndex: number) => {
-            return symbolizer.fromJson({
-                "circle": {
-                    "fill": {
-                        "color": "rgba(255,0,0,1)"
-                    },
-                    "opacity": 1,
-                    "stroke": {
-                        "color": "rgba(255,255,255,1)",
-                        "width": 1
-                    },
-                    "radius": 3
-                },
-
-                text: {
-                    text: `${pageIndex + 1}`,
-                    stroke: {
-                        color: "white",
-                        width: 2
-                    },
-                    "offset-y": 20
-                }
-            });
-        }
-    });
-
-    let vectorSource = new ol.source.Vector({
-        features: []
-    });
-
-    let vectorLayer = new ol.layer.Vector({
-        source: vectorSource,
-        style: (f: ol.Feature, res: number) => <ol.style.Style>f.getStyle()
-    });
-
-    map.addLayer(vectorLayer);
-
+function addSomeFeatures(vectorLayer: ol.layer.Vector) {
     let circleFeature = new ol.Feature({
         id: 123,
         foo: "foo",
@@ -151,28 +111,22 @@ export function run() {
         foo: "foo",
         bar: "bar",
     });
-    markerFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1] + 1000]));
+
+
+    markerFeature.setGeometry(new ol.geom.Polygon([[
+        [center[0] + 1000, center[1] + 1000],
+        [center[0] + 1000 * Math.random(), center[1] + 1000 * Math.random()],
+        [center[0] + 100 * Math.random(), center[1] + 100 * Math.random()],
+        [center[0] + 100 + 1000 * Math.random(), center[1] + 100 + 100 * Math.random()],
+        [center[0] + 1000, center[1] + 1000]
+    ]]));
     setStyle(markerFeature, {
-        "circle": {
-            "fill": {
-                "gradient": {
-                    "type": "linear(32,32,96,96)",
-                    "stops": "rgba(0,255,0,0.1) 0%;rgba(0,255,0,0.8) 100%"
-                }
-            },
-            "opacity": 1,
-            "stroke": {
-                "color": "rgba(0,255,0,1)",
-                "width": 1
-            },
-            "radius": 64
+        "fill": {
+            "color": "rgba(255,255,0,1)",
         },
-        "image": {
-            "anchor": [16, 48],
-            "imgSize": [32, 48],
-            "anchorXUnits": "pixels",
-            "anchorYUnits": "pixels",
-            "src": "http://openlayers.org/en/v3.20.1/examples/data/icon.png"
+        "stroke": {
+            "color": "rgba(0,255,0,1)",
+            "width": 1
         }
     });
 
@@ -196,7 +150,84 @@ export function run() {
         }
     });
 
-    vectorSource.addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
+    vectorLayer.getSource().addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
+}
 
+export function run() {
 
+    cssin("simple", css);
+    document.body.appendChild(asHtml(`<div>${html}</div>`));
+
+    let mapContainer = document.getElementsByClassName("map")[0];
+
+    let map = new ol.Map({
+        target: mapContainer,
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM()
+            })
+        ],
+        view: new ol.View({
+            center: center,
+            zoom: 16
+        })
+    });
+
+    Popup.create({
+        map: map,
+        // shift+click multi-selects
+        multi: true,
+        // white background, border, etc.
+        css: popupCss,
+        // render selected features w/ red dot and number
+        pagingStyle: (feature: ol.Feature, resolution: number, pageIndex: number) => {
+            return symbolizer.fromJson({
+                "circle": {
+                    "fill": {
+                        "color": "rgba(255,0,0,1)"
+                    },
+                    "opacity": 1,
+                    "stroke": {
+                        "color": "rgba(255,255,255,1)",
+                        "width": 1
+                    },
+                    "radius": 3
+                },
+
+                text: {
+                    text: `${pageIndex + 1}`,
+                    fill: {
+                        color: "white",
+                    },
+                    stroke: {
+                        color: "black",
+                        width: 2
+                    },
+                    "offset-y": 10
+                }
+            });
+        },
+        asContent: (feature: ol.Feature) => {
+            let div = document.createElement("div");
+
+            let keys = Object.keys(feature.getProperties()).filter(key => {
+                let v = feature.get(key);
+                if (typeof v === "string") return true;
+                if (typeof v === "number") return true;
+                return false;
+            });
+            div.title = feature.getGeometryName();
+            div.innerHTML = `<table>${keys.map(k => `<tr><td><b>${k}</b></td><td><i>${feature.get(k)}</i></td></tr>`).join("")}</table>`;
+
+            return div;
+        },
+    });
+
+    let vectorLayer = new ol.layer.Vector({
+        source: new ol.source.Vector()
+    });
+
+    map.addLayer(vectorLayer);
+
+    addSomeFeatures(vectorLayer);
 }

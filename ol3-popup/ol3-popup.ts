@@ -6,6 +6,9 @@ import { Paging } from "./paging/paging";
 import { default as PageNavigator } from "./paging/page-navigator";
 import { cssin, defaults, html } from "ol3-fun/ol3-fun/common";
 import { SelectInteraction } from "./interaction";
+import Symbolizer = require("ol3-symbolizer");
+
+const symbolizer = new Symbolizer.StyleConverter();
 
 const css = `
 .ol-popup {
@@ -125,6 +128,31 @@ function asContent(feature: ol.Feature) {
     return div;
 }
 
+function pagingStyle(feature: ol.Feature, resolution: number, pageIndex: number) {
+    return symbolizer.fromJson({
+        "circle": {
+            "fill": {
+                "color": "rgba(255,0,0,1)"
+            },
+            "opacity": 1,
+            "stroke": {
+                "color": "rgba(255,255,255,1)",
+                "width": 1
+            },
+            "radius": 3
+        },
+
+        text: {
+            text: `${pageIndex + 1}`,
+            stroke: {
+                color: "white",
+                width: 2
+            },
+            "offset-y": 20
+        }
+    });
+}
+
 /**
  * debounce: wait until it hasn't been called for a while before executing the callback
  */
@@ -173,29 +201,9 @@ function enableTouchScroll(elm: HTMLElement) {
 export interface IPopupOptions extends olx.OverlayOptions {
     map?: ol.Map,
     // allow multiple popups or automatically close before re-opening?
-    autoClose?: boolean;
-    // calls panIntoView when position changes
-    autoPan?: boolean;
-    // when panning into view, passed to the pan animation to track the 'center'
-    autoPanAnimation?: {
-        // how long should the animation last?
-        duration: number;
-        source: any;
-    };
-    // virtually increases the control width & height by this amount when computing new center point
-    autoPanMargin?: number;
+    multi?: boolean;
     // automatically listen for map click event and open popup
     autoPopup?: boolean;
-    // determines if this should be the first (or last) element in its container
-    insertFirst?: boolean;
-    // determines which container to use, if true then event propagation is stopped meaning mousedown and touchstart events don't reach the map.
-    stopEvent?: boolean;
-    // the pixel offset when computing the rendered position
-    offset?: [number, number];
-    // one of (bottom|center|top)*(left|center|right), css positioning when updating the rendered position
-    positioning?: string;
-    // the point coordinate for this overlay
-    position?: [number, number];
     // allows popup to dock w/in this container
     dockContainer?: HTMLElement;
     // css content to add to DOM for the lifecycle of this control
@@ -210,7 +218,6 @@ export interface IPopupOptions extends olx.OverlayOptions {
     pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style;
     // how to render a feature
     asContent?: (feature: ol.Feature) => HTMLElement;
-
 }
 
 /**
@@ -218,7 +225,8 @@ export interface IPopupOptions extends olx.OverlayOptions {
  */
 const DEFAULT_OPTIONS: IPopupOptions = {
     asContent: asContent,
-    autoClose: false,
+    pagingStyle: pagingStyle,
+    multi: false,
     autoPan: true,
     autoPanAnimation: {
         source: null,
