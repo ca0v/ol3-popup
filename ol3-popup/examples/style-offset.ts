@@ -211,7 +211,7 @@ export function run() {
 
     popup.on("show", () => {
         popup.applyOffset(popup.options.offset || [0, 0]);
-        popup.setIndicatorPosition(popup.options.pointerPosition);
+        popup.setPointerPosition(popup.options.pointerPosition);
     });
 
     popup.pages.on("goto", () => {
@@ -231,7 +231,7 @@ export function run() {
             if (popupInfo.offset) {
                 popup.applyOffset(popupInfo.offset);
             }
-            popup.setIndicatorPosition(popupInfo.pointerPosition || popup.options.pointerPosition);
+            popup.setPointerPosition(popupInfo.pointerPosition || popup.options.pointerPosition);
         } else {
             popup.setOffset(popup.options.offset || [0, 0]);
         }

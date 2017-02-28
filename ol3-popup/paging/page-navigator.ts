@@ -1,3 +1,4 @@
+import ol = require("openlayers");
 import { Paging } from "./paging";
 
 const classNames = {
@@ -20,7 +21,7 @@ const eventNames = {
 /**
  * The prior + next paging buttons and current page indicator
  */
-class PageNavigator {
+export default class PageNavigator extends ol.Observable {
 
     private domNode: HTMLElement;
     prevButton: HTMLButtonElement;
@@ -28,7 +29,7 @@ class PageNavigator {
     pageInfo: HTMLSpanElement;
 
     constructor(public options: { pages: Paging }) {
-
+        super();
         let pages = options.pages;
 
         this.domNode = document.createElement("div");
@@ -40,8 +41,8 @@ class PageNavigator {
         this.pageInfo = <HTMLSpanElement>this.domNode.getElementsByClassName(classNames.pagenum)[0];
 
         pages.options.popup.domNode.appendChild(this.domNode);
-        this.prevButton.addEventListener('click', () => this.dispatch(eventNames.prev));
-        this.nextButton.addEventListener('click', () => this.dispatch(eventNames.next));
+        this.prevButton.addEventListener('click', () => this.dispatchEvent(eventNames.prev));
+        this.nextButton.addEventListener('click', () => this.dispatchEvent(eventNames.next));
 
         pages.on("goto", () => pages.count > 1 ? this.show() : this.hide());
         pages.on("clear", () => this.hide());
@@ -61,27 +62,17 @@ class PageNavigator {
         });
     }
 
-    dispatch(name: string) {
-        this.domNode.dispatchEvent(new Event(name));
-    }
-
-    on(name: string, listener: EventListener) {
-        this.domNode.addEventListener(name, listener);
-    }
-
     template() {
         return `<button class="arrow btn-prev"></button><span class="page-num">m of n</span><button class="arrow btn-next"></button>`;
     }
 
     hide() {
         this.domNode.classList.add(classNames.hidden);
-        this.dispatch(eventNames.hide);
+        this.dispatchEvent(eventNames.hide);
     }
 
     show() {
         this.domNode.classList.remove(classNames.hidden);
-        this.dispatch(eventNames.show);
+        this.dispatchEvent(eventNames.show);
     }
 }
-
-export = PageNavigator;

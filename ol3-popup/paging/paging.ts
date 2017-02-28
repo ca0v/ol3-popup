@@ -24,18 +24,22 @@ const eventNames = {
 /**
  * Collection of "pages"
  */
-export class Paging {
+export class Paging extends ol.Observable {
 
     private _pages: Array<{
-        callback?: SourceCallback;
         element: HTMLElement;
-        location: ol.geom.Geometry;
+        callback?: SourceCallback;
+        feature?: ol.Feature;
+        location?: ol.geom.Geometry;
     }>;
 
     private _activeIndex: number;
     domNode: HTMLDivElement;
 
-    constructor(public options: { popup: Popup }) {
+    constructor(public options: {
+        popup: Popup
+    }) {
+        super();
         this._pages = [];
         this.domNode = document.createElement("div");
         this.domNode.classList.add(classNames.pages);
@@ -54,20 +58,44 @@ export class Paging {
         return this._pages.length;
     }
 
-    dispatch(name: string) {
-        this.domNode.dispatchEvent(new Event(name));
+    on(name: string, listener: () => void);
+    on(name: "add", listener: (evt: {
+        pageIndex: number;
+        feature: ol.Feature;
+        element: HTMLElement;
+        geom: ol.geom.Geometry;
+    }) => void);
+    on(name: "clear", listener: () => void);
+    on(name: "goto", listener: () => void);
+    on(name: string, listener: () => void) {
+        super.on(name, listener);
     }
 
-    on(name: string, listener: EventListener) {
-        this.domNode.addEventListener(name, listener);
+    addFeature(feature: ol.Feature, options: {
+        searchCoordinate: ol.Coordinate
+    }) {
+        let page = {
+            element: document.createElement("div"),
+            feature: feature,
+            location: new ol.geom.Point(options.searchCoordinate)
+        };
+        this._pages.push(page);
+        this.dispatchEvent({
+            type: eventNames.add,
+            element: page.element,
+            feature: page.feature,
+            geom: options.searchCoordinate,
+            pageIndex: this._pages.length - 1,
+        });
     }
 
     add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry) {
+        let page = document.createElement("div");
+
         if (false) {
         }
 
         else if (typeof source === "string") {
-            let page = document.createElement("div");
             page.innerHTML = source;
             this._pages.push({
                 element: <HTMLElement>page,
@@ -76,7 +104,6 @@ export class Paging {
         }
 
         else if (source["appendChild"]) {
-            let page = <HTMLElement>source;
             page.classList.add(classNames.page);
             this._pages.push({
                 element: page,
@@ -86,7 +113,6 @@ export class Paging {
 
         else if (source["then"]) {
             let d = <JQueryDeferred<HTMLElement | string>>source;
-            let page = document.createElement("div");
             page.classList.add(classNames.page);
             this._pages.push({
                 element: page,
@@ -103,7 +129,6 @@ export class Paging {
 
         else if (typeof source === "function") {
             // response can be a DOM, string or promise            
-            let page = document.createElement("div");
             page.classList.add("page");
             this._pages.push({
                 callback: <SourceCallback>source,
@@ -116,7 +141,13 @@ export class Paging {
             throw `invalid source value: ${source}`;
         }
 
-        this.dispatch(eventNames.add);
+        this.dispatchEvent({
+            type: eventNames.add,
+            element: page,
+            feature: null,
+            geom: geom,
+            pageIndex: this._pages.length - 1
+        });
     }
 
     clear() {
@@ -125,7 +156,7 @@ export class Paging {
         this._pages = [];
         if (activeChild) {
             this.domNode.removeChild(activeChild.element);
-            this.dispatch(eventNames.clear);
+            this.dispatchEvent(eventNames.clear);
         }
     }
 
@@ -133,7 +164,22 @@ export class Paging {
         let page = this._pages[index];
         if (!page) return;
 
+        let popup = this.options.popup;
         let activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
+
+        if (page.feature) {
+            page.element.innerHTML = "";
+            page.element.appendChild(popup.options.asContent(page.feature));
+            this.options.popup.setPosition(getInteriorPoint(page.location || page.feature.getGeometry()));
+
+            activeChild && activeChild.element.remove();
+            this._activeIndex = index;
+            this.domNode.appendChild(page.element);
+
+            this.dispatchEvent(eventNames.goto);
+            return;
+        }
+
         let d = $.Deferred();
         if (page.callback) {
             let refreshedContent = page.callback();
@@ -163,7 +209,7 @@ export class Paging {
             if (page.location) {
                 this.options.popup.setPosition(getInteriorPoint(page.location));
             }
-            this.dispatch(eventNames.goto);
+            this.dispatchEvent(eventNames.goto);
         });
     }
 

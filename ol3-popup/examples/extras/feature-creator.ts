@@ -5,6 +5,12 @@ import ol = require("openlayers");
  */
 class FeatureCreator {
 
+    static create(options: {
+        map: ol.Map;
+    }) {
+        return new FeatureCreator(options);
+    }
+
     constructor(public options: {
         map: ol.Map;
     }) {

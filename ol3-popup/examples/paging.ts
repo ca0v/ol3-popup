@@ -1,8 +1,7 @@
 //import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
-import FeatureCreator = require("../extras/feature-creator");
-import FeatureSelector = require("../extras/feature-selector");
+import FeatureCreator = require("./extras/feature-creator");
 import { defaults, html as asHtml } from "ol3-fun/ol3-fun/common";
 import $ = require("jquery");
 
@@ -151,21 +150,22 @@ export function run() {
         })
     });
 
-    let popup = new Popup({
+    let popup = Popup.create({
+        map: map,
         autoPan: true,
         autoPanMargin: 20,
         autoPanAnimation: {
             source: null,
             duration: 500
         },
+        autoPopup: true,
+        css: css_popup,
+        dockContainer: dockContainer,
         pointerPosition: 150,
         xOffset: -4, // offset padding
         yOffset: 3,
-        css: css_popup,
-        dockContainer: dockContainer
     });
 
-    map.addOverlay(popup);
     popup.on("show", () => console.log(`show popup`));
     popup.on("hide", () => console.log(`hide popup`));
     popup.pages.on("goto", () => console.log(`goto page: ${popup.pages.activeIndex}`));
@@ -260,13 +260,7 @@ This page was resolved after 3 seconds.
         }, 200);
     }, 500);
 
-    let selector = new FeatureSelector({
-        map: map,
-        popup: popup,
-        title: "<b>Alt+Click</b> creates markers",
-    });
-
-    new FeatureCreator({
+    FeatureCreator.create({
         map: map
     });
 
