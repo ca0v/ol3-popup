@@ -217,7 +217,7 @@ function enableTouchScroll(elm: HTMLElement) {
  * The constructor options 'must' conform, most interesting is autoPan
  */
 export interface IPopupOptions extends olx.OverlayOptions {
-    map?: ol.Map,
+    map: ol.Map,
     // allow multiple popups or automatically close before re-opening?
     multi?: boolean;
     // automatically listen for map click event and open popup
@@ -319,8 +319,8 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private handlers: Array<() => void>;
 
-    static create(options?: IPopupOptions) {
-        options = defaults(options || {}, DEFAULT_OPTIONS);
+    static create(options: IPopupOptions) {
+        options = defaults({}, options, DEFAULT_OPTIONS);
 
         let popup = new Popup(options);
         options.map && options.map.addOverlay(popup);
