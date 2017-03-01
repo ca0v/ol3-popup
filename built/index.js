@@ -193,6 +193,16 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
         Paging.prototype.prev = function () {
             (0 < this.activeIndex) && this.goto(this.activeIndex - 1);
         };
+        Paging.prototype.indexOf = function (feature) {
+            var result = -1;
+            this._pages.some(function (f, i) {
+                if (f.feature === feature) {
+                    result = i;
+                    return true;
+                }
+            });
+            return result;
+        };
         return Paging;
     }(ol.Observable));
     exports.Paging = Paging;
@@ -339,13 +349,27 @@ define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], functi
         };
     }
     exports.cssin = cssin;
-    function debounce(func, wait) {
+    function debounce(func, wait, immediate) {
+        var _this = this;
         if (wait === void 0) { wait = 50; }
-        var h;
-        return function () {
-            clearTimeout(h);
-            h = setTimeout(function () { return func(); }, wait);
-        };
+        if (immediate === void 0) { immediate = false; }
+        var timeout;
+        return (function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var later = function () {
+                timeout = null;
+                if (!immediate)
+                    func.apply(_this, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow)
+                func.call(_this, args);
+        });
     }
     exports.debounce = debounce;
     function html(html) {
@@ -358,6 +382,27 @@ define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], functi
         return b.firstElementChild;
     }
     exports.html = html;
+    function range(n) {
+        var result = new Array(n);
+        for (var i = 0; i < n; i++)
+            result[i] = i;
+        return result;
+    }
+    exports.range = range;
+    function shuffle(array) {
+        var currentIndex = array.length;
+        var temporaryValue;
+        var randomIndex;
+        while (0 !== currentIndex) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+            temporaryValue = array[currentIndex];
+            array[currentIndex] = array[randomIndex];
+            array[randomIndex] = temporaryValue;
+        }
+        return array;
+    }
+    exports.shuffle = shuffle;
 });
 define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_1) {
     "use strict";
@@ -367,6 +412,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
             this.options = options;
             var popup = options.popup;
             var map = options.map;
+            var overlay;
             this.handlers = [];
             var h = map.on("click", function (args) {
                 if (!popup.options.multi || !options.addCondition(args)) {
@@ -375,6 +421,9 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
                 {
                     var found_1 = false;
                     map.forEachFeatureAtPixel(args.pixel, function (feature, layer) {
+                        if (!layer || layer === overlay) {
+                            return;
+                        }
                         popup.pages.addFeature(feature, {
                             searchCoordinate: args.coordinate
                         });
@@ -390,7 +439,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
             });
             this.handlers.push(function () { return ol.Observable.unByKey(h); });
             if (popup.options.pagingStyle) {
-                this.setupOverlay();
+                overlay = this.setupOverlay();
             }
             popup.on("dispose", function () { return _this.destroy(); });
         }
@@ -422,15 +471,21 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
                 updateWhileAnimating: true,
                 updateWhileInteracting: true
             });
+            featureOverlay.setStyle(function (feature, resolution) {
+                var pageIndex = source.getFeatures().indexOf(feature);
+                return popup.options.pagingStyle(feature, resolution, pageIndex);
+            });
             featureOverlay.setMap(this.options.map);
             this.handlers.push(function () { return _this.options.map.removeLayer(featureOverlay); });
             popup.pages.on("clear", function () {
                 source.clear();
             });
+            popup.pages.on("goto", function () { return featureOverlay.getSource().refresh(); });
             popup.pages.on("add", function (args) {
                 var feature = args.feature;
                 if (feature) {
                     feature = feature.clone();
+                    feature.setStyle(null);
                     if (args.geom) {
                         feature.setGeometry(args.geom);
                     }
@@ -442,10 +497,11 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
                     }
                 }
                 if (feature) {
-                    feature.setStyle(popup.options.pagingStyle(feature, 0, args.pageIndex));
+                    feature.set("page-index", args.pageIndex);
                     source.addFeature(feature);
                 }
             });
+            return featureOverlay;
         };
         SelectInteraction.prototype.destroy = function () {
             this.handlers.forEach(function (h) { return h(); });
@@ -931,8 +987,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         div.innerHTML = "<table>" + keys.map(function (k) { return "<tr><td>" + k + "</td><td>" + feature.get(k) + "</td></tr>"; }).join("") + "</table>";
         return div;
     }
-    function pagingStyle(feature, resolution, pageIndex) {
-        return symbolizer.fromJson({
+    function pagingStyleFactory(popup) {
+        var baseStyle = symbolizer.fromJson({
             "circle": {
                 "fill": {
                     "color": "rgba(255,0,0,1)"
@@ -943,16 +999,29 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
                     "width": 1
                 },
                 "radius": 3
-            },
-            text: {
-                text: "" + (pageIndex + 1),
-                stroke: {
-                    color: "white",
-                    width: 2
-                },
-                "offset-y": 20
             }
         });
+        return function (feature, resolution, pageIndex) {
+            var style = [baseStyle];
+            if (popup.options.multi && popup.pages.count > 1) {
+                var isActive = popup.pages.activeIndex === pageIndex;
+                var textStyle = symbolizer.fromJson({
+                    text: {
+                        text: "" + (pageIndex + 1),
+                        fill: {
+                            color: isActive ? "white" : "black",
+                        },
+                        stroke: {
+                            color: isActive ? "black" : "white",
+                            width: isActive ? 4 : 2
+                        },
+                        "offset-y": 20
+                    }
+                });
+                style.push(textStyle);
+            }
+            return style;
+        };
     }
     function debounce(func, wait, immediate) {
         var _this = this;
@@ -996,8 +1065,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         }, false);
     }
     var DEFAULT_OPTIONS = {
+        map: null,
         asContent: asContent,
-        pagingStyle: pagingStyle,
         multi: false,
         autoPan: true,
         autoPanAnimation: {
@@ -1017,6 +1086,9 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         __extends(Popup, _super);
         function Popup(options) {
             var _this = _super.call(this, options) || this;
+            if (!options.pagingStyle) {
+                options.pagingStyle = pagingStyleFactory(_this);
+            }
             _this.options = options;
             _this.handlers = [];
             common_2.cssin("ol3-popup", css);
@@ -1071,7 +1143,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             return _this;
         }
         Popup.create = function (options) {
-            options = common_2.defaults(options || {}, DEFAULT_OPTIONS);
+            options = common_2.defaults({}, options, DEFAULT_OPTIONS);
             var popup = new Popup(options);
             options.map && options.map.addOverlay(popup);
             return popup;
@@ -1209,8 +1281,14 @@ define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require
     "use strict";
     return Popup;
 });
-define("ol3-popup/examples/extras/feature-creator", ["require", "exports", "openlayers"], function (require, exports, ol) {
+define("ol3-popup/examples/extras/feature-creator", ["require", "exports", "openlayers", "bower_components/ol3-symbolizer/index"], function (require, exports, ol, Symbolizer) {
     "use strict";
+    var symbolizer = new Symbolizer.StyleConverter();
+    function setStyle(feature, json) {
+        var style = symbolizer.fromJson(json);
+        feature.setStyle(style);
+        return style;
+    }
     var FeatureCreator = (function () {
         function FeatureCreator(options) {
             this.options = options;
@@ -1254,6 +1332,85 @@ define("ol3-popup/examples/extras/feature-creator", ["require", "exports", "open
         FeatureCreator.create = function (options) {
             return new FeatureCreator(options);
         };
+        FeatureCreator.prototype.addSomeFeatures = function (vectorLayer, center) {
+            var circleFeature = new ol.Feature({
+                id: 123,
+                foo: "foo",
+                bar: "bar",
+            });
+            circleFeature.setGeometry(new ol.geom.Point(center));
+            setStyle(circleFeature, {
+                "circle": {
+                    "fill": {
+                        "color": "rgba(128,0,0,0.90)"
+                    },
+                    "opacity": 1,
+                    "stroke": {
+                        "color": "rgba(0,0,0,0.5)",
+                        "width": 2
+                    },
+                    "radius": 10
+                }
+            });
+            var svgFeature = new ol.Feature({
+                id: 123,
+                foo: "foo",
+                bar: "bar",
+            });
+            svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
+            setStyle(svgFeature, {
+                "image": {
+                    "imgSize": [36, 36],
+                    "anchor": [32, 32],
+                    "stroke": {
+                        "color": "rgba(128,25,0,0.8)",
+                        "width": 10
+                    },
+                    "path": "M23 2 L23 23 L43 16.5 L23 23 L35 40 L23 23 L11 40 L23 23 L3 17 L23 23 L23 2 Z"
+                }
+            });
+            var markerFeature = new ol.Feature({
+                id: 123,
+                foo: "foo",
+                bar: "bar",
+            });
+            markerFeature.setGeometry(new ol.geom.Polygon([[
+                    [center[0] + 1000, center[1] + 1000],
+                    [center[0] + 1000 * Math.random(), center[1] + 1000 * Math.random()],
+                    [center[0] + 100 * Math.random(), center[1] + 100 * Math.random()],
+                    [center[0] + 100 + 1000 * Math.random(), center[1] + 100 + 100 * Math.random()],
+                    [center[0] + 1000, center[1] + 1000]
+                ]]));
+            setStyle(markerFeature, {
+                "fill": {
+                    "color": "rgba(255,255,0,1)",
+                },
+                "stroke": {
+                    "color": "rgba(0,255,0,1)",
+                    "width": 1
+                }
+            });
+            var markerFeature2 = new ol.Feature({
+                id: 123,
+                foo: "foo",
+                UserIdentification: "foo.bar@foobar.org",
+            });
+            markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
+            setStyle(markerFeature2, {
+                "circle": {
+                    "fill": {
+                        color: "rgba(100,100,100,0.5)"
+                    },
+                    "opacity": 1,
+                    "stroke": {
+                        "color": "rgba(100,100,100,1)",
+                        "width": 8
+                    },
+                    "radius": 32
+                }
+            });
+            vectorLayer.getSource().addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
+        };
         return FeatureCreator;
     }());
     return FeatureCreator;
@@ -1286,7 +1443,7 @@ define("ol3-popup/examples/index", ["require", "exports"], function (require, ex
     function run() {
         var l = window.location;
         var path = "" + l.origin + l.pathname + "?run=ol3-popup/examples/";
-        var labs = "\n    simple\n    paging\n    style-offset\n    index\n    ";
+        var labs = "\n    multi\n    paging\n    simple\n    style-offset\n    index\n    ";
         document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
         document.writeln(labs
             .split(/ /)
@@ -1299,7 +1456,86 @@ define("ol3-popup/examples/index", ["require", "exports"], function (require, ex
     exports.run = run;
     ;
 });
-define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/examples/extras/feature-creator", "bower_components/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_1, FeatureCreator, common_3, $) {
+define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_1, Symbolizer, common_3, FeatureCreator) {
+    "use strict";
+    var symbolizer = new Symbolizer.StyleConverter();
+    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
+    var popupCss = "\n.ol-popup {\n    background-color: white;\n    padding: 4px;\n    padding-top: 24px;\n    border: 1px solid rgba(0, 0, 0, 1);\n}\n.pagination {\n    min-width: 160px;\n}\n.pagination .page-num {\n    min-width: 100px;\n    display: inline-block;\n    text-align: center; \n}\n.pagination .arrow.btn-next {\n    float: right;\n}";
+    var html = "\n<div class=\"map\"></div>\n";
+    var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
+    function run() {
+        common_3.cssin("multi", css);
+        document.body.appendChild(common_3.html("<div>" + html + "</div>"));
+        var mapContainer = document.getElementsByClassName("map")[0];
+        var map = new ol.Map({
+            target: mapContainer,
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: center,
+                zoom: 16
+            })
+        });
+        ol3_popup_1.Popup.create({
+            map: map,
+            multi: true,
+            css: popupCss,
+            pagingStyle: function (feature, resolution, pageIndex) {
+                return [symbolizer.fromJson({
+                        "circle": {
+                            "fill": {
+                                "color": "rgba(255,0,0,1)"
+                            },
+                            "opacity": 1,
+                            "stroke": {
+                                "color": "rgba(255,255,255,1)",
+                                "width": 5
+                            },
+                            "radius": 25
+                        },
+                        text: {
+                            text: "" + (pageIndex + 1),
+                            fill: {
+                                color: "white",
+                            },
+                            stroke: {
+                                color: "black",
+                                width: 2
+                            },
+                            scale: 3,
+                            "offset-y": 0
+                        }
+                    })];
+            },
+            asContent: function (feature) {
+                var div = document.createElement("div");
+                var keys = Object.keys(feature.getProperties()).filter(function (key) {
+                    var v = feature.get(key);
+                    if (typeof v === "string")
+                        return true;
+                    if (typeof v === "number")
+                        return true;
+                    return false;
+                });
+                div.title = feature.getGeometryName();
+                div.innerHTML = "<table>" + keys.map(function (k) { return "<tr><td><b>" + k + "</b></td><td><i>" + feature.get(k) + "</i></td></tr>"; }).join("") + "</table>";
+                return div;
+            },
+        });
+        var vectorLayer = new ol.layer.Vector({
+            source: new ol.source.Vector()
+        });
+        map.addLayer(vectorLayer);
+        FeatureCreator
+            .create({ map: map })
+            .addSomeFeatures(vectorLayer, center);
+    }
+    exports.run = run;
+});
+define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/examples/extras/feature-creator", "bower_components/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_2, FeatureCreator, common_4, $) {
     "use strict";
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
@@ -1314,8 +1550,8 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
     ];
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        document.head.appendChild(common_3.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
-        document.body.appendChild(common_3.html("<div>" + html + "</div>"));
+        document.head.appendChild(common_4.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(common_4.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var dockContainer = document.getElementsByClassName("dock-container")[0];
         var map = new ol.Map({
@@ -1330,7 +1566,7 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
                 zoom: 6
             })
         });
-        var popup = ol3_popup_1.Popup.create({
+        var popup = ol3_popup_2.Popup.create({
             map: map,
             autoPan: true,
             autoPanMargin: 20,
@@ -1425,100 +1661,15 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
     }
     exports.run = run;
 });
-define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, ol3_popup_2, Symbolizer, common_4) {
+define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_3, common_5, FeatureCreator) {
     "use strict";
-    var symbolizer = new Symbolizer.StyleConverter();
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var popupCss = "\n.ol-popup {\n    background-color: white;\n    padding: 4px;\n    padding-top: 24px;\n    border: 1px solid rgba(0, 0, 0, 1);\n}\n.pagination {\n    min-width: 160px;\n}\n.pagination .page-num {\n    min-width: 100px;\n    display: inline-block;\n    text-align: center; \n}\n.pagination .arrow.btn-next {\n    float: right;\n}";
     var html = "\n<div class=\"map\"></div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
-    function setStyle(feature, json) {
-        var style = symbolizer.fromJson(json);
-        feature.setStyle(style);
-        return style;
-    }
-    function addSomeFeatures(vectorLayer) {
-        var circleFeature = new ol.Feature({
-            id: 123,
-            foo: "foo",
-            bar: "bar",
-        });
-        circleFeature.setGeometry(new ol.geom.Point(center));
-        setStyle(circleFeature, {
-            "circle": {
-                "fill": {
-                    "color": "rgba(128,0,0,0.90)"
-                },
-                "opacity": 1,
-                "stroke": {
-                    "color": "rgba(0,0,0,0.5)",
-                    "width": 2
-                },
-                "radius": 10
-            }
-        });
-        var svgFeature = new ol.Feature({
-            id: 123,
-            foo: "foo",
-            bar: "bar",
-        });
-        svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
-        setStyle(svgFeature, {
-            "image": {
-                "imgSize": [36, 36],
-                "anchor": [32, 32],
-                "stroke": {
-                    "color": "rgba(128,25,0,0.8)",
-                    "width": 10
-                },
-                "path": "M23 2 L23 23 L43 16.5 L23 23 L35 40 L23 23 L11 40 L23 23 L3 17 L23 23 L23 2 Z"
-            }
-        });
-        var markerFeature = new ol.Feature({
-            id: 123,
-            foo: "foo",
-            bar: "bar",
-        });
-        markerFeature.setGeometry(new ol.geom.Polygon([[
-                [center[0] + 1000, center[1] + 1000],
-                [center[0] + 1000 * Math.random(), center[1] + 1000 * Math.random()],
-                [center[0] + 100 * Math.random(), center[1] + 100 * Math.random()],
-                [center[0] + 100 + 1000 * Math.random(), center[1] + 100 + 100 * Math.random()],
-                [center[0] + 1000, center[1] + 1000]
-            ]]));
-        setStyle(markerFeature, {
-            "fill": {
-                "color": "rgba(255,255,0,1)",
-            },
-            "stroke": {
-                "color": "rgba(0,255,0,1)",
-                "width": 1
-            }
-        });
-        var markerFeature2 = new ol.Feature({
-            id: 123,
-            foo: "foo",
-            UserIdentification: "foo.bar@foobar.org",
-        });
-        markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
-        setStyle(markerFeature2, {
-            "circle": {
-                "fill": {
-                    color: "rgba(100,100,100,0.5)"
-                },
-                "opacity": 1,
-                "stroke": {
-                    "color": "rgba(100,100,100,1)",
-                    "width": 8
-                },
-                "radius": 32
-            }
-        });
-        vectorLayer.getSource().addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
-    }
     function run() {
-        common_4.cssin("simple", css);
-        document.body.appendChild(common_4.html("<div>" + html + "</div>"));
+        common_5.cssin("simple", css);
+        document.body.appendChild(common_5.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
             target: mapContainer,
@@ -1528,64 +1679,26 @@ define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-po
                 })
             ],
             view: new ol.View({
+                projection: "EPSG:3857",
                 center: center,
                 zoom: 16
             })
         });
-        ol3_popup_2.Popup.create({
+        ol3_popup_3.Popup.create({
             map: map,
-            multi: true,
-            css: popupCss,
-            pagingStyle: function (feature, resolution, pageIndex) {
-                return symbolizer.fromJson({
-                    "circle": {
-                        "fill": {
-                            "color": "rgba(255,0,0,1)"
-                        },
-                        "opacity": 1,
-                        "stroke": {
-                            "color": "rgba(255,255,255,1)",
-                            "width": 1
-                        },
-                        "radius": 3
-                    },
-                    text: {
-                        text: "" + (pageIndex + 1),
-                        fill: {
-                            color: "white",
-                        },
-                        stroke: {
-                            color: "black",
-                            width: 2
-                        },
-                        "offset-y": 10
-                    }
-                });
-            },
-            asContent: function (feature) {
-                var div = document.createElement("div");
-                var keys = Object.keys(feature.getProperties()).filter(function (key) {
-                    var v = feature.get(key);
-                    if (typeof v === "string")
-                        return true;
-                    if (typeof v === "number")
-                        return true;
-                    return false;
-                });
-                div.title = feature.getGeometryName();
-                div.innerHTML = "<table>" + keys.map(function (k) { return "<tr><td><b>" + k + "</b></td><td><i>" + feature.get(k) + "</i></td></tr>"; }).join("") + "</table>";
-                return div;
-            },
+            css: popupCss
         });
         var vectorLayer = new ol.layer.Vector({
             source: new ol.source.Vector()
         });
         map.addLayer(vectorLayer);
-        addSomeFeatures(vectorLayer);
+        FeatureCreator
+            .create({ map: map })
+            .addSomeFeatures(vectorLayer, center);
     }
     exports.run = run;
 });
-define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "../extras/feature-selector", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, ol3_popup_3, FeatureSelector, Symbolizer, common_5) {
+define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_4, Symbolizer, common_6, FeatureCreator) {
     "use strict";
     var symbolizer = new Symbolizer.StyleConverter();
     function setStyle(feature, json) {
@@ -1598,8 +1711,8 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
     var html = "\n<div class=\"map\"></div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        document.head.appendChild(common_5.html("<style name=\"style-offset\" type='text/css'>" + css + "</style>"));
-        document.body.appendChild(common_5.html("<div>" + html + "</div>"));
+        document.head.appendChild(common_6.html("<style name=\"style-offset\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(common_6.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
             target: mapContainer,
@@ -1613,7 +1726,8 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 zoom: 16
             })
         });
-        var popup = new ol3_popup_3.Popup({
+        var popup = ol3_popup_4.Popup.create({
+            map: map,
             autoPan: true,
             autoPanMargin: 20,
             autoPanAnimation: {
@@ -1625,12 +1739,6 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
             offset: [0, -10],
             css: "\n        .ol-popup {\n            background-color: white;\n            border: 1px solid black;\n            padding: 4px;\n            width: 200px;\n        }\n        "
         });
-        map.addOverlay(popup);
-        var selector = new FeatureSelector({
-            map: map,
-            popup: popup,
-            title: "<b>Alt+Click</b> creates markers",
-        });
         var vectorSource = new ol.source.Vector({
             features: []
         });
@@ -1639,94 +1747,9 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
             style: function (f, res) { return f.getStyle(); }
         });
         map.addLayer(vectorLayer);
-        var circleFeature = new ol.Feature();
-        circleFeature.setGeometry(new ol.geom.Point(center));
-        setStyle(circleFeature, {
-            popup: {
-                offset: [0, -10],
-                pointerPosition: -1,
-                positioning: "top-right"
-            },
-            "circle": {
-                "fill": {
-                    "color": "rgba(255,0,0,0.90)"
-                },
-                "opacity": 1,
-                "stroke": {
-                    "color": "rgba(0,0,0,0.5)",
-                    "width": 2
-                },
-                "radius": 10
-            }
-        });
-        var svgFeature = new ol.Feature();
-        svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
-        setStyle(svgFeature, {
-            popup: {
-                offset: [0, -18],
-                pointerPosition: -1,
-                positioning: "top-left"
-            },
-            "image": {
-                "imgSize": [36, 36],
-                "anchor": [32, 32],
-                "stroke": {
-                    "color": "rgba(255,25,0,0.8)",
-                    "width": 10
-                },
-                "path": "M23 2 L23 23 L43 16.5 L23 23 L35 40 L23 23 L11 40 L23 23 L3 17 L23 23 L23 2 Z"
-            }
-        });
-        var markerFeature = new ol.Feature();
-        markerFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1] + 1000]));
-        setStyle(markerFeature, {
-            popup: {
-                offset: [0, -64],
-                pointerPosition: -1,
-                positioning: "bottom-left"
-            },
-            "circle": {
-                "fill": {
-                    "gradient": {
-                        "type": "linear(32,32,96,96)",
-                        "stops": "rgba(0,255,0,0.1) 0%;rgba(0,255,0,0.8) 100%"
-                    }
-                },
-                "opacity": 1,
-                "stroke": {
-                    "color": "rgba(0,255,0,1)",
-                    "width": 1
-                },
-                "radius": 64
-            },
-            "image": {
-                "anchor": [16, 48],
-                "imgSize": [32, 48],
-                "anchorXUnits": "pixels",
-                "anchorYUnits": "pixels",
-                "src": "http://openlayers.org/en/v3.20.1/examples/data/icon.png"
-            }
-        });
-        var markerFeature2 = new ol.Feature();
-        markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
-        setStyle(markerFeature2, {
-            popup: {
-                offset: [0, -36],
-                pointerPosition: -1,
-                positioning: "bottom-right"
-            },
-            "circle": {
-                "fill": {
-                    color: "rgba(100,100,100,0.5)"
-                },
-                "opacity": 1,
-                "stroke": {
-                    "color": "rgba(100,100,100,1)",
-                    "width": 8
-                },
-                "radius": 32
-            }
-        });
+        FeatureCreator
+            .create({ map: map })
+            .addSomeFeatures(vectorLayer, center);
         popup.on("show", function () {
             popup.applyOffset(popup.options.offset || [0, 0]);
             popup.setPointerPosition(popup.options.pointerPosition);
@@ -1754,7 +1777,6 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 popup.setOffset(popup.options.offset || [0, 0]);
             }
         });
-        vectorSource.addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
     }
     exports.run = run;
 });

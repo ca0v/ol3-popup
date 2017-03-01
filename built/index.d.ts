@@ -3,7 +3,10 @@ declare module "ol3-popup/paging/paging" {
     import { Popup } from "ol3-popup/ol3-popup";
     export type SourceType = HTMLElement | string | JQueryDeferred<HTMLElement | string>;
     export type SourceCallback = () => SourceType;
-    export class Paging extends ol.Observable {
+    export interface IPaging {
+        indexOf(feature: ol.Feature): number;
+    }
+    export class Paging extends ol.Observable implements IPaging {
         options: {
             popup: Popup;
         };
@@ -38,6 +41,7 @@ declare module "ol3-popup/paging/paging" {
         goto(index: number): void;
         next(): void;
         prev(): void;
+        indexOf(feature: ol.Feature): number;
     }
 }
 declare module "ol3-popup/paging/page-navigator" {
@@ -67,8 +71,10 @@ declare module "bower_components/ol3-fun/ol3-fun/common" {
     export function mixin<A extends any, B extends any>(a: A, b: B): A & B;
     export function defaults<A extends any, B extends any>(a: A, ...b: B[]): A & B;
     export function cssin(name: string, css: string): () => void;
-    export function debounce(func: () => void, wait?: number): () => void;
+    export function debounce<T extends Function>(func: T, wait?: number, immediate?: boolean): T;
     export function html(html: string): HTMLElement;
+    export function range(n: number): any[];
+    export function shuffle<T>(array: T[]): T[];
 }
 declare module "ol3-popup/interaction" {
     import ol = require("openlayers");
@@ -233,7 +239,7 @@ declare module "ol3-popup/ol3-popup" {
     import ol = require("openlayers");
     import { Paging } from "ol3-popup/paging/paging";
     export interface IPopupOptions extends olx.OverlayOptions {
-        map?: ol.Map;
+        map: ol.Map;
         multi?: boolean;
         autoPopup?: boolean;
         dockContainer?: HTMLElement;
@@ -241,7 +247,7 @@ declare module "ol3-popup/ol3-popup" {
         pointerPosition?: number;
         xOffset?: number;
         yOffset?: number;
-        pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style;
+        pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style[];
         asContent?: (feature: ol.Feature) => HTMLElement;
     }
     export interface IPopup_4_0_1<T> {
@@ -266,7 +272,7 @@ declare module "ol3-popup/ol3-popup" {
         private docker;
         pages: Paging;
         private handlers;
-        static create(options?: IPopupOptions): Popup;
+        static create(options: IPopupOptions): Popup;
         private constructor(options);
         private injectCss(css);
         setIndictorPosition(): void;
@@ -281,7 +287,7 @@ declare module "ol3-popup/ol3-popup" {
         isDocked(): boolean;
         dock(): void;
         undock(): void;
-        applyOffset([x, y]: [number, number]): void;
+        applyOffset([x, y]: number[]): void;
     }
 }
 declare module "index" {
@@ -300,6 +306,7 @@ declare module "ol3-popup/examples/extras/feature-creator" {
         constructor(options: {
             map: ol.Map;
         });
+        addSomeFeatures(vectorLayer: ol.layer.Vector, center: ol.Coordinate): void;
     }
     export = FeatureCreator;
 }
@@ -324,6 +331,9 @@ declare module "ol3-popup/examples/flash-style" {
     export = style;
 }
 declare module "ol3-popup/examples/index" {
+    export function run(): void;
+}
+declare module "ol3-popup/examples/multi" {
     export function run(): void;
 }
 declare module "ol3-popup/examples/paging" {

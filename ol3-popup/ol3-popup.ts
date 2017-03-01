@@ -242,6 +242,7 @@ export interface IPopupOptions extends olx.OverlayOptions {
  * Default options for the popup control so it can be created without any contructor arguments
  */
 const DEFAULT_OPTIONS: IPopupOptions = {
+    map: null,
     asContent: asContent,
     multi: false,
     autoPan: true,
@@ -528,7 +529,7 @@ export class Popup extends ol.Overlay implements IPopup {
         this.setPosition(this.options.position);
     }
 
-    applyOffset([x, y]: [number, number]) {
+    applyOffset([x, y]: number[]) {
         switch (this.getPositioning()) {
             case "bottom-left":
                 this.setOffset([x, -y]);
