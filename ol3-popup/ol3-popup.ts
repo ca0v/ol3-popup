@@ -128,8 +128,8 @@ function asContent(feature: ol.Feature) {
     return div;
 }
 
-function pagingStyle(feature: ol.Feature, resolution: number, pageIndex: number) {
-    return symbolizer.fromJson({
+function pagingStyleFactory(popup: Popup) {
+    let baseStyle = symbolizer.fromJson({
         "circle": {
             "fill": {
                 "color": "rgba(255,0,0,1)"
@@ -140,17 +140,35 @@ function pagingStyle(feature: ol.Feature, resolution: number, pageIndex: number)
                 "width": 1
             },
             "radius": 3
-        },
-
-        text: {
-            text: `${pageIndex + 1}`,
-            stroke: {
-                color: "white",
-                width: 2
-            },
-            "offset-y": 20
         }
     });
+
+    return (feature: ol.Feature, resolution: number, pageIndex: number) => {
+        let style = [baseStyle];
+
+        if (popup.options.multi && popup.pages.count > 1) {
+            let isActive = popup.pages.activeIndex === pageIndex;
+
+            let textStyle = symbolizer.fromJson({
+
+                text: {
+                    text: `${pageIndex + 1}`,
+                    fill: {
+                        color: isActive ? "white" : "black",
+                    },
+                    stroke: {
+                        color: isActive ? "black" : "white",
+                        width: isActive ? 4 : 2
+                    },
+                    "offset-y": 20
+                }
+            });
+
+            style.push(textStyle);
+        }
+
+        return style;
+    };
 }
 
 /**
@@ -215,7 +233,7 @@ export interface IPopupOptions extends olx.OverlayOptions {
     // indicator position
     yOffset?: number;
     // how to style paged features
-    pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style;
+    pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style[];
     // how to render a feature
     asContent?: (feature: ol.Feature) => HTMLElement;
 }
@@ -225,7 +243,6 @@ export interface IPopupOptions extends olx.OverlayOptions {
  */
 const DEFAULT_OPTIONS: IPopupOptions = {
     asContent: asContent,
-    pagingStyle: pagingStyle,
     multi: false,
     autoPan: true,
     autoPanAnimation: {
@@ -315,8 +332,13 @@ export class Popup extends ol.Overlay implements IPopup {
          * overlays have a map, element, offset, position, positioning
          */
         super(options);
+        if (!options.pagingStyle) {
+            options.pagingStyle = pagingStyleFactory(this);
+        }
+
         this.options = options;
         this.handlers = [];
+
 
         cssin("ol3-popup", css);
         options.css && this.injectCss(options.css);

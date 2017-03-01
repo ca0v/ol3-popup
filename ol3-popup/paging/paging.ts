@@ -21,10 +21,14 @@ const eventNames = {
     goto: "goto"
 }
 
+export interface IPaging {
+    indexOf(feature: ol.Feature): number;
+}
+
 /**
  * Collection of "pages"
  */
-export class Paging extends ol.Observable {
+export class Paging extends ol.Observable implements IPaging {
 
     private _pages: Array<{
         element: HTMLElement;
@@ -229,6 +233,20 @@ export class Paging extends ol.Observable {
 
     prev() {
         (0 < this.activeIndex) && this.goto(this.activeIndex - 1);
+    }
+
+    // TODO: add indexOf to ol-fun
+    indexOf(feature: ol.Feature) {
+        let result = -1;
+
+        this._pages.some((f, i) => {
+            if (f.feature === feature) {
+                result = i;
+                return true;
+            }
+        });
+
+        return result;
     }
 }
 

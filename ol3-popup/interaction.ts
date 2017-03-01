@@ -37,6 +37,7 @@ export class SelectInteraction {
         this.options = options;
         let popup = options.popup;
         let map = options.map;
+        let overlay: ol.layer.Vector;
 
         this.handlers = [];
 
@@ -48,6 +49,9 @@ export class SelectInteraction {
             {
                 let found = false;
                 map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
+                    if (!layer || layer === overlay) {
+                        return;
+                    }
                     popup.pages.addFeature(feature, {
                         searchCoordinate: args.coordinate
                     });
@@ -71,7 +75,7 @@ export class SelectInteraction {
         this.handlers.push(() => ol.Observable.unByKey(h));
 
         if (popup.options.pagingStyle) {
-            this.setupOverlay();
+            overlay = this.setupOverlay();
         }
 
         popup.on("dispose", () => this.destroy());
@@ -93,6 +97,11 @@ export class SelectInteraction {
             updateWhileInteracting: true
         });
 
+        featureOverlay.setStyle((feature: ol.Feature, resolution) => {
+            let pageIndex = source.getFeatures().indexOf(feature);
+            return popup.options.pagingStyle(feature, resolution, pageIndex);
+        });
+
         featureOverlay.setMap(this.options.map);
 
         this.handlers.push(() => this.options.map.removeLayer(featureOverlay));
@@ -101,10 +110,13 @@ export class SelectInteraction {
             source.clear();
         });
 
+        popup.pages.on("goto", () => featureOverlay.getSource().refresh());
+
         popup.pages.on("add", args => {
             let feature = args.feature;
             if (feature) {
                 feature = feature.clone();
+                feature.setStyle(null);
                 if (args.geom) {
                     feature.setGeometry(args.geom);
                 }
@@ -115,11 +127,12 @@ export class SelectInteraction {
                 }
             }
             if (feature) {
-                feature.setStyle(popup.options.pagingStyle(feature, 0, args.pageIndex));
+                feature.set("page-index", args.pageIndex);
                 source.addFeature(feature);
             }
         });
 
+        return featureOverlay;
     }
 
     public destroy() {
