@@ -71,10 +71,8 @@ declare module "bower_components/ol3-fun/ol3-fun/common" {
     export function mixin<A extends any, B extends any>(a: A, b: B): A & B;
     export function defaults<A extends any, B extends any>(a: A, ...b: B[]): A & B;
     export function cssin(name: string, css: string): () => void;
-    export function debounce<T extends Function>(func: T, wait?: number, immediate?: boolean): T;
+    export function debounce(func: () => void, wait?: number): () => void;
     export function html(html: string): HTMLElement;
-    export function range(n: number): any[];
-    export function shuffle<T>(array: T[]): T[];
 }
 declare module "ol3-popup/interaction" {
     import ol = require("openlayers");
@@ -293,6 +291,9 @@ declare module "ol3-popup/ol3-popup" {
 declare module "index" {
     import Popup = require("ol3-popup/ol3-popup");
     export = Popup;
+}
+declare module "ol3-popup/examples/docking" {
+    export function run(): void;
 }
 declare module "ol3-popup/examples/extras/feature-creator" {
     import ol = require("openlayers");

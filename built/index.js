@@ -349,27 +349,13 @@ define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], functi
         };
     }
     exports.cssin = cssin;
-    function debounce(func, wait, immediate) {
-        var _this = this;
+    function debounce(func, wait) {
         if (wait === void 0) { wait = 50; }
-        if (immediate === void 0) { immediate = false; }
-        var timeout;
-        return (function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            var later = function () {
-                timeout = null;
-                if (!immediate)
-                    func.apply(_this, args);
-            };
-            var callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-            if (callNow)
-                func.call(_this, args);
-        });
+        var h;
+        return function () {
+            clearTimeout(h);
+            h = setTimeout(function () { return func(); }, wait);
+        };
     }
     exports.debounce = debounce;
     function html(html) {
@@ -382,27 +368,6 @@ define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], functi
         return b.firstElementChild;
     }
     exports.html = html;
-    function range(n) {
-        var result = new Array(n);
-        for (var i = 0; i < n; i++)
-            result[i] = i;
-        return result;
-    }
-    exports.range = range;
-    function shuffle(array) {
-        var currentIndex = array.length;
-        var temporaryValue;
-        var randomIndex;
-        while (0 !== currentIndex) {
-            randomIndex = Math.floor(Math.random() * currentIndex);
-            currentIndex -= 1;
-            temporaryValue = array[currentIndex];
-            array[currentIndex] = array[randomIndex];
-            array[randomIndex] = temporaryValue;
-        }
-        return array;
-    }
-    exports.shuffle = shuffle;
 });
 define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_1) {
     "use strict";
@@ -415,6 +380,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
             var overlay;
             this.handlers = [];
             var h = map.on("click", function (args) {
+                var wasDocked = popup.isDocked();
                 if (!popup.options.multi || !options.addCondition(args)) {
                     popup.hide();
                 }
@@ -436,6 +402,8 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
                     }
                 }
                 popup.pages.goto(popup.pages.count - 1);
+                if (wasDocked && !popup.isDocked())
+                    popup.dock();
             });
             this.handlers.push(function () { return ol.Observable.unByKey(h); });
             if (popup.options.pagingStyle) {
@@ -960,7 +928,7 @@ define("bower_components/ol3-symbolizer/index", ["require", "exports", "bower_co
 define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "bower_components/ol3-symbolizer/index"], function (require, exports, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer) {
     "use strict";
     var symbolizer = new Symbolizer.StyleConverter();
-    var css = "\n.ol-popup {\n    position: absolute;\n    bottom: 12px;\n    left: -50px;\n}\n\n.ol-popup:after {\n    top: auto;\n    bottom: -20px;\n    left: 50px;\n    border: solid transparent;\n    border-top-color: inherit;\n    content: \" \";\n    height: 0;\n    width: 0;\n    position: absolute;\n    pointer-events: none;\n    border-width: 10px;\n    margin-left: -10px;\n}\n\n.ol-popup.docked {\n    position:absolute;\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    width:auto;\n    height:auto;\n    pointer-events: all;\n}\n\n.ol-popup.docked:after {\n    display:none;\n}\n\n.ol-popup.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n    height: calc(100% - 60px);\n}\n\n.ol-popup.docked .pagination {\n    position: absolute;\n    bottom: 0;\n}\n\n.ol-popup .pagination .btn-prev::after {\n    content: \"\u21E6\"; \n}\n\n.ol-popup .pagination .btn-next::after {\n    content: \"\u21E8\"; \n}\n\n.ol-popup .pagination.hidden {\n    display: none;\n}\n\n.ol-popup .ol-popup-closer {\n    border: none;\n    background: transparent;\n    color: inherit;\n    position: absolute;\n    top: 0;\n    right: 0;\n    text-decoration: none;\n}\n    \n.ol-popup .ol-popup-closer:after {\n    content:'\u2716';\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n";
+    var css = "\n.ol-popup {\n    position: absolute;\n    bottom: 12px;\n    left: -50px;\n}\n\n.ol-popup.hidden {\n    display: none;\n}\n\n.ol-popup:after {\n    top: auto;\n    bottom: -20px;\n    left: 50px;\n    border: solid transparent;\n    border-top-color: inherit;\n    content: \" \";\n    height: 0;\n    width: 0;\n    position: absolute;\n    pointer-events: none;\n    border-width: 10px;\n    margin-left: -10px;\n}\n\n.ol-popup.docked {\n    position:absolute;\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    width:auto;\n    height:auto;\n    pointer-events: all;\n}\n\n.ol-popup.docked:after {\n    display:none;\n}\n\n.ol-popup.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n    height: calc(100% - 60px);\n}\n\n.ol-popup.docked .pagination {\n    position: absolute;\n    bottom: 0;\n}\n\n.ol-popup .pagination .btn-prev::after {\n    content: \"\u21E6\"; \n}\n\n.ol-popup .pagination .btn-next::after {\n    content: \"\u21E8\"; \n}\n\n.ol-popup .pagination.hidden {\n    display: none;\n}\n\n.ol-popup .ol-popup-closer {\n    border: none;\n    background: transparent;\n    color: inherit;\n    position: absolute;\n    top: 0;\n    right: 0;\n    text-decoration: none;\n}\n    \n.ol-popup .ol-popup-closer:after {\n    content:'\u2716';\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n";
     var classNames = {
         olPopup: 'ol-popup',
         olPopupDocker: 'ol-popup-docker',
@@ -1197,6 +1165,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
                     center: position
                 });
             }
+            this.domNode.classList.remove(classNames.hidden);
         };
         Popup.prototype.panIntoView = function () {
             if (!this.isOpened())
@@ -1223,13 +1192,11 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             else {
                 this.content.innerHTML = html;
             }
-            this.domNode.classList.remove(classNames.hidden);
             this.setPosition(coord);
             this.dispatch(eventNames.show);
             return this;
         };
         Popup.prototype.hide = function () {
-            this.isDocked() && this.undock();
             this.setPosition(undefined);
             this.pages.clear();
             this.dispatch(eventNames.hide);
@@ -1280,6 +1247,48 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
 define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require, exports, Popup) {
     "use strict";
     return Popup;
+});
+define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, ol3_popup_1, common_3) {
+    "use strict";
+    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
+    var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
+    var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
+    var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
+    function run() {
+        document.head.appendChild(common_3.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(common_3.html("<div>" + html + "</div>"));
+        var mapContainer = document.getElementsByClassName("map")[0];
+        var dockContainer = document.getElementsByClassName("dock-container")[0];
+        var map = new ol.Map({
+            target: mapContainer,
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: center,
+                zoom: 6
+            })
+        });
+        ol3_popup_1.Popup.create({
+            map: map,
+            autoPan: true,
+            autoPanMargin: 20,
+            autoPanAnimation: {
+                source: null,
+                duration: 500
+            },
+            autoPopup: true,
+            css: css_popup,
+            dockContainer: dockContainer,
+            pointerPosition: 150,
+            xOffset: -4,
+            yOffset: 3,
+            multi: true
+        });
+    }
+    exports.run = run;
 });
 define("ol3-popup/examples/extras/feature-creator", ["require", "exports", "openlayers", "bower_components/ol3-symbolizer/index"], function (require, exports, ol, Symbolizer) {
     "use strict";
@@ -1443,7 +1452,7 @@ define("ol3-popup/examples/index", ["require", "exports"], function (require, ex
     function run() {
         var l = window.location;
         var path = "" + l.origin + l.pathname + "?run=ol3-popup/examples/";
-        var labs = "\n    multi\n    paging\n    simple\n    style-offset\n    index\n    ";
+        var labs = "\n    docking\n    multi\n    paging\n    simple\n    style-offset\n    index\n    ";
         document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
         document.writeln(labs
             .split(/ /)
@@ -1456,7 +1465,7 @@ define("ol3-popup/examples/index", ["require", "exports"], function (require, ex
     exports.run = run;
     ;
 });
-define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_1, Symbolizer, common_3, FeatureCreator) {
+define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_2, Symbolizer, common_4, FeatureCreator) {
     "use strict";
     var symbolizer = new Symbolizer.StyleConverter();
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
@@ -1464,8 +1473,8 @@ define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-pop
     var html = "\n<div class=\"map\"></div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        common_3.cssin("multi", css);
-        document.body.appendChild(common_3.html("<div>" + html + "</div>"));
+        common_4.cssin("multi", css);
+        document.body.appendChild(common_4.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
             target: mapContainer,
@@ -1479,7 +1488,7 @@ define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-pop
                 zoom: 16
             })
         });
-        ol3_popup_1.Popup.create({
+        ol3_popup_2.Popup.create({
             map: map,
             multi: true,
             css: popupCss,
@@ -1535,7 +1544,7 @@ define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-pop
     }
     exports.run = run;
 });
-define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/examples/extras/feature-creator", "bower_components/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_2, FeatureCreator, common_4, $) {
+define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/examples/extras/feature-creator", "bower_components/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_3, FeatureCreator, common_5, $) {
     "use strict";
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
@@ -1550,8 +1559,8 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
     ];
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        document.head.appendChild(common_4.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
-        document.body.appendChild(common_4.html("<div>" + html + "</div>"));
+        document.head.appendChild(common_5.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(common_5.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var dockContainer = document.getElementsByClassName("dock-container")[0];
         var map = new ol.Map({
@@ -1566,7 +1575,7 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
                 zoom: 6
             })
         });
-        var popup = ol3_popup_2.Popup.create({
+        var popup = ol3_popup_3.Popup.create({
             map: map,
             autoPan: true,
             autoPanMargin: 20,
@@ -1661,15 +1670,15 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
     }
     exports.run = run;
 });
-define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_3, common_5, FeatureCreator) {
+define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_4, common_6, FeatureCreator) {
     "use strict";
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var popupCss = "\n.ol-popup {\n    background-color: white;\n    padding: 4px;\n    padding-top: 24px;\n    border: 1px solid rgba(0, 0, 0, 1);\n}\n.pagination {\n    min-width: 160px;\n}\n.pagination .page-num {\n    min-width: 100px;\n    display: inline-block;\n    text-align: center; \n}\n.pagination .arrow.btn-next {\n    float: right;\n}";
     var html = "\n<div class=\"map\"></div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        common_5.cssin("simple", css);
-        document.body.appendChild(common_5.html("<div>" + html + "</div>"));
+        common_6.cssin("simple", css);
+        document.body.appendChild(common_6.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
             target: mapContainer,
@@ -1684,7 +1693,7 @@ define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-po
                 zoom: 16
             })
         });
-        ol3_popup_3.Popup.create({
+        ol3_popup_4.Popup.create({
             map: map,
             css: popupCss
         });
@@ -1698,7 +1707,7 @@ define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-po
     }
     exports.run = run;
 });
-define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_4, Symbolizer, common_6, FeatureCreator) {
+define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-symbolizer/index", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_5, Symbolizer, common_7, FeatureCreator) {
     "use strict";
     var symbolizer = new Symbolizer.StyleConverter();
     function setStyle(feature, json) {
@@ -1711,8 +1720,8 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
     var html = "\n<div class=\"map\"></div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        document.head.appendChild(common_6.html("<style name=\"style-offset\" type='text/css'>" + css + "</style>"));
-        document.body.appendChild(common_6.html("<div>" + html + "</div>"));
+        document.head.appendChild(common_7.html("<style name=\"style-offset\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(common_7.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
             target: mapContainer,
@@ -1726,7 +1735,7 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
                 zoom: 16
             })
         });
-        var popup = ol3_popup_4.Popup.create({
+        var popup = ol3_popup_5.Popup.create({
             map: map,
             autoPan: true,
             autoPanMargin: 20,
