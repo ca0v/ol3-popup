@@ -2,23 +2,21 @@ import ol = require("openlayers");
 import { Popup } from "./ol3-popup";
 import { defaults } from "ol3-fun/ol3-fun/common";
 
-export interface IOptions extends olx.interaction.SelectOptions {
+export interface SelectOptions extends olx.interaction.SelectOptions {
     map?: ol.Map;
     popup?: Popup;
-    showCoordinates?: boolean;
 }
 
 export class SelectInteraction {
 
     private handlers: Array<() => void>;
-    public options: IOptions;
+    public options: SelectOptions;
 
-    static DEFAULT_OPTIONS = <IOptions>{
-        multi: true,
-        showCoordinates: true
+    static DEFAULT_OPTIONS = <SelectOptions>{
+        multi: true
     };
 
-    static create(options: IOptions) {
+    static create(options: SelectOptions) {
         if (!options.popup) throw "popup is a required option";
         if (!options.map) {
             options.map = options.popup.options.map;
@@ -33,7 +31,7 @@ export class SelectInteraction {
 
     }
 
-    private constructor(options: IOptions) {
+    private constructor(options: SelectOptions) {
         this.options = options;
         let popup = options.popup;
         let map = options.map;
@@ -50,18 +48,48 @@ export class SelectInteraction {
 
             {
                 let found = false;
-                map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
-                    if (!layer || layer === overlay) {
-                        return;
-                    }
-                    popup.pages.addFeature(feature, {
-                        searchCoordinate: args.coordinate
+                let extent = ol.extent.createEmpty();
+                extent[0] = extent[2] = args.pixel[0];
+                extent[1] = extent[3] = args.pixel[1];
+                extent = ol.extent.buffer(extent, 4);
+
+                [[extent[0], extent[3]], [extent[2], extent[1]]] = [
+                    map.getCoordinateFromPixel([extent[0], extent[1]]),
+                    map.getCoordinateFromPixel([extent[2], extent[3]])
+                ];
+
+                let layers = popup.options.layers;
+
+                if (!layers) {
+                    layers = <ol.layer.Vector[]>map.getLayers().getArray().filter(l => l instanceof ol.layer.Vector);
+                }
+
+                layers.forEach(layer => {
+                    if (layer === overlay) return;
+                    layer.getSource().forEachFeatureIntersectingExtent(extent, (feature: ol.Feature) => {
+                        popup.pages.addFeature(feature, {
+                            searchCoordinate: args.coordinate
+                        });
+                        found = true;
+                        return !popup.options.multi;
                     });
-                    found = true;
-                    return !popup.options.multi;
                 });
 
-                if (!found && options.showCoordinates) {
+                if (!found) {
+                    // this technique considers styling (e.g. point features and large borders)
+                    map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer: ol.layer.Vector) => {
+                        if (!layer || layer === overlay || -1 === layers.indexOf(layer)) {
+                            return;
+                        }
+                        popup.pages.addFeature(feature, {
+                            searchCoordinate: args.coordinate
+                        });
+                        found = true;
+                        return !popup.options.multi;
+                    });
+                }
+
+                if (!found && popup.options.showCoordinates) {
                     popup.pages.add(`
 <table>
 <tr><td>lon</td><td>${args.coordinate[0].toFixed(5)}</td></tr>

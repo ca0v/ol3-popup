@@ -220,7 +220,7 @@ function enableTouchScroll(elm: HTMLElement) {
 /**
  * The constructor options 'must' conform, most interesting is autoPan
  */
-export interface IPopupOptions extends olx.OverlayOptions {
+export interface PopupOptions extends olx.OverlayOptions {
     map: ol.Map,
     // allow multiple popups or automatically close before re-opening?
     multi?: boolean;
@@ -228,6 +228,8 @@ export interface IPopupOptions extends olx.OverlayOptions {
     autoPopup?: boolean;
     // allows popup to dock w/in this container
     dockContainer?: HTMLElement;
+    // facilitates styling by adding a class name
+    className?: string;
     // css content to add to DOM for the lifecycle of this control
     css?: string;
     // where should the infoviewer callout be placed relative to the edge?
@@ -240,12 +242,16 @@ export interface IPopupOptions extends olx.OverlayOptions {
     pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style[];
     // how to render a feature
     asContent?: (feature: ol.Feature) => HTMLElement;
+    // which layers to consider
+    layers?: ol.layer.Vector[];
+    // when no features found show coordinates isntead
+    showCoordinates?: boolean;
 }
 
 /**
  * Default options for the popup control so it can be created without any contructor arguments
  */
-const DEFAULT_OPTIONS: IPopupOptions = {
+const DEFAULT_OPTIONS: PopupOptions = {
     map: null,
     asContent: asContent,
     multi: false,
@@ -255,6 +261,7 @@ const DEFAULT_OPTIONS: IPopupOptions = {
         duration: 250
     },
     autoPopup: true,
+    className: classNames.olPopup,
     css: `
 .ol-popup {
     background-color: white;
@@ -283,7 +290,8 @@ const DEFAULT_OPTIONS: IPopupOptions = {
     xOffset: 0,
     yOffset: 0,
     positioning: "top-right", // ol.OverlayPositioning.TOP_RIGHT
-    stopEvent: true
+    stopEvent: true,
+    showCoordinates: false
 }
 
 /**
@@ -315,7 +323,7 @@ export interface IPopup extends IPopup_4_0_1<Popup> {
  * The control formerly known as ol.Overlay.Popup 
  */
 export class Popup extends ol.Overlay implements IPopup {
-    options: IPopupOptions & { parentNode?: HTMLElement };
+    options: PopupOptions & { parentNode?: HTMLElement };
     content: HTMLDivElement;
     domNode: HTMLDivElement;
     private closer: HTMLLabelElement;
@@ -324,7 +332,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private handlers: Array<() => void>;
 
-    static create(options: IPopupOptions) {
+    static create(options: PopupOptions) {
         options = defaults({}, options, DEFAULT_OPTIONS);
 
         let popup = new Popup(options);
@@ -332,7 +340,7 @@ export class Popup extends ol.Overlay implements IPopup {
         return popup;
     }
 
-    private constructor(options: IPopupOptions) {
+    private constructor(options: PopupOptions) {
         /**
          * overlays have a map, element, offset, position, positioning
          */
@@ -349,7 +357,7 @@ export class Popup extends ol.Overlay implements IPopup {
         options.css && this.injectCss(options.css);
 
         let domNode = this.domNode = document.createElement('div');
-        domNode.className = classNames.olPopup;
+        domNode.className = options.className;
         this.setElement(domNode);
 
         if (typeof this.options.pointerPosition === "number") {
@@ -452,6 +460,8 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     setPosition(position: ol.Coordinate) {
+        // make popup visisble
+        this.domNode.classList.remove(classNames.hidden);
         this.options.position = <any>position;
         if (!this.isDocked()) {
             super.setPosition(position);
@@ -461,8 +471,6 @@ export class Popup extends ol.Overlay implements IPopup {
                 center: position
             });
         }
-        // make popup visisble
-        this.domNode.classList.remove(classNames.hidden);
     }
 
     panIntoView() {
