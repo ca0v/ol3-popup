@@ -80,18 +80,32 @@ export function run() {
         })
     });
 
-    Popup.create({
-        map: map,
-        css: popupCss
-    });
-
     let vectorLayer = new ol.layer.Vector({
         source: new ol.source.Vector()
     });
 
+    let unclickableLayer = new ol.layer.Vector({
+        source: new ol.source.Vector()
+    });
+
     map.addLayer(vectorLayer);
+    map.addLayer(unclickableLayer);
 
     FeatureCreator
         .create({ map: map })
-        .addSomeFeatures(vectorLayer, center);
-}   
+        .addSomeFeatures(vectorLayer, center)
+        .addSomeFeatures(unclickableLayer, center);
+
+    Popup.create({
+        map: map,
+        css: popupCss,
+        layers: [vectorLayer]
+    });
+
+    Popup.create({
+        map: map, 
+        className: "ol-popup black",
+        css: `.ol-popup.black { background-color: black; color: white }`,
+        layers: [unclickableLayer]
+    });
+}
