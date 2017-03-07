@@ -17,6 +17,10 @@ const css = `
     left: -50px;
 }
 
+.ol-popup.hidden {
+    display: none;
+}
+
 .ol-popup:after {
     top: auto;
     bottom: -20px;
@@ -456,8 +460,9 @@ export class Popup extends ol.Overlay implements IPopup {
             view.animate({
                 center: position
             });
-
         }
+        // make popup visisble
+        this.domNode.classList.remove(classNames.hidden);
     }
 
     panIntoView() {
@@ -486,8 +491,6 @@ export class Popup extends ol.Overlay implements IPopup {
         } else {
             this.content.innerHTML = html;
         }
-        this.domNode.classList.remove(classNames.hidden);
-
         this.setPosition(coord);
 
         this.dispatch(eventNames.show);
@@ -496,7 +499,6 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     hide() {
-        this.isDocked() && this.undock();
         this.setPosition(undefined);
         this.pages.clear();
         this.dispatch(eventNames.hide);

@@ -42,6 +42,8 @@ export class SelectInteraction {
         this.handlers = [];
 
         let h = map.on("click", (args: ol.MapBrowserPointerEvent) => {
+            let wasDocked = popup.isDocked();
+
             if (!popup.options.multi || !options.addCondition(args)) {
                 popup.hide();
             }
@@ -70,7 +72,7 @@ export class SelectInteraction {
                 }
             }
             popup.pages.goto(popup.pages.count - 1);
-
+            if (wasDocked && !popup.isDocked()) popup.dock();
         });
         this.handlers.push(() => ol.Observable.unByKey(h));
 
