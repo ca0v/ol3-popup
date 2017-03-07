@@ -159,6 +159,7 @@ export function run() {
             duration: 500
         },
         autoPopup: true,
+        showCoordinates: true,
         css: css_popup,
         dockContainer: dockContainer,
         pointerPosition: 150,

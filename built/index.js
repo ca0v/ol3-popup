@@ -1307,6 +1307,7 @@ define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "ol3-p
                 duration: 500
             },
             autoPopup: true,
+            showCoordinates: true,
             css: css_popup,
             dockContainer: dockContainer,
             pointerPosition: 150,
@@ -1624,6 +1625,7 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
                 duration: 500
             },
             autoPopup: true,
+            showCoordinates: true,
             css: css_popup,
             dockContainer: dockContainer,
             pointerPosition: 150,
