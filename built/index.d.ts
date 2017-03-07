@@ -77,16 +77,15 @@ declare module "bower_components/ol3-fun/ol3-fun/common" {
 declare module "ol3-popup/interaction" {
     import ol = require("openlayers");
     import { Popup } from "ol3-popup/ol3-popup";
-    export interface IOptions extends olx.interaction.SelectOptions {
+    export interface SelectOptions extends olx.interaction.SelectOptions {
         map?: ol.Map;
         popup?: Popup;
-        showCoordinates?: boolean;
     }
     export class SelectInteraction {
         private handlers;
-        options: IOptions;
-        static DEFAULT_OPTIONS: IOptions;
-        static create(options: IOptions): SelectInteraction;
+        options: SelectOptions;
+        static DEFAULT_OPTIONS: SelectOptions;
+        static create(options: SelectOptions): SelectInteraction;
         private constructor(options);
         private setupOverlay();
         destroy(): void;
@@ -236,17 +235,20 @@ declare module "bower_components/ol3-symbolizer/index" {
 declare module "ol3-popup/ol3-popup" {
     import ol = require("openlayers");
     import { Paging } from "ol3-popup/paging/paging";
-    export interface IPopupOptions extends olx.OverlayOptions {
+    export interface PopupOptions extends olx.OverlayOptions {
         map: ol.Map;
         multi?: boolean;
         autoPopup?: boolean;
         dockContainer?: HTMLElement;
+        className?: string;
         css?: string;
         pointerPosition?: number;
         xOffset?: number;
         yOffset?: number;
         pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style[];
         asContent?: (feature: ol.Feature) => HTMLElement;
+        layers?: ol.layer.Vector[];
+        showCoordinates?: boolean;
     }
     export interface IPopup_4_0_1<T> {
         show(position: ol.Coordinate, markup: string): T;
@@ -261,7 +263,7 @@ declare module "ol3-popup/ol3-popup" {
     export interface IPopup extends IPopup_4_0_1<Popup> {
     }
     export class Popup extends ol.Overlay implements IPopup {
-        options: IPopupOptions & {
+        options: PopupOptions & {
             parentNode?: HTMLElement;
         };
         content: HTMLDivElement;
@@ -270,7 +272,7 @@ declare module "ol3-popup/ol3-popup" {
         private docker;
         pages: Paging;
         private handlers;
-        static create(options: IPopupOptions): Popup;
+        static create(options: PopupOptions): Popup;
         private constructor(options);
         private injectCss(css);
         setIndictorPosition(): void;
@@ -307,7 +309,7 @@ declare module "ol3-popup/examples/extras/feature-creator" {
         constructor(options: {
             map: ol.Map;
         });
-        addSomeFeatures(vectorLayer: ol.layer.Vector, center: ol.Coordinate): void;
+        addSomeFeatures(vectorLayer: ol.layer.Vector, center: ol.Coordinate): this;
     }
     export = FeatureCreator;
 }
