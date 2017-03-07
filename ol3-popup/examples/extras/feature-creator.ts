@@ -3,6 +3,14 @@ import Symbolizer = require("ol3-symbolizer");
 
 const symbolizer = new Symbolizer.StyleConverter();
 
+function random(center: ol.Coordinate, scale = 1000): ol.Coordinate {
+    return [center[0] + scale * Math.random(), center[1] + scale * Math.random()];
+}
+
+function translate(center: ol.Coordinate, t: ol.Coordinate): ol.Coordinate {
+    return [center[0] + t[0], center[1] + t[1]];
+}
+
 function setStyle(feature: ol.Feature, json: Symbolizer.Format.Style) {
     let style = symbolizer.fromJson(json);
     feature.setStyle(style);
@@ -68,25 +76,25 @@ class FeatureCreator {
     }
 
     addSomeFeatures(vectorLayer: ol.layer.Vector, center: ol.Coordinate) {
-        
+
         let circleFeature = new ol.Feature({
             id: 123,
             foo: "foo",
             bar: "bar",
         });
-        circleFeature.setGeometry(new ol.geom.Point(center));
+        circleFeature.setGeometry(new ol.geom.Point(random(center, 100)));
 
         setStyle(circleFeature, {
             "circle": {
                 "fill": {
-                    "color": "rgba(128,0,0,0.90)"
+                    "color": "rgba(255,0,0,0.90)"
                 },
                 "opacity": 1,
                 "stroke": {
-                    "color": "rgba(0,0,0,0.5)",
-                    "width": 2
+                    "color": "rgba(0,0,0,1)",
+                    "width": 1
                 },
-                "radius": 10
+                "radius": 6
             }
         });
 
@@ -95,7 +103,7 @@ class FeatureCreator {
             foo: "foo",
             bar: "bar",
         });
-        svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
+        svgFeature.setGeometry(new ol.geom.Point(random(translate(center, [1000, 0]))));
         setStyle(svgFeature, {
             "image": {
                 "imgSize": [36, 36],
@@ -115,13 +123,14 @@ class FeatureCreator {
         });
 
 
+        let triangle1 = random(translate(center, [1000, 1000]));
         markerFeature.setGeometry(new ol.geom.Polygon([[
-            [center[0] + 1000, center[1] + 1000],
-            [center[0] + 1000 * Math.random(), center[1] + 1000 * Math.random()],
-            [center[0] + 100 * Math.random(), center[1] + 100 * Math.random()],
-            [center[0] + 100 + 1000 * Math.random(), center[1] + 100 + 100 * Math.random()],
-            [center[0] + 1000, center[1] + 1000]
+            triangle1,
+            random(center, 1000),
+            random(center, 1000),
+            triangle1
         ]]));
+
         setStyle(markerFeature, {
             "fill": {
                 "color": "rgba(255,255,0,1)",
@@ -137,7 +146,7 @@ class FeatureCreator {
             foo: "foo",
             UserIdentification: "foo.bar@foobar.org",
         });
-        markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
+        markerFeature2.setGeometry(new ol.geom.Point(random(translate(center, [0, 1000]))));
         setStyle(markerFeature2, {
             "circle": {
                 "fill": {
@@ -152,7 +161,14 @@ class FeatureCreator {
             }
         });
 
-        vectorLayer.getSource().addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
+        vectorLayer.getSource().addFeatures([
+            circleFeature,
+            svgFeature,
+            markerFeature,
+            markerFeature2
+        ]);
+
+        return this;
     }
 
 }
