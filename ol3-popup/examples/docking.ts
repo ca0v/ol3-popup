@@ -1,5 +1,6 @@
 //import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
+import $ = require("jquery");
 import { Popup } from "../ol3-popup";
 import { html as asHtml } from "ol3-fun/ol3-fun/common";
 
@@ -120,8 +121,8 @@ let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
 export function run() {
 
-    document.head.appendChild(asHtml(`<style name="paging" type='text/css'>${css}</style>`));
-    document.body.appendChild(asHtml(`<div>${html}</div>`));
+    $(document.head).append(asHtml(`<style name="paging" type='text/css'>${css}</style>`));
+    $(document.body).append(asHtml(`<div>${html}</div>`));
 
     let mapContainer = <HTMLDivElement>document.getElementsByClassName("map")[0];
     let dockContainer = <HTMLDivElement>document.getElementsByClassName("dock-container")[0];

@@ -17,6 +17,10 @@ const eventNames = {
     next: "next"
 };
 
+// ie11 compatible
+function toggle(e: HTMLElement, className: string, toggle = false) {
+    toggle ? e.classList.remove(className) : e.classList.add(className);
+}
 
 /**
  * The prior + next paging buttons and current page indicator
@@ -52,10 +56,10 @@ export default class PageNavigator extends ol.Observable {
             let count = pages.count;
             let canPrev = 0 < index;
             let canNext = count - 1 > index;
-            this.prevButton.classList.toggle(classNames.inactive, !canPrev);
-            this.prevButton.classList.toggle(classNames.active, canPrev);
-            this.nextButton.classList.toggle(classNames.inactive, !canNext);
-            this.nextButton.classList.toggle(classNames.active, canNext);
+            toggle(this.prevButton, classNames.inactive, !canPrev);
+            toggle(this.prevButton, classNames.active, canPrev);
+            toggle(this.nextButton, classNames.inactive, !canNext);
+            toggle(this.nextButton, classNames.active, canNext);
             this.prevButton.disabled = !canPrev;
             this.nextButton.disabled = !canNext;
             this.pageInfo.innerHTML = `${1 + index} of ${count}`;

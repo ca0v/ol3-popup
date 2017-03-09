@@ -417,7 +417,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private injectCss(css: string) {
         let style = html(`<style type='text/css'>${css}</style>`);
-        document.head.appendChild(style);
+        $(document.head).append(style);
         this.handlers.push(() => style.remove());
     }
 
@@ -488,7 +488,7 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     dispatch(name: string) {
-        this["dispatchEvent"](new Event(name));
+        this["dispatchEvent"](new ol.events.Event(name));
     }
 
     show(coord: ol.Coordinate, html: string | HTMLElement) {
