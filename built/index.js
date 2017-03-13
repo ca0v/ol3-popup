@@ -130,13 +130,9 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             });
         };
         Paging.prototype.clear = function () {
-            var activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
             this._activeIndex = -1;
             this._pages = [];
-            if (activeChild) {
-                this.domNode.removeChild(activeChild.element);
-                this.dispatchEvent(eventNames.clear);
-            }
+            this.dispatchEvent(eventNames.clear);
         };
         Paging.prototype.goto = function (index) {
             var _this = this;
@@ -144,14 +140,9 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             if (!page)
                 return;
             var popup = this.options.popup;
-            var activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
             if (page.feature) {
-                page.element.innerHTML = "";
-                page.element.appendChild(popup.options.asContent(page.feature));
-                this.options.popup.setPosition(getInteriorPoint(page.location || page.feature.getGeometry()));
-                activeChild && activeChild.element.remove();
+                this.options.popup.show(getInteriorPoint(page.location || page.feature.getGeometry()), popup.options.asContent(page.feature));
                 this._activeIndex = index;
-                this.domNode.appendChild(page.element);
                 this.dispatchEvent(eventNames.goto);
                 return;
             }
@@ -178,12 +169,8 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 d.resolve();
             }
             d.then(function () {
-                activeChild && activeChild.element.remove();
                 _this._activeIndex = index;
-                _this.domNode.appendChild(page.element);
-                if (page.location) {
-                    _this.options.popup.setPosition(getInteriorPoint(page.location));
-                }
+                _this.options.popup.show(getInteriorPoint(page.location), page.element);
                 _this.dispatchEvent(eventNames.goto);
             });
         };
@@ -223,6 +210,10 @@ define("ol3-popup/paging/page-navigator", ["require", "exports", "openlayers"], 
         prev: "prev",
         next: "next"
     };
+    function toggle(e, className, toggle) {
+        if (toggle === void 0) { toggle = false; }
+        !toggle ? e.classList.remove(className) : e.classList.add(className);
+    }
     var PageNavigator = (function (_super) {
         __extends(PageNavigator, _super);
         function PageNavigator(options) {
@@ -245,10 +236,10 @@ define("ol3-popup/paging/page-navigator", ["require", "exports", "openlayers"], 
                 var count = pages.count;
                 var canPrev = 0 < index;
                 var canNext = count - 1 > index;
-                _this.prevButton.classList.toggle(classNames.inactive, !canPrev);
-                _this.prevButton.classList.toggle(classNames.active, canPrev);
-                _this.nextButton.classList.toggle(classNames.inactive, !canNext);
-                _this.nextButton.classList.toggle(classNames.active, canNext);
+                toggle(_this.prevButton, classNames.inactive, !canPrev);
+                toggle(_this.prevButton, classNames.active, canPrev);
+                toggle(_this.nextButton, classNames.inactive, !canNext);
+                toggle(_this.nextButton, classNames.active, canNext);
                 _this.prevButton.disabled = !canPrev;
                 _this.nextButton.disabled = !canNext;
                 _this.pageInfo.innerHTML = 1 + index + " of " + count;
@@ -336,7 +327,8 @@ define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], functi
         if (!styleTag) {
             styleTag = document.createElement("style");
             styleTag.id = id;
-            styleTag.innerText = css;
+            styleTag.type = "text/css";
+            styleTag.appendChild(document.createTextNode(css));
             document.head.appendChild(styleTag);
         }
         var dataset = styleTag.dataset;
@@ -349,28 +341,68 @@ define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], functi
         };
     }
     exports.cssin = cssin;
-    function debounce(func, wait) {
+    function debounce(func, wait, immediate) {
+        var _this = this;
         if (wait === void 0) { wait = 50; }
-        var h;
-        return function () {
-            clearTimeout(h);
-            h = setTimeout(function () { return func(); }, wait);
-        };
+        if (immediate === void 0) { immediate = false; }
+        var timeout;
+        return (function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var later = function () {
+                timeout = null;
+                if (!immediate)
+                    func.apply(_this, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow)
+                func.call(_this, args);
+        });
     }
     exports.debounce = debounce;
     function html(html) {
-        var d = document;
-        var a = d.createElement("div");
-        var b = d.createDocumentFragment();
+        var a = document.createElement("div");
         a.innerHTML = html;
-        while (a.firstChild)
-            b.appendChild(a.firstChild);
-        return b.firstElementChild;
+        return (a.firstElementChild || a.firstChild);
     }
     exports.html = html;
+    function pair(a1, a2) {
+        var result = [];
+        a1.forEach(function (v1) { return a2.forEach(function (v2) { return result.push([v1, v2]); }); });
+        return result;
+    }
+    exports.pair = pair;
+    function range(n) {
+        var result = new Array(n);
+        for (var i = 0; i < n; i++)
+            result[i] = i;
+        return result;
+    }
+    exports.range = range;
+    function shuffle(array) {
+        var currentIndex = array.length;
+        var temporaryValue;
+        var randomIndex;
+        while (0 !== currentIndex) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+            temporaryValue = array[currentIndex];
+            array[currentIndex] = array[randomIndex];
+            array[randomIndex] = temporaryValue;
+        }
+        return array;
+    }
+    exports.shuffle = shuffle;
 });
 define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_1) {
     "use strict";
+    var dispose = function (handlers) {
+        return handlers.forEach(function (h) { return (h instanceof Function) ? h() : ol.Observable.unByKey(h); });
+    };
     var SelectInteraction = (function () {
         function SelectInteraction(options) {
             var _this = this;
@@ -379,10 +411,10 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
             var map = options.map;
             var overlay;
             this.handlers = [];
-            var h = map.on("click", function (args) {
+            this.handlers.push(map.on("click", function (args) {
                 var wasDocked = popup.isDocked();
                 if (!popup.options.multi || !options.addCondition(args)) {
-                    popup.hide();
+                    popup.pages.clear();
                 }
                 {
                     var found_1 = false;
@@ -422,16 +454,23 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
                         });
                     }
                     if (!found_1 && popup.options.showCoordinates) {
-                        popup.pages.add(("\n<table>\n<tr><td>lon</td><td>" + args.coordinate[0].toFixed(5) + "</td></tr>\n<tr><td>lat</td><td>" + args.coordinate[1].toFixed(5) + "</td></tr>\n</table>")
+                        popup.pages.add(("\n<table>\n<tr><td>lon</td><td>" + args.coordinate[0].toPrecision(6) + "</td></tr>\n<tr><td>lat</td><td>" + args.coordinate[1].toPrecision(6) + "</td></tr>\n</table>")
                             .trim(), new ol.geom.Point(args.coordinate));
+                        found_1 = true;
+                    }
+                    if (found_1) {
+                        popup.pages.goto(popup.pages.count - 1);
+                        if (wasDocked && !popup.isDocked())
+                            popup.dock();
+                    }
+                    else {
+                        if (!popup.options.multi || !options.addCondition(args)) {
+                            popup.hide();
+                        }
                     }
                 }
-                popup.pages.goto(popup.pages.count - 1);
-                if (wasDocked && !popup.isDocked())
-                    popup.dock();
                 var _a, _b, _c;
-            });
-            this.handlers.push(function () { return ol.Observable.unByKey(h); });
+            }));
             if (popup.options.pagingStyle) {
                 overlay = this.setupOverlay();
             }
@@ -474,7 +513,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
             popup.pages.on("clear", function () {
                 source.clear();
             });
-            popup.pages.on("goto", function () { return featureOverlay.getSource().refresh(); });
+            this.handlers.push(popup.pages.on("goto", function () { return featureOverlay.getSource().refresh(); }));
             popup.pages.on("add", function (args) {
                 var feature = args.feature;
                 if (feature) {
@@ -498,7 +537,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
             return featureOverlay;
         };
         SelectInteraction.prototype.destroy = function () {
-            this.handlers.forEach(function (h) { return h(); });
+            dispose(this.handlers);
         };
         return SelectInteraction;
     }());
@@ -964,7 +1003,10 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
     };
     var eventNames = {
         show: "show",
-        hide: "hide"
+        hide: "hide",
+        dispose: "dispose",
+        dock: "dock",
+        undock: "undock"
     };
     function asContent(feature) {
         var div = document.createElement("div");
@@ -1091,6 +1133,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             var domNode = _this.domNode = document.createElement('div');
             domNode.className = options.className;
             _this.setElement(domNode);
+            _this.handlers.push(function () { return domNode.remove(); });
             if (typeof _this.options.pointerPosition === "number") {
                 _this.setPointerPosition(_this.options.pointerPosition);
             }
@@ -1145,7 +1188,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         };
         Popup.prototype.injectCss = function (css) {
             var style = common_2.html("<style type='text/css'>" + css + "</style>");
-            document.head.appendChild(style);
+            $(document.head).append(style);
             this.handlers.push(function () { return style.remove(); });
         };
         Popup.prototype.setIndictorPosition = function () {
@@ -1182,7 +1225,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             css.forEach(function (css) { return _this.injectCss(css); });
         };
         Popup.prototype.setPosition = function (position) {
-            this.domNode.classList.remove(classNames.hidden);
             this.options.position = position;
             if (!this.isDocked()) {
                 _super.prototype.setPosition.call(this, position);
@@ -1205,11 +1247,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         Popup.prototype.destroy = function () {
             this.handlers.forEach(function (h) { return h(); });
             this.handlers = [];
-            this.getMap().removeOverlay(this);
-            this.dispatch("dispose");
-        };
-        Popup.prototype.dispatch = function (name) {
-            this["dispatchEvent"](new Event(name));
+            this.getMap() && this.getMap().removeOverlay(this);
+            this.dispatchEvent(eventNames.dispose);
         };
         Popup.prototype.show = function (coord, html) {
             if (html instanceof HTMLElement) {
@@ -1220,14 +1259,18 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
                 this.content.innerHTML = html;
             }
             this.setPosition(coord);
-            this.dispatch(eventNames.show);
+            this.domNode.classList.remove(classNames.hidden);
+            this.dispatchEvent(eventNames.show);
             return this;
+        };
+        Popup.prototype.on = function (type, listener, opt_this) {
+            return _super.prototype.on.call(this, type, listener);
         };
         Popup.prototype.hide = function () {
             this.setPosition(undefined);
             this.pages.clear();
-            this.dispatch(eventNames.hide);
             this.domNode.classList.add(classNames.hidden);
+            this.dispatchEvent(eventNames.hide);
             return this;
         };
         Popup.prototype.isOpened = function () {
@@ -1243,12 +1286,16 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             map.removeOverlay(this);
             this.domNode.classList.add(classNames.docked);
             this.options.dockContainer.appendChild(this.domNode);
+            this.dispatchEvent(eventNames.dock);
+            return this;
         };
         Popup.prototype.undock = function () {
             this.options.parentNode.appendChild(this.domNode);
             this.domNode.classList.remove(classNames.docked);
             this.options.map.addOverlay(this);
             this.setPosition(this.options.position);
+            this.dispatchEvent(eventNames.undock);
+            return this;
         };
         Popup.prototype.applyOffset = function (_a) {
             var x = _a[0], y = _a[1];
@@ -1275,15 +1322,15 @@ define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require
     "use strict";
     return Popup;
 });
-define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, ol3_popup_1, common_3) {
+define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-popup/ol3-popup", "bower_components/ol3-fun/ol3-fun/common"], function (require, exports, ol, $, ol3_popup_1, common_3) {
     "use strict";
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
     var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        document.head.appendChild(common_3.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
-        document.body.appendChild(common_3.html("<div>" + html + "</div>"));
+        $(document.head).append(common_3.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
+        $(document.body).append(common_3.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var dockContainer = document.getElementsByClassName("dock-container")[0];
         var map = new ol.Map({
@@ -1298,7 +1345,7 @@ define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "ol3-p
                 zoom: 6
             })
         });
-        ol3_popup_1.Popup.create({
+        var p1 = ol3_popup_1.Popup.create({
             map: map,
             autoPan: true,
             autoPanMargin: 20,
@@ -1315,6 +1362,24 @@ define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "ol3-p
             yOffset: 3,
             multi: true
         });
+        p1.on("dock", common_3.debounce(function () {
+            var h = p1.on("show", function () {
+                var p = ol3_popup_1.Popup.create({
+                    map: map,
+                    autoPopup: false,
+                    positioning: "top-center",
+                    asContent: function (feature) { return common_3.html("<b>Hi " + feature.get("hello") + "</b>"); }
+                });
+                p1.once(["undock", "dispose"], function () { return p.destroy(); });
+                var feature = new ol.Feature({
+                    hello: "Hello",
+                    geometry: new ol.geom.Point(p1.options.position)
+                });
+                p.pages.addFeature(feature, { searchCoordinate: p1.options.position });
+                p.pages.goto(0);
+            });
+            p1.once(["undock", "dispose"], function () { return ol.Observable.unByKey(h); });
+        }));
     }
     exports.run = run;
 });
@@ -1427,7 +1492,7 @@ define("ol3-popup/examples/extras/feature-creator", ["require", "exports", "open
                 ]]));
             setStyle(markerFeature, {
                 "fill": {
-                    "color": "rgba(255,255,0,1)",
+                    "color": "rgba(255,255,0, 0.8)",
                 },
                 "stroke": {
                     "color": "rgba(0,255,0,1)",
@@ -1756,7 +1821,8 @@ define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-po
             map: map,
             className: "ol-popup black",
             css: ".ol-popup.black { background-color: black; color: white }",
-            layers: [unclickableLayer]
+            layers: [unclickableLayer],
+            showCoordinates: true
         });
     }
     exports.run = run;
