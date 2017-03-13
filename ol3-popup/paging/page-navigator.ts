@@ -19,7 +19,7 @@ const eventNames = {
 
 // ie11 compatible
 function toggle(e: HTMLElement, className: string, toggle = false) {
-    toggle ? e.classList.remove(className) : e.classList.add(className);
+    !toggle ? e.classList.remove(className) : e.classList.add(className);
 }
 
 /**

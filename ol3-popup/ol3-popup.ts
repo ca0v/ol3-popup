@@ -484,11 +484,7 @@ export class Popup extends ol.Overlay implements IPopup {
         this.handlers.forEach(h => h());
         this.handlers = [];
         this.getMap().removeOverlay(this);
-        this.dispatch("dispose");
-    }
-
-    dispatch(name: string) {
-        this["dispatchEvent"](new ol.events.Event(name));
+        this.dispatchEvent("dispose");
     }
 
     show(coord: ol.Coordinate, html: string | HTMLElement) {
@@ -501,7 +497,7 @@ export class Popup extends ol.Overlay implements IPopup {
         }
         this.setPosition(coord);
 
-        this.dispatch(eventNames.show);
+        this.dispatchEvent(eventNames.show);
 
         return this;
     }
@@ -509,7 +505,7 @@ export class Popup extends ol.Overlay implements IPopup {
     hide() {
         this.setPosition(undefined);
         this.pages.clear();
-        this.dispatch(eventNames.hide);
+        this.dispatchEvent(eventNames.hide);
         this.domNode.classList.add(classNames.hidden);
         return this;
     }
