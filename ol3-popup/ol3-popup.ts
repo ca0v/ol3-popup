@@ -114,7 +114,10 @@ const classNames = {
 
 const eventNames = {
     show: "show",
-    hide: "hide"
+    hide: "hide",
+    dispose: "dispose",
+    dock: "dock",
+    undock: "undock"
 };
 
 function asContent(feature: ol.Feature) {
@@ -359,6 +362,7 @@ export class Popup extends ol.Overlay implements IPopup {
         let domNode = this.domNode = document.createElement('div');
         domNode.className = options.className;
         this.setElement(domNode);
+        this.handlers.push(() => domNode.remove());
 
         if (typeof this.options.pointerPosition === "number") {
             this.setPointerPosition(this.options.pointerPosition);
@@ -461,7 +465,6 @@ export class Popup extends ol.Overlay implements IPopup {
 
     setPosition(position: ol.Coordinate) {
         // make popup visisble
-        this.domNode.classList.remove(classNames.hidden);
         this.options.position = <any>position;
         if (!this.isDocked()) {
             super.setPosition(position);
@@ -483,8 +486,8 @@ export class Popup extends ol.Overlay implements IPopup {
     destroy() {
         this.handlers.forEach(h => h());
         this.handlers = [];
-        this.getMap().removeOverlay(this);
-        this.dispatchEvent("dispose");
+        this.getMap() && this.getMap().removeOverlay(this);
+        this.dispatchEvent(eventNames.dispose);
     }
 
     show(coord: ol.Coordinate, html: string | HTMLElement) {
@@ -497,16 +500,26 @@ export class Popup extends ol.Overlay implements IPopup {
         }
         this.setPosition(coord);
 
+        this.domNode.classList.remove(classNames.hidden);
         this.dispatchEvent(eventNames.show);
 
         return this;
     }
 
+    on(type: "dock", listener: () => void): ol.EventsKey;
+    on(type: "undock", listener: () => void): ol.EventsKey;
+    on(type: "hide", listener: () => void): ol.EventsKey;
+    on(type: "show", listener: () => void): ol.EventsKey;
+    on(type: "dispose", listener: () => void): ol.EventsKey;
+    on(type: (string | string[]), listener: Function, opt_this?: GlobalObject): (ol.EventsKey | ol.EventsKey[]) {
+        return super.on(type, listener);
+    }
+
     hide() {
         this.setPosition(undefined);
         this.pages.clear();
-        this.dispatchEvent(eventNames.hide);
         this.domNode.classList.add(classNames.hidden);
+        this.dispatchEvent(eventNames.hide);
         return this;
     }
 
@@ -526,6 +539,8 @@ export class Popup extends ol.Overlay implements IPopup {
         map.removeOverlay(this);
         this.domNode.classList.add(classNames.docked);
         this.options.dockContainer.appendChild(this.domNode);
+        this.dispatchEvent(eventNames.dock);
+        return this;
     }
 
     undock() {
@@ -533,6 +548,8 @@ export class Popup extends ol.Overlay implements IPopup {
         this.domNode.classList.remove(classNames.docked);
         this.options.map.addOverlay(this);
         this.setPosition(this.options.position);
+        this.dispatchEvent(eventNames.undock);
+        return this;
     }
 
     applyOffset([x, y]: number[]) {
