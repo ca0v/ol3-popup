@@ -7,9 +7,14 @@ export interface SelectOptions extends olx.interaction.SelectOptions {
     popup?: Popup;
 }
 
+// to be shared across all disposables via ol3-fun
+type Disposables = Array<ol.Object | ol.Object[] | (() => void)>;
+const dispose = (handlers: Disposables) =>
+    handlers.forEach(h => (h instanceof Function) ? h() : ol.Observable.unByKey(h));
+
 export class SelectInteraction {
 
-    private handlers: Array<() => void>;
+    private handlers: Disposables;
     public options: SelectOptions;
 
     static DEFAULT_OPTIONS = <SelectOptions>{
@@ -39,11 +44,11 @@ export class SelectInteraction {
 
         this.handlers = [];
 
-        let h = map.on("click", (args: ol.MapBrowserPointerEvent) => {
+        this.handlers.push(map.on("click", (args: ol.MapBrowserPointerEvent) => {
             let wasDocked = popup.isDocked();
 
             if (!popup.options.multi || !options.addCondition(args)) {
-                popup.hide();
+                popup.pages.clear();
             }
 
             {
@@ -92,17 +97,27 @@ export class SelectInteraction {
                 if (!found && popup.options.showCoordinates) {
                     popup.pages.add(`
 <table>
-<tr><td>lon</td><td>${args.coordinate[0].toFixed(5)}</td></tr>
-<tr><td>lat</td><td>${args.coordinate[1].toFixed(5)}</td></tr>
+<tr><td>lon</td><td>${args.coordinate[0].toPrecision(6)}</td></tr>
+<tr><td>lat</td><td>${args.coordinate[1].toPrecision(6)}</td></tr>
 </table>`
                         .trim()
                         , new ol.geom.Point(args.coordinate));
+
+                    found = true;
+                }
+
+                if (found) {
+                    popup.pages.goto(popup.pages.count - 1);
+                    if (wasDocked && !popup.isDocked()) popup.dock();
+                }
+                else {
+                    // we already cleared the pages, now hide the popup
+                    if (!popup.options.multi || !options.addCondition(args)) {
+                        popup.hide();
+                    }
                 }
             }
-            popup.pages.goto(popup.pages.count - 1);
-            if (wasDocked && !popup.isDocked()) popup.dock();
-        });
-        this.handlers.push(() => ol.Observable.unByKey(h));
+        }));
 
         if (popup.options.pagingStyle) {
             overlay = this.setupOverlay();
@@ -140,7 +155,7 @@ export class SelectInteraction {
             source.clear();
         });
 
-        popup.pages.on("goto", () => featureOverlay.getSource().refresh());
+        this.handlers.push(popup.pages.on("goto", () => featureOverlay.getSource().refresh()));
 
         popup.pages.on("add", args => {
             let feature = args.feature;
@@ -166,6 +181,6 @@ export class SelectInteraction {
     }
 
     public destroy() {
-        this.handlers.forEach(h => h());
+        dispose(this.handlers);
     }
 }
