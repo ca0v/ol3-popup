@@ -165,13 +165,9 @@ export class Paging extends ol.Observable implements IPaging {
     }
 
     clear() {
-        let activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
         this._activeIndex = -1;
         this._pages = [];
-        if (activeChild) {
-            this.domNode.removeChild(activeChild.element);
-            this.dispatchEvent(eventNames.clear);
-        }
+        this.dispatchEvent(eventNames.clear);
     }
 
     goto(index: number) {
@@ -179,18 +175,14 @@ export class Paging extends ol.Observable implements IPaging {
         if (!page) return;
 
         let popup = this.options.popup;
-        let activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
 
         if (page.feature) {
-            page.element.innerHTML = "";
-            page.element.appendChild(popup.options.asContent(page.feature));
-            this.options.popup.setPosition(getInteriorPoint(page.location || page.feature.getGeometry()));
+            this.options.popup.show(getInteriorPoint(page.location || page.feature.getGeometry()), popup.options.asContent(page.feature));
 
-            activeChild && activeChild.element.remove();
             this._activeIndex = index;
-            this.domNode.appendChild(page.element);
 
             this.dispatchEvent(eventNames.goto);
+
             return;
         }
 
@@ -215,14 +207,9 @@ export class Paging extends ol.Observable implements IPaging {
 
         d.then(() => {
             // replace page
-            activeChild && activeChild.element.remove();
             this._activeIndex = index;
-            this.domNode.appendChild(page.element);
-
             // position popup
-            if (page.location) {
-                this.options.popup.setPosition(getInteriorPoint(page.location));
-            }
+            this.options.popup.show(getInteriorPoint(page.location), page.element);
             this.dispatchEvent(eventNames.goto);
         });
     }
