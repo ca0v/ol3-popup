@@ -71,8 +71,11 @@ declare module "bower_components/ol3-fun/ol3-fun/common" {
     export function mixin<A extends any, B extends any>(a: A, b: B): A & B;
     export function defaults<A extends any, B extends any>(a: A, ...b: B[]): A & B;
     export function cssin(name: string, css: string): () => void;
-    export function debounce(func: () => void, wait?: number): () => void;
+    export function debounce<T extends Function>(func: T, wait?: number, immediate?: boolean): T;
     export function html(html: string): HTMLElement;
+    export function pair<A, B>(a1: A[], a2: B[]): [A, B][];
+    export function range(n: number): any[];
+    export function shuffle<T>(array: T[]): T[];
 }
 declare module "ol3-popup/interaction" {
     import ol = require("openlayers");
@@ -107,6 +110,10 @@ declare module "bower_components/ol3-symbolizer/ol3-symbolizer/format/ol3-symbol
         type LineDash = number[];
         interface Fill {
             color?: string;
+            gradient?: {
+                type?: string;
+                stops?: string;
+            };
         }
         interface Stroke {
             color?: string;
@@ -280,13 +287,17 @@ declare module "ol3-popup/ol3-popup" {
         setPosition(position: ol.Coordinate): void;
         panIntoView(): void;
         destroy(): void;
-        dispatch(name: string): void;
         show(coord: ol.Coordinate, html: string | HTMLElement): this;
+        on(type: "dock", listener: () => void): ol.EventsKey;
+        on(type: "undock", listener: () => void): ol.EventsKey;
+        on(type: "hide", listener: () => void): ol.EventsKey;
+        on(type: "show", listener: () => void): ol.EventsKey;
+        on(type: "dispose", listener: () => void): ol.EventsKey;
         hide(): this;
         isOpened(): boolean;
         isDocked(): boolean;
-        dock(): void;
-        undock(): void;
+        dock(): this;
+        undock(): this;
         applyOffset([x, y]: number[]): void;
     }
 }
