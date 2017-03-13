@@ -98,7 +98,7 @@ export function run() {
 
     Popup.create({
         map: map,
-        css: popupCss,
+        css: popupCss,        
         layers: [vectorLayer]
     });
 
@@ -106,6 +106,8 @@ export function run() {
         map: map, 
         className: "ol-popup black",
         css: `.ol-popup.black { background-color: black; color: white }`,
-        layers: [unclickableLayer]
+        layers: [unclickableLayer],
+        showCoordinates: true
     });
+
 }

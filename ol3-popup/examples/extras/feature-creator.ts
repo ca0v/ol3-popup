@@ -133,7 +133,7 @@ class FeatureCreator {
 
         setStyle(markerFeature, {
             "fill": {
-                "color": "rgba(255,255,0,1)",
+                "color": "rgba(255,255,0, 0.8)",
             },
             "stroke": {
                 "color": "rgba(0,255,0,1)",

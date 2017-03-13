@@ -2,7 +2,7 @@
 import ol = require("openlayers");
 import $ = require("jquery");
 import { Popup } from "../ol3-popup";
-import { html as asHtml } from "ol3-fun/ol3-fun/common";
+import { debounce, html as asHtml } from "ol3-fun/ol3-fun/common";
 
 const css = `
 head, body {
@@ -140,7 +140,7 @@ export function run() {
         })
     });
 
-    Popup.create({
+    let p1 = Popup.create({
         map: map,
         autoPan: true,
         autoPanMargin: 20,
@@ -157,4 +157,32 @@ export function run() {
         yOffset: 3,
         multi: true
     });
+
+    p1.on("dock", debounce(() => {
+
+        let h = p1.on("show", () => {
+            let p = Popup.create({
+                map: map,
+                autoPopup: false,
+                positioning: "top-center",
+                asContent: (feature) => asHtml(`<b>Hi ${feature.get("hello")}</b>`)
+            });
+
+            p1.once(["undock", "dispose"], () => p.destroy());
+
+            let feature = new ol.Feature({
+                hello: "Hello",
+                geometry: new ol.geom.Point(p1.options.position)
+            });
+
+            p.pages.addFeature(feature, { searchCoordinate: p1.options.position });
+            p.pages.goto(0);
+
+        });
+
+        p1.once(["undock", "dispose"], () => ol.Observable.unByKey(h));
+
+
+    }));
+
 }
