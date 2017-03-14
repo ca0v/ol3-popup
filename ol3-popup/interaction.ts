@@ -12,7 +12,8 @@ type Disposables = Array<ol.Object | ol.Object[] | (() => void)>;
 const dispose = (handlers: Disposables) =>
     handlers.forEach(h => (h instanceof Function) ? h() : ol.Observable.unByKey(h));
 
-export class SelectInteraction {
+// custom selection because map click detects style sizes better
+export class SelectInteraction extends ol.interaction.Select {
 
     private handlers: Disposables;
     public options: SelectOptions;
@@ -37,6 +38,7 @@ export class SelectInteraction {
     }
 
     private constructor(options: SelectOptions) {
+        super(options);
         this.options = options;
         let popup = options.popup;
         let map = options.map;
@@ -45,6 +47,8 @@ export class SelectInteraction {
         this.handlers = [];
 
         this.handlers.push(map.on("click", (args: ol.MapBrowserPointerEvent) => {
+            if (!this.get("active")) return;
+
             let wasDocked = popup.isDocked();
 
             if (!popup.options.multi || !options.addCondition(args)) {

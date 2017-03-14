@@ -1,6 +1,7 @@
 /**
  * OpenLayers 3 Popup Overlay.
  */
+import $ = require("jquery");
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
 import { default as PageNavigator } from "./paging/page-navigator";
@@ -179,48 +180,6 @@ function pagingStyleFactory(popup: Popup) {
 }
 
 /**
- * debounce: wait until it hasn't been called for a while before executing the callback
- */
-function debounce<T extends Function>(func: T, wait = 20, immediate = false): T {
-    let timeout;
-    return <T><any>((...args: any[]) => {
-        let later = () => {
-            timeout = null;
-            if (!immediate) func.call(this, args);
-        };
-        let callNow = immediate && !timeout;
-
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-        if (callNow) func.call(this, args);
-    });
-}
-
-let isTouchDevice = () => {
-    try {
-        document.createEvent("TouchEvent");
-        isTouchDevice = () => true;
-    } catch (e) {
-        isTouchDevice = () => false;
-    }
-    return isTouchDevice();
-};
-
-/**
- * Apply workaround to enable scrolling of overflowing content within an
- * element. Adapted from https://gist.github.com/chrismbarr/4107472
- */
-function enableTouchScroll(elm: HTMLElement) {
-    var scrollStartPos = 0;
-    elm.addEventListener("touchstart", function (event) {
-        scrollStartPos = this.scrollTop + event.touches[0].pageY;
-    }, false);
-    elm.addEventListener("touchmove", function (event) {
-        this.scrollTop = scrollStartPos - event.touches[0].pageY;
-    }, false);
-}
-
-/**
  * The constructor options 'must' conform, most interesting is autoPan
  */
 export interface PopupOptions extends olx.OverlayOptions {
@@ -300,7 +259,7 @@ const DEFAULT_OPTIONS: PopupOptions = {
 /**
  * This is the contract that will not break between versions
  */
-export interface IPopup_4_0_1<T> {
+export interface IPopup_4_0_1<T> extends ol.Overlay {
     // show popup at this coordinate
     show(position: ol.Coordinate, markup: string): T;
     // close popup
@@ -397,8 +356,6 @@ export class Popup extends ol.Overlay implements IPopup {
             let content = this.content = document.createElement('div');
             content.className = classNames.olPopupContent;
             this.domNode.appendChild(content);
-            // Apply workaround to enable scrolling of content div on touch devices
-            isTouchDevice() && enableTouchScroll(content);
         }
 
         {
@@ -413,6 +370,9 @@ export class Popup extends ol.Overlay implements IPopup {
         if (this.options.autoPopup) {
             let autoPopup = SelectInteraction.create({
                 popup: this
+            });
+            this.on("change:active", () => {
+                autoPopup.set("active", this.get("active"));
             });
             this.handlers.push(() => autoPopup.destroy());
         }
@@ -506,6 +466,7 @@ export class Popup extends ol.Overlay implements IPopup {
         return this;
     }
 
+    on(type: "change:active", listener: () => void): ol.EventsKey;
     on(type: "dock", listener: () => void): ol.EventsKey;
     on(type: "undock", listener: () => void): ol.EventsKey;
     on(type: "hide", listener: () => void): ol.EventsKey;
