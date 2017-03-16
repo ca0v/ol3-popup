@@ -84,7 +84,7 @@ declare module "ol3-popup/interaction" {
         map?: ol.Map;
         popup?: Popup;
     }
-    export class SelectInteraction {
+    export class SelectInteraction extends ol.interaction.Select {
         private handlers;
         options: SelectOptions;
         static DEFAULT_OPTIONS: SelectOptions;
@@ -257,7 +257,7 @@ declare module "ol3-popup/ol3-popup" {
         layers?: ol.layer.Vector[];
         showCoordinates?: boolean;
     }
-    export interface IPopup_4_0_1<T> {
+    export interface IPopup_4_0_1<T> extends ol.Overlay {
         show(position: ol.Coordinate, markup: string): T;
         hide(): T;
         isOpened(): boolean;
@@ -288,6 +288,7 @@ declare module "ol3-popup/ol3-popup" {
         panIntoView(): void;
         destroy(): void;
         show(coord: ol.Coordinate, html: string | HTMLElement): this;
+        on(type: "change:active", listener: () => void): ol.EventsKey;
         on(type: "dock", listener: () => void): ol.EventsKey;
         on(type: "undock", listener: () => void): ol.EventsKey;
         on(type: "hide", listener: () => void): ol.EventsKey;
@@ -305,9 +306,6 @@ declare module "index" {
     import Popup = require("ol3-popup/ol3-popup");
     export = Popup;
 }
-declare module "ol3-popup/examples/docking" {
-    export function run(): void;
-}
 declare module "ol3-popup/examples/extras/feature-creator" {
     import ol = require("openlayers");
     class FeatureCreator {
@@ -323,6 +321,12 @@ declare module "ol3-popup/examples/extras/feature-creator" {
         addSomeFeatures(vectorLayer: ol.layer.Vector, center: ol.Coordinate): this;
     }
     export = FeatureCreator;
+}
+declare module "ol3-popup/examples/activate" {
+    export function run(): void;
+}
+declare module "ol3-popup/examples/docking" {
+    export function run(): void;
 }
 declare module "ol3-popup/examples/flash-style" {
     let style: {
