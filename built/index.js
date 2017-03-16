@@ -264,6 +264,25 @@ define("ol3-popup/paging/page-navigator", ["require", "exports", "openlayers"], 
 });
 define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], function (require, exports) {
     "use strict";
+    function uuid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+    function asArray(list) {
+        var result = new Array(list.length);
+        for (var i = 0; i < list.length; i++) {
+            result.push(list[i]);
+        }
+        return result;
+    }
+    exports.asArray = asArray;
+    function toggle(e, className, toggle) {
+        if (toggle === void 0) { toggle = false; }
+        !toggle ? e.classList.remove(className) : e.classList.add(className);
+    }
+    exports.toggle = toggle;
     function parse(v, type) {
         if (typeof type === "string")
             return v;
@@ -328,8 +347,8 @@ define("bower_components/ol3-fun/ol3-fun/common", ["require", "exports"], functi
             styleTag = document.createElement("style");
             styleTag.id = id;
             styleTag.type = "text/css";
-            styleTag.appendChild(document.createTextNode(css));
             document.head.appendChild(styleTag);
+            styleTag.appendChild(document.createTextNode(css));
         }
         var dataset = styleTag.dataset;
         dataset["count"] = parseInt(dataset["count"] || "0") + 1 + "";
