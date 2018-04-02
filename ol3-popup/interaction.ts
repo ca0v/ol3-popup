@@ -76,7 +76,7 @@ export class SelectInteraction extends ol.interaction.Select {
                 layers.forEach(layer => {
                     if (layer === overlay) return;
                     layer.getSource().forEachFeatureIntersectingExtent(extent, (feature: ol.Feature) => {
-                        popup.pages.addFeature(feature, {
+                        popup.pages.toggleFeature(feature, {
                             searchCoordinate: args.coordinate
                         });
                         found = true;
@@ -90,7 +90,7 @@ export class SelectInteraction extends ol.interaction.Select {
                         if (!layer || layer === overlay || -1 === layers.indexOf(layer)) {
                             return;
                         }
-                        popup.pages.addFeature(feature, {
+                        popup.pages.toggleFeature(feature, {
                             searchCoordinate: args.coordinate
                         });
                         found = true;
@@ -160,6 +160,15 @@ export class SelectInteraction extends ol.interaction.Select {
         });
 
         this.handlers.push(popup.pages.on("goto", () => featureOverlay.getSource().refresh()));
+
+        popup.pages.on("remove", args => {
+            source.forEachFeature(f => {
+                if (f.get("page-index") === args.pageIndex) {
+                    source.removeFeature(f);
+                    return true;
+                }
+            });
+        });
 
         popup.pages.on("add", args => {
             let feature = args.feature;

@@ -175,7 +175,7 @@ export function run() {
                 geometry: new ol.geom.Point(p1.options.position)
             });
 
-            p.pages.addFeature(feature, { searchCoordinate: p1.options.position });
+            p.pages.toggleFeature(feature, { searchCoordinate: p1.options.position });
             p.pages.goto(0);
 
         });

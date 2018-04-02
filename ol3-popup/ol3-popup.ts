@@ -104,6 +104,20 @@ const css = `
 }
 `;
 
+const baseStyle = symbolizer.fromJson({
+    "circle": {
+        "fill": {
+            "color": "rgba(255,0,0,1)"
+        },
+        "opacity": 1,
+        "stroke": {
+            "color": "rgba(255,255,255,1)",
+            "width": 1
+        },
+        "radius": 3
+    }
+});
+
 const classNames = {
     olPopup: 'ol-popup',
     olPopupDocker: 'ol-popup-docker',
@@ -137,20 +151,6 @@ function asContent(feature: ol.Feature) {
 }
 
 function pagingStyleFactory(popup: Popup) {
-    let baseStyle = symbolizer.fromJson({
-        "circle": {
-            "fill": {
-                "color": "rgba(255,0,0,1)"
-            },
-            "opacity": 1,
-            "stroke": {
-                "color": "rgba(255,255,255,1)",
-                "width": 1
-            },
-            "radius": 3
-        }
-    });
-
     return (feature: ol.Feature, resolution: number, pageIndex: number) => {
         let style = [baseStyle];
 

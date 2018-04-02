@@ -18,24 +18,27 @@ const classNames = {
 const eventNames = {
     add: "add",
     clear: "clear",
-    goto: "goto"
+    goto: "goto",
+    remove: "remove"
 }
 
 export interface IPaging {
     indexOf(feature: ol.Feature): number;
 }
 
+export interface IPage {
+    element: HTMLElement;
+    callback?: SourceCallback;
+    feature?: ol.Feature;
+    location?: ol.geom.Geometry;
+};
+
 /**
  * Collection of "pages"
  */
 export class Paging extends ol.Observable implements IPaging {
 
-    private _pages: Array<{
-        element: HTMLElement;
-        callback?: SourceCallback;
-        feature?: ol.Feature;
-        location?: ol.geom.Geometry;
-    }>;
+    private _pages: Array<IPage>;
 
     private _activeIndex: number;
     domNode: HTMLDivElement;
@@ -71,13 +74,51 @@ export class Paging extends ol.Observable implements IPaging {
     }) => void);
     on(name: "clear", listener: () => void);
     on(name: "goto", listener: () => void);
-    on(name: string, listener: () => void) {
+    on(name: "remove", listener: (evt: {
+        pageIndex: number;
+        feature: ol.Feature;
+        element: HTMLElement;
+        geom: ol.geom.Geometry;
+    }) => void);
+    on(name: string, listener: (evt?: any) => void) {
         super.on(name, listener);
     }
 
-    addFeature(feature: ol.Feature, options: {
+    private findPage(feature: ol.Feature) {
+        return this._pages.filter(p => p.feature === feature)[0];
+    }
+
+    private removePage(page: IPage) {
+        let index = this._pages.indexOf(page);
+        if (0 <= index) {
+            this._pages.splice(index, 1);
+            let count = this._pages.length;
+            if (index >= count) index == count - 1;
+            if (index >= 0) {
+                this.goto(index);
+            } else {
+                this.clear();
+            }
+        }
+    }
+
+    toggleFeature(feature: ol.Feature, options: {
         searchCoordinate: ol.Coordinate
     }) {
+
+        let page = this.findPage(feature);
+        if (page) {
+            let pageIndex = this._pages.indexOf(page);
+            this.removePage(page);
+            this.dispatchEvent({
+                type: eventNames.remove,
+                element: page.element,
+                feature: page.feature,
+                geom: page.location,
+                pageIndex: pageIndex
+            });
+                return null;
+        }
 
         // if click location intersects with geometry then
         // use it as the page location otherwise use closest point        
@@ -88,12 +129,13 @@ export class Paging extends ol.Observable implements IPaging {
             geom = new ol.geom.Point(geom.getClosestPoint(options.searchCoordinate));
         }
 
-        let page = {
+        page = {
             element: document.createElement("div"),
             feature: feature,
             location: geom
         };
         this._pages.push(page);
+
         this.dispatchEvent({
             type: eventNames.add,
             element: page.element,
@@ -101,6 +143,8 @@ export class Paging extends ol.Observable implements IPaging {
             geom: page.location,
             pageIndex: this._pages.length - 1,
         });
+
+        return page;
     }
 
     add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry) {

@@ -53,10 +53,19 @@ const popupCss = `
 }
 .pagination .arrow.btn-next {
     float: right;
-}`;
+}
+div.map > label {
+    position: absolute;
+    top: 10px;
+    left: 60px;
+    z-index: 1;
+}
+`;
 
 const html = `
-<div class="map"></div>
+<div class="map">
+<label>Hold the shift key down when clicking the marker to multi-select</label>
+</div>
 `;
 
 const center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');

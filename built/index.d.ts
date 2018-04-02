@@ -6,6 +6,12 @@ declare module "ol3-popup/paging/paging" {
     export interface IPaging {
         indexOf(feature: ol.Feature): number;
     }
+    export interface IPage {
+        element: HTMLElement;
+        callback?: SourceCallback;
+        feature?: ol.Feature;
+        location?: ol.geom.Geometry;
+    }
     export class Paging extends ol.Observable implements IPaging {
         options: {
             popup: Popup;
@@ -16,12 +22,7 @@ declare module "ol3-popup/paging/paging" {
         constructor(options: {
             popup: Popup;
         });
-        readonly activePage: {
-            element: HTMLElement;
-            callback?: SourceCallback;
-            feature?: ol.Feature;
-            location?: ol.geom.Geometry;
-        };
+        readonly activePage: IPage;
         readonly activeIndex: number;
         readonly count: number;
         on(name: string, listener: () => void): any;
@@ -33,9 +34,17 @@ declare module "ol3-popup/paging/paging" {
         }) => void): any;
         on(name: "clear", listener: () => void): any;
         on(name: "goto", listener: () => void): any;
-        addFeature(feature: ol.Feature, options: {
+        on(name: "remove", listener: (evt: {
+            pageIndex: number;
+            feature: ol.Feature;
+            element: HTMLElement;
+            geom: ol.geom.Geometry;
+        }) => void): any;
+        private findPage(feature);
+        private removePage(page);
+        toggleFeature(feature: ol.Feature, options: {
             searchCoordinate: ol.Coordinate;
-        }): void;
+        }): IPage;
         add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry): void;
         clear(): void;
         goto(index: number): void;
@@ -91,7 +100,7 @@ declare module "ol3-popup/interaction" {
         options: SelectOptions;
         static DEFAULT_OPTIONS: SelectOptions;
         static create(options: SelectOptions): SelectInteraction;
-        private constructor(options);
+        private constructor();
         private setupOverlay();
         destroy(): void;
     }
@@ -282,7 +291,7 @@ declare module "ol3-popup/ol3-popup" {
         pages: Paging;
         private handlers;
         static create(options: PopupOptions): Popup;
-        private constructor(options);
+        private constructor();
         private injectCss(css);
         setIndictorPosition(): void;
         setPointerPosition(offset: number): void;

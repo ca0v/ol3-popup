@@ -60,7 +60,7 @@ const popupCss = `
 
 const html = `
 <div class="map">
-    <input type="button" class="toggle-active" text="Toggle"></input>
+    <input type="button" class="toggle-active" value="Toggle Popup"></input>
 </div>
 `;
 

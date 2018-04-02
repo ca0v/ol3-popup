@@ -194,11 +194,11 @@ export function run() {
 
                     console.log("adding a page with string and dom promise");
                     {
-                        let d1 = $.Deferred();
+                        let d1 = $.Deferred<string>();
                         popup.pages.add(d1);
                         setTimeout(() => d1.resolve('<p>This promise resolves to a string<p>'), 500);
 
-                        let d2 = $.Deferred();
+                        let d2 = $.Deferred<HTMLElement>();
                         popup.pages.add(d2);
                         let div = document.createElement("div");
                         div.innerHTML = '<p>This function promise resolves to a div element</p>';
@@ -217,7 +217,7 @@ export function run() {
 
                     console.log("adding a page with a string-promise");
                     popup.pages.add(() => {
-                        let d = $.Deferred();
+                        let d = $.Deferred<string>();
                         d.resolve('<p>This function promise resolves to a string</p>');
                         return d;
                     });
@@ -234,7 +234,7 @@ This page was resolved after 3 seconds.
 
                         popup.pages.add(() => {
                             let index = 0;
-                            let d = $.Deferred();
+                            let d = $.Deferred<HTMLElement>();
                             let div = document.createElement("div");
                             let body = document.createElement("div");
                             body.appendChild(div);
