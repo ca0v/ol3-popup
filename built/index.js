@@ -43,14 +43,14 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
         }
         Object.defineProperty(Paging.prototype, "activePage", {
             get: function () {
-                return this._pages[this._activeIndex];
+                return this._activePage;
             },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Paging.prototype, "activeIndex", {
             get: function () {
-                return this._activeIndex;
+                return this._pages.indexOf(this._activePage);
             },
             enumerable: true,
             configurable: true
@@ -108,47 +108,48 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             return page;
         };
         Paging.prototype.add = function (source, geom) {
-            var page = document.createElement("div");
+            var page;
+            var pageDiv = document.createElement("div");
             if (false) {
             }
             else if (typeof source === "string") {
-                page.innerHTML = source;
-                this._pages.push({
-                    element: page,
+                pageDiv.innerHTML = source;
+                this._pages.push(page = {
+                    element: pageDiv,
                     location: geom,
                     uid: getId(),
                 });
             }
             else if (source["appendChild"]) {
-                page.classList.add(classNames.page);
-                this._pages.push({
-                    element: page,
+                pageDiv.classList.add(classNames.page);
+                this._pages.push(page = {
+                    element: pageDiv,
                     location: geom,
                     uid: getId(),
                 });
             }
             else if (source["then"]) {
                 var d = source;
-                page.classList.add(classNames.page);
-                this._pages.push({
-                    element: page,
+                pageDiv.classList.add(classNames.page);
+                this._pages.push(page = {
+                    element: pageDiv,
                     location: geom,
                     uid: getId(),
                 });
                 $.when(d).then(function (v) {
                     if (typeof v === "string") {
-                        page.innerHTML = v;
+                        pageDiv.innerHTML = v;
                     }
                     else {
-                        page.appendChild(v);
+                        pageDiv.appendChild(v);
                     }
                 });
             }
             else if (typeof source === "function") {
-                page.classList.add("page");
-                this._pages.push({
+                pageDiv.classList.add("page");
+                this._pages.push(page = {
                     callback: source,
-                    element: page,
+                    element: pageDiv,
                     location: geom,
                     uid: getId(),
                 });
@@ -158,26 +159,33 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             }
             this.dispatchEvent({
                 type: eventNames.add,
-                element: page,
+                element: pageDiv,
                 feature: null,
                 geom: geom,
                 pageIndex: this._pages.length - 1
             });
+            return page;
         };
         Paging.prototype.clear = function () {
-            this._activeIndex = -1;
+            this._activePage = null;
             this._pages = [];
             this.dispatchEvent(eventNames.clear);
         };
         Paging.prototype.goto = function (index) {
             var _this = this;
-            var page = this._pages[index];
+            var page;
+            if (typeof index === "number") {
+                page = this._pages[index];
+            }
+            else {
+                page = this._pages.filter(function (p) { return p.uid === index; })[0];
+            }
             if (!page)
                 return;
             var popup = this.options.popup;
             if (page.feature) {
                 this.options.popup.show(getInteriorPoint(page.location || page.feature.getGeometry()), popup.options.asContent(page.feature));
-                this._activeIndex = index;
+                this._activePage = page;
                 this.dispatchEvent(eventNames.goto);
                 return;
             }
@@ -204,7 +212,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 d.resolve();
             }
             d.then(function () {
-                _this._activeIndex = index;
+                _this._activePage = page;
                 _this.options.popup.show(getInteriorPoint(page.location), page.element);
                 _this.dispatchEvent(eventNames.goto);
             });
@@ -514,12 +522,12 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
                         });
                     }
                     if (!found_1 && popup.options.showCoordinates) {
-                        popup.pages.add(("\n<table>\n<tr><td>lon</td><td>" + args.coordinate[0].toPrecision(6) + "</td></tr>\n<tr><td>lat</td><td>" + args.coordinate[1].toPrecision(6) + "</td></tr>\n</table>")
+                        page_1 = popup.pages.add(("\n<table>\n<tr><td>lon</td><td>" + args.coordinate[0].toPrecision(6) + "</td></tr>\n<tr><td>lat</td><td>" + args.coordinate[1].toPrecision(6) + "</td></tr>\n</table>")
                             .trim(), new ol.geom.Point(args.coordinate));
                         found_1 = true;
                     }
                     if (found_1) {
-                        popup.pages.goto(popup.pages.count - 1);
+                        popup.pages.goto(page_1.uid);
                         if (wasDocked && !popup.isDocked())
                             popup.dock();
                     }

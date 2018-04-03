@@ -18,7 +18,7 @@ declare module "ol3-popup/paging/paging" {
             popup: Popup;
         };
         private _pages;
-        private _activeIndex;
+        private _activePage;
         domNode: HTMLDivElement;
         constructor(options: {
             popup: Popup;
@@ -46,9 +46,9 @@ declare module "ol3-popup/paging/paging" {
         addFeature(feature: ol.Feature, options: {
             searchCoordinate: ol.Coordinate;
         }): IPage;
-        add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry): void;
+        add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry): IPage;
         clear(): void;
-        goto(index: number): void;
+        goto(index: number | string): void;
         next(): void;
         prev(): void;
         indexOf(feature: ol.Feature): number;

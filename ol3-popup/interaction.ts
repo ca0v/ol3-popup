@@ -102,7 +102,7 @@ export class SelectInteraction extends ol.interaction.Select {
                 }
 
                 if (!found && popup.options.showCoordinates) {
-                    popup.pages.add(`
+                    page = popup.pages.add(`
 <table>
 <tr><td>lon</td><td>${args.coordinate[0].toPrecision(6)}</td></tr>
 <tr><td>lat</td><td>${args.coordinate[1].toPrecision(6)}</td></tr>
@@ -114,7 +114,7 @@ export class SelectInteraction extends ol.interaction.Select {
                 }
 
                 if (found) {
-                    popup.pages.goto(popup.pages.count - 1);
+                    popup.pages.goto(page.uid);
                     if (wasDocked && !popup.isDocked()) popup.dock();
                 }
                 else {

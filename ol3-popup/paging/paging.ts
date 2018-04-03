@@ -44,7 +44,7 @@ export class Paging extends ol.Observable implements IPaging {
 
     private _pages: Array<IPage>;
 
-    private _activeIndex: number;
+    private _activePage: IPage;
     domNode: HTMLDivElement;
 
     constructor(public options: {
@@ -58,11 +58,11 @@ export class Paging extends ol.Observable implements IPaging {
     }
 
     get activePage() {
-        return this._pages[this._activeIndex];
+        return this._activePage;
     }
 
     get activeIndex() {
-        return this._activeIndex;
+        return this._pages.indexOf(this._activePage);
     }
 
     get count() {
@@ -141,24 +141,26 @@ export class Paging extends ol.Observable implements IPaging {
     }
 
     add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry) {
-        let page = document.createElement("div");
+        let page: IPage;
+
+        let pageDiv = document.createElement("div");
 
         if (false) {
         }
 
         else if (typeof source === "string") {
-            page.innerHTML = source;
-            this._pages.push({
-                element: <HTMLElement>page,
+            pageDiv.innerHTML = source;
+            this._pages.push(page = {
+                element: <HTMLElement>pageDiv,
                 location: geom,
                 uid: getId(),
             });
         }
 
         else if (source["appendChild"]) {
-            page.classList.add(classNames.page);
-            this._pages.push({
-                element: page,
+            pageDiv.classList.add(classNames.page);
+            this._pages.push(page = {
+                element: pageDiv,
                 location: geom,
                 uid: getId(),
             });
@@ -166,27 +168,27 @@ export class Paging extends ol.Observable implements IPaging {
 
         else if (source["then"]) {
             let d = <JQueryDeferred<HTMLElement | string>>source;
-            page.classList.add(classNames.page);
-            this._pages.push({
-                element: page,
+            pageDiv.classList.add(classNames.page);
+            this._pages.push(page = {
+                element: pageDiv,
                 location: geom,
                 uid: getId(),
             });
             $.when(d).then(v => {
                 if (typeof v === "string") {
-                    page.innerHTML = v;
+                    pageDiv.innerHTML = v;
                 } else {
-                    page.appendChild(v);
+                    pageDiv.appendChild(v);
                 }
             });
         }
 
         else if (typeof source === "function") {
             // response can be a DOM, string or promise            
-            page.classList.add("page");
-            this._pages.push({
+            pageDiv.classList.add("page");
+            this._pages.push(page = {
                 callback: <SourceCallback>source,
-                element: page,
+                element: pageDiv,
                 location: geom,
                 uid: getId(),
             });
@@ -198,21 +200,28 @@ export class Paging extends ol.Observable implements IPaging {
 
         this.dispatchEvent({
             type: eventNames.add,
-            element: page,
+            element: pageDiv,
             feature: null,
             geom: geom,
             pageIndex: this._pages.length - 1
         });
+
+        return page;
     }
 
     clear() {
-        this._activeIndex = -1;
+        this._activePage = null;
         this._pages = [];
         this.dispatchEvent(eventNames.clear);
     }
 
-    goto(index: number) {
-        let page = this._pages[index];
+    goto(index: number | string) {
+        let page: IPage;
+        if (typeof index === "number") {
+            page = this._pages[index];
+        } else {
+            page = this._pages.filter(p => p.uid === index)[0];
+        }
         if (!page) return;
 
         let popup = this.options.popup;
@@ -220,7 +229,7 @@ export class Paging extends ol.Observable implements IPaging {
         if (page.feature) {
             this.options.popup.show(getInteriorPoint(page.location || page.feature.getGeometry()), popup.options.asContent(page.feature));
 
-            this._activeIndex = index;
+            this._activePage = page;
 
             this.dispatchEvent(eventNames.goto);
 
@@ -248,7 +257,7 @@ export class Paging extends ol.Observable implements IPaging {
 
         d.then(() => {
             // replace page
-            this._activeIndex = index;
+            this._activePage = page;
             // position popup
             this.options.popup.show(getInteriorPoint(page.location), page.element);
             this.dispatchEvent(eventNames.goto);
