@@ -1,9 +1,9 @@
 //import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
-import FeatureSelector = require("../extras/feature-selector");
 import Symbolizer = require("ol3-symbolizer");
 import { html as asHtml } from "ol3-fun/ol3-fun/common";
+import FeatureCreator = require("./extras/feature-creator");
 
 interface IPopupInfo {
     offset?: [number, number];
@@ -77,7 +77,8 @@ export function run() {
         })
     });
 
-    let popup = new Popup({
+    let popup = Popup.create({
+        map: map,
         autoPan: true,
         autoPanMargin: 20,
         autoPanAnimation: {
@@ -97,14 +98,6 @@ export function run() {
         `
     });
 
-    map.addOverlay(popup);
-
-    let selector = new FeatureSelector({
-        map: map,
-        popup: popup,
-        title: "<b>Alt+Click</b> creates markers",
-    });
-
     let vectorSource = new ol.source.Vector({
         features: []
     });
@@ -116,77 +109,9 @@ export function run() {
 
     map.addLayer(vectorLayer);
 
-    let circleFeature = new ol.Feature();
-    circleFeature.setGeometry(new ol.geom.Point(center));
-
-    setStyle(circleFeature, {
-        popup: {
-            offset: [0, -10],
-            pointerPosition: -1,
-            positioning: "top-right"
-        },
-        "circle": {
-            "fill": {
-                "color": "rgba(255,0,0,0.90)"
-            },
-            "opacity": 1,
-            "stroke": {
-                "color": "rgba(0,0,0,0.5)",
-                "width": 2
-            },
-            "radius": 10
-        }
-    });
-
-    let svgFeature = new ol.Feature();
-    svgFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1]]));
-    setStyle(svgFeature, {
-        popup: {
-            offset: [0, -18],
-            pointerPosition: -1,
-            positioning: "top-left"
-        },
-        "image": {
-            "imgSize": [36, 36],
-            "anchor": [32, 32],
-            "stroke": {
-                "color": "rgba(255,25,0,0.8)",
-                "width": 10
-            },
-            "path": "M23 2 L23 23 L43 16.5 L23 23 L35 40 L23 23 L11 40 L23 23 L3 17 L23 23 L23 2 Z"
-        }
-    });
-
-    let markerFeature = new ol.Feature();
-    markerFeature.setGeometry(new ol.geom.Point([center[0] + 1000, center[1] + 1000]));
-    setStyle(markerFeature, {
-        popup: {
-            offset: [0, -64],
-            pointerPosition: -1,
-            positioning: "bottom-left"
-        },
-        "circle": {
-            "fill": {
-                "gradient": {
-                    "type": "linear(32,32,96,96)",
-                    "stops": "rgba(0,255,0,0.1) 0%;rgba(0,255,0,0.8) 100%"
-                }
-            },
-            "opacity": 1,
-            "stroke": {
-                "color": "rgba(0,255,0,1)",
-                "width": 1
-            },
-            "radius": 64
-        },
-        "image": {
-            "anchor": [16, 48],
-            "imgSize": [32, 48],
-            "anchorXUnits": "pixels",
-            "anchorYUnits": "pixels",
-            "src": "http://openlayers.org/en/v3.20.1/examples/data/icon.png"
-        }
-    });
+    FeatureCreator
+        .create({ map: map })
+        .addSomeFeatures(vectorLayer, center);
 
     let markerFeature2 = new ol.Feature();
     markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
@@ -211,7 +136,7 @@ export function run() {
 
     popup.on("show", () => {
         popup.applyOffset(popup.options.offset || [0, 0]);
-        popup.setIndicatorPosition(popup.options.pointerPosition);
+        popup.setPointerPosition(popup.options.pointerPosition);
     });
 
     popup.pages.on("goto", () => {
@@ -231,13 +156,10 @@ export function run() {
             if (popupInfo.offset) {
                 popup.applyOffset(popupInfo.offset);
             }
-            popup.setIndicatorPosition(popupInfo.pointerPosition || popup.options.pointerPosition);
+            popup.setPointerPosition(popupInfo.pointerPosition || popup.options.pointerPosition);
         } else {
             popup.setOffset(popup.options.offset || [0, 0]);
         }
     });
-
-    vectorSource.addFeatures([circleFeature, svgFeature, markerFeature, markerFeature2]);
-
 
 }

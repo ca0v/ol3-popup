@@ -1,8 +1,7 @@
 //import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
-import FeatureCreator = require("../extras/feature-creator");
-import FeatureSelector = require("../extras/feature-selector");
+import FeatureCreator = require("./extras/feature-creator");
 import { defaults, html as asHtml } from "ol3-fun/ol3-fun/common";
 import $ = require("jquery");
 
@@ -151,21 +150,23 @@ export function run() {
         })
     });
 
-    let popup = new Popup({
+    let popup = Popup.create({
+        map: map,
         autoPan: true,
         autoPanMargin: 20,
         autoPanAnimation: {
             source: null,
             duration: 500
         },
+        autoPopup: true,
+        showCoordinates: true,
+        css: css_popup,
+        dockContainer: dockContainer,
         pointerPosition: 150,
         xOffset: -4, // offset padding
         yOffset: 3,
-        css: css_popup,
-        dockContainer: dockContainer
     });
 
-    map.addOverlay(popup);
     popup.on("show", () => console.log(`show popup`));
     popup.on("hide", () => console.log(`hide popup`));
     popup.pages.on("goto", () => console.log(`goto page: ${popup.pages.activeIndex}`));
@@ -193,11 +194,11 @@ export function run() {
 
                     console.log("adding a page with string and dom promise");
                     {
-                        let d1 = $.Deferred();
+                        let d1 = $.Deferred<string>();
                         popup.pages.add(d1);
                         setTimeout(() => d1.resolve('<p>This promise resolves to a string<p>'), 500);
 
-                        let d2 = $.Deferred();
+                        let d2 = $.Deferred<HTMLElement>();
                         popup.pages.add(d2);
                         let div = document.createElement("div");
                         div.innerHTML = '<p>This function promise resolves to a div element</p>';
@@ -216,7 +217,7 @@ export function run() {
 
                     console.log("adding a page with a string-promise");
                     popup.pages.add(() => {
-                        let d = $.Deferred();
+                        let d = $.Deferred<string>();
                         d.resolve('<p>This function promise resolves to a string</p>');
                         return d;
                     });
@@ -233,7 +234,7 @@ This page was resolved after 3 seconds.
 
                         popup.pages.add(() => {
                             let index = 0;
-                            let d = $.Deferred();
+                            let d = $.Deferred<HTMLElement>();
                             let div = document.createElement("div");
                             let body = document.createElement("div");
                             body.appendChild(div);
@@ -260,13 +261,7 @@ This page was resolved after 3 seconds.
         }, 200);
     }, 500);
 
-    let selector = new FeatureSelector({
-        map: map,
-        popup: popup,
-        title: "<b>Alt+Click</b> creates markers",
-    });
-
-    new FeatureCreator({
+    FeatureCreator.create({
         map: map
     });
 

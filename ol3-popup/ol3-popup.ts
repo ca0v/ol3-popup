@@ -3,14 +3,22 @@
  */
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
-import PageNavigator = require("./paging/page-navigator");
+import { default as PageNavigator } from "./paging/page-navigator";
 import { cssin, defaults, html } from "ol3-fun/ol3-fun/common";
+import { SelectInteraction } from "./interaction";
+import Symbolizer = require("ol3-symbolizer");
+
+const symbolizer = new Symbolizer.StyleConverter();
 
 const css = `
 .ol-popup {
     position: absolute;
     bottom: 12px;
     left: -50px;
+}
+
+.ol-popup.hidden {
+    display: none;
 }
 
 .ol-popup:after {
@@ -95,6 +103,20 @@ const css = `
 }
 `;
 
+const baseStyle = symbolizer.fromJson({
+    "circle": {
+        "fill": {
+            "color": "rgba(255,0,0,1)"
+        },
+        "opacity": 1,
+        "stroke": {
+            "color": "rgba(255,255,255,1)",
+            "width": 1
+        },
+        "radius": 3
+    }
+});
+
 const classNames = {
     olPopup: 'ol-popup',
     olPopupDocker: 'ol-popup-docker',
@@ -105,170 +127,103 @@ const classNames = {
 };
 
 const eventNames = {
+    dispose: "dispose",
+    dock: "dock",
+    hide: "hide",
     show: "show",
-    hide: "hide"
+    undock: "undock"
 };
 
-/**
- * debounce: wait until it hasn't been called for a while before executing the callback
- */
-function debounce<T extends Function>(func: T, wait = 20, immediate = false): T {
-    let timeout;
-    return <T><any>((...args: any[]) => {
-        let later = () => {
-            timeout = null;
-            if (!immediate) func.call(this, args);
-        };
-        let callNow = immediate && !timeout;
+function asContent(feature: ol.Feature) {
+    let div = document.createElement("div");
 
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-        if (callNow) func.call(this, args);
+    let keys = Object.keys(feature.getProperties()).filter(key => {
+        let v = feature.get(key);
+        if (typeof v === "string") return true;
+        if (typeof v === "number") return true;
+        return false;
     });
+    div.title = feature.getGeometryName();
+    div.innerHTML = `<table>${keys.map(k => `<tr><td>${k}</td><td>${feature.get(k)}</td></tr>`).join("")}</table>`;
+
+    return div;
 }
 
-let isTouchDevice = () => {
-    try {
-        document.createEvent("TouchEvent");
-        isTouchDevice = () => true;
-    } catch (e) {
-        isTouchDevice = () => false;
-    }
-    return isTouchDevice();
-};
+function pagingStyleFactory(popup: Popup) {
+    return (feature: ol.Feature, resolution: number, pageIndex: number) => {
+        let style = [baseStyle];
 
-/**
- * Apply workaround to enable scrolling of overflowing content within an
- * element. Adapted from https://gist.github.com/chrismbarr/4107472
- */
-function enableTouchScroll(elm: HTMLElement) {
-    var scrollStartPos = 0;
-    elm.addEventListener("touchstart", function (event) {
-        scrollStartPos = this.scrollTop + event.touches[0].pageY;
-    }, false);
-    elm.addEventListener("touchmove", function (event) {
-        this.scrollTop = scrollStartPos - event.touches[0].pageY;
-    }, false);
+        if (popup.options.multi && popup.pages.count > 1) {
+            let isActive = popup.pages.activeIndex === pageIndex;
+
+            let textStyle = symbolizer.fromJson({
+
+                text: {
+                    text: `${pageIndex + 1}`,
+                    fill: {
+                        color: isActive ? "white" : "black",
+                    },
+                    stroke: {
+                        color: isActive ? "black" : "white",
+                        width: isActive ? 4 : 2
+                    },
+                    "offset-y": 20
+                }
+            });
+
+            style.push(textStyle);
+        }
+
+        return style;
+    };
 }
 
 /**
  * The constructor options 'must' conform, most interesting is autoPan
  */
-export interface IPopupOptions_2_0_4 extends olx.OverlayOptions {
-    // calls panIntoView when position changes
-    autoPan?: boolean;
-    // when panning into view, passed to the pan animation to track the 'center'
-    autoPanAnimation?: {
-        // how long should the animation last?
-        duration: number;
-        source: any;
-    };
-    // virtually increases the control width & height by this amount when computing new center point
-    autoPanMargin?: number;
-    // determines if this should be the first (or last) element in its container
-    insertFirst?: boolean;
-    // determines which container to use, if true then event propagation is stopped meaning mousedown and touchstart events don't reach the map.
-    stopEvent?: boolean;
-    // the pixel offset when computing the rendered position
-    offset?: [number, number];
-    // one of (bottom|center|top)*(left|center|right), css positioning when updating the rendered position
-    positioning?: string;
-    // the point coordinate for this overlay
-    position?: [number, number];
-};
-
-export interface IPopupOptions_2_0_5 extends IPopupOptions_2_0_4 {
+export interface PopupOptions extends olx.OverlayOptions {
+    map: ol.Map,
+    // allow multiple popups or automatically close before re-opening?
+    multi?: boolean;
+    // automatically listen for map click event and open popup
+    autoPopup?: boolean;
+    // allows popup to dock w/in this container
     dockContainer?: HTMLElement;
-}
-
-export interface IPopupOptions_2_0_6 extends IPopupOptions_2_0_5 {
-    css?: string; // css file
+    // facilitates styling by adding a class name
+    className?: string;
+    // css content to add to DOM for the lifecycle of this control
+    css?: string;
+    // where should the infoviewer callout be placed relative to the edge?
     pointerPosition?: number;
-}
-
-export interface IPopupOptions_2_0_7 extends IPopupOptions_2_0_6 {
     // indicator position
     xOffset?: number;
     // indicator position
     yOffset?: number;
-}
-
-export interface IPopupOptions_3_20_1 extends IPopupOptions_2_0_7 {
-}
-
-export interface IPopupOptions_4_0_1 extends IPopupOptions_3_20_1 {
-
-}
-
-export interface IPopupOptions extends IPopupOptions_4_0_1 {
-    // automatically listen for map click event and open popup
-    autoPopup?: boolean;
-    // allow multiple popups or automatically close before re-opening?
-    autoClose?: boolean;
+    // how to style paged features
+    pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style[];
+    // how to render a feature
+    asContent?: (feature: ol.Feature) => HTMLElement;
+    // which layers to consider
+    layers?: ol.layer.Vector[];
+    // when no features found show coordinates isntead
+    showCoordinates?: boolean;
 }
 
 /**
  * Default options for the popup control so it can be created without any contructor arguments
  */
-const DEFAULT_OPTIONS: IPopupOptions = {
-    // determines if this should be the first (or last) element in its container
-    insertFirst: true,
+const DEFAULT_OPTIONS: PopupOptions = {
+    map: null,
+    asContent: asContent,
+    multi: false,
     autoPan: true,
     autoPanAnimation: {
         source: null,
         duration: 250
     },
-    pointerPosition: 50,
-    xOffset: 0,
-    yOffset: 0,
-    positioning: "top-right", // ol.OverlayPositioning.TOP_RIGHT
-    stopEvent: true
-}
-
-/**
- * This is the contract that will not break between versions
- */
-export interface IPopup_2_0_4<T> {
-    show(position: ol.Coordinate, markup: string): T;
-    hide(): T;
-}
-
-export interface IPopup_2_0_5<T> extends IPopup_2_0_4<T> {
-    isOpened(): boolean;
-    destroy(): void;
-    panIntoView(): void;
-    isDocked(): boolean;
-}
-
-export interface IPopup_3_20_1<T> extends IPopup_2_0_5<T> {
-    applyOffset([x, y]: [number, number]);
-    setIndicatorPosition(offset: number);
-}
-
-export interface IPopup_4_0_1<T> extends IPopup_3_20_1<T> {
-}
-
-export interface IPopup extends IPopup_4_0_1<Popup> {
-}
-
-/**
- * The control formerly known as ol.Overlay.Popup 
- */
-export class Popup extends ol.Overlay implements IPopup {
-    options: IPopupOptions & { map?: ol.Map, parentNode?: HTMLElement };
-    content: HTMLDivElement;
-    domNode: HTMLDivElement;
-    private closer: HTMLLabelElement;
-    private docker: HTMLLabelElement;
-    pages: Paging;
-
-    private handlers: Array<() => void>;
-
-    static create(map: ol.Map, options?: IPopupOptions) {
-        options = defaults(options || {}, {
-            autoPopup: true,
-            autoClose: false,
-            css: `
+    autoPopup: true,
+    className: classNames.olPopup,
+    css: `
 .ol-popup {
     background-color: white;
     border: 1px solid black;
@@ -289,41 +244,86 @@ export class Popup extends ol.Overlay implements IPopup {
 .ol-popup .ol-popup-closer {
     right: 4px;
 }
-`.trim()
-        }, DEFAULT_OPTIONS);
+`.trim(),
+    // determines if this should be the first (or last) element in its container
+    insertFirst: true,
+    pointerPosition: 50,
+    xOffset: 0,
+    yOffset: 0,
+    positioning: "top-right", // ol.OverlayPositioning.TOP_RIGHT
+    stopEvent: true,
+    showCoordinates: false
+}
+
+/**
+ * This is the contract that will not break between versions
+ */
+export interface IPopup_4_0_1<T> extends ol.Overlay {
+    // show popup at this coordinate
+    show(position: ol.Coordinate, markup: string): T;
+    // close popup
+    hide(): T;
+    // true when open
+    isOpened(): boolean;
+    // destroy and cleanup
+    destroy(): void;
+    // pan map so infoviewer is fully within view
+    panIntoView(): void;
+    // true when docked
+    isDocked(): boolean;
+    // changes the infoViewer relative to actual target location (pixels)
+    applyOffset([x, y]: [number, number]);
+    // sets the pointer position
+    setPointerPosition(offset: number);
+}
+
+export interface IPopup extends IPopup_4_0_1<Popup> {
+}
+
+/**
+ * The control formerly known as ol.Overlay.Popup 
+ */
+export class Popup extends ol.Overlay implements IPopup {
+    options: PopupOptions & { parentNode?: HTMLElement };
+    content: HTMLDivElement;
+    domNode: HTMLDivElement;
+    private closer: HTMLLabelElement;
+    private docker: HTMLLabelElement;
+    pages: Paging;
+
+    private handlers: Array<() => void>;
+
+    static create(options: PopupOptions) {
+        options = defaults({}, options, DEFAULT_OPTIONS);
 
         let popup = new Popup(options);
-        map.addOverlay(popup);
+        options.map && options.map.addOverlay(popup);
         return popup;
     }
 
-    constructor(options = DEFAULT_OPTIONS) {
-
-        options = defaults({}, options, DEFAULT_OPTIONS);
+    private constructor(options: PopupOptions) {
         /**
          * overlays have a map, element, offset, position, positioning
          */
         super(options);
+        if (!options.pagingStyle) {
+            options.pagingStyle = pagingStyleFactory(this);
+        }
+
         this.options = options;
         this.handlers = [];
 
-        // the internal properties, dom and listeners are in place, time to create the popup
-        this.postCreate();
-    }
-
-    private postCreate() {
 
         cssin("ol3-popup", css);
-
-        let options = this.options;
         options.css && this.injectCss(options.css);
 
         let domNode = this.domNode = document.createElement('div');
-        domNode.className = classNames.olPopup;
+        domNode.className = options.className;
         this.setElement(domNode);
+        this.handlers.push(() => domNode.remove());
 
         if (typeof this.options.pointerPosition === "number") {
-            this.setIndicatorPosition(this.options.pointerPosition);
+            this.setPointerPosition(this.options.pointerPosition);
         }
 
         if (this.options.dockContainer) {
@@ -355,8 +355,6 @@ export class Popup extends ol.Overlay implements IPopup {
             let content = this.content = document.createElement('div');
             content.className = classNames.olPopupContent;
             this.domNode.appendChild(content);
-            // Apply workaround to enable scrolling of content div on touch devices
-            isTouchDevice() && enableTouchScroll(content);
         }
 
         {
@@ -368,9 +366,14 @@ export class Popup extends ol.Overlay implements IPopup {
             pages.on("goto", () => this.panIntoView());
         }
 
-        if (0) {
-            let callback = this.setPosition;
-            this.setPosition = debounce(args => callback.apply(this, args), 50);
+        if (this.options.autoPopup) {
+            let autoPopup = SelectInteraction.create({
+                popup: this
+            });
+            this.on("change:active", () => {
+                autoPopup.set("active", this.get("active"));
+            });
+            this.handlers.push(() => autoPopup.destroy());
         }
 
     }
@@ -384,11 +387,15 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private injectCss(css: string) {
         let style = html(`<style type='text/css'>${css}</style>`);
-        document.head.appendChild(style);
+        $(document.head).append(style);
         this.handlers.push(() => style.remove());
     }
 
-    setIndicatorPosition(offset: number) {
+    setIndictorPosition() {
+        throw "removed in 4.0.1: use setPointerPosition";
+    }
+
+    setPointerPosition(offset: number) {
         // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
         let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
 
@@ -423,6 +430,7 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     setPosition(position: ol.Coordinate) {
+        // make popup visisble
         this.options.position = <any>position;
         if (!this.isDocked()) {
             super.setPosition(position);
@@ -431,7 +439,6 @@ export class Popup extends ol.Overlay implements IPopup {
             view.animate({
                 center: position
             });
-
         }
     }
 
@@ -439,18 +446,14 @@ export class Popup extends ol.Overlay implements IPopup {
         if (!this.isOpened()) return;
         if (this.isDocked()) return;
         let p = this.getPosition();
-        p && this.setPosition(p.map(v => v)); // clone p to force change
+        p && this.setPosition(p.map(v => v) as [number, number]); // clone p to force change
     }
 
     destroy() {
         this.handlers.forEach(h => h());
         this.handlers = [];
-        this.getMap().removeOverlay(this);
-        this.dispatch("dispose");
-    }
-
-    dispatch(name: string) {
-        this["dispatchEvent"](new Event(name));
+        this.getMap() && this.getMap().removeOverlay(this);
+        this.dispatchEvent(eventNames.dispose);
     }
 
     show(coord: ol.Coordinate, html: string | HTMLElement) {
@@ -461,21 +464,29 @@ export class Popup extends ol.Overlay implements IPopup {
         } else {
             this.content.innerHTML = html;
         }
-        this.domNode.classList.remove(classNames.hidden);
-
         this.setPosition(coord);
 
-        this.dispatch(eventNames.show);
+        this.domNode.classList.remove(classNames.hidden);
+        this.dispatchEvent(eventNames.show);
 
         return this;
     }
 
+    on(type: "change:active", listener: () => void): ol.EventsKey;
+    on(type: "dock", listener: () => void): ol.EventsKey;
+    on(type: "undock", listener: () => void): ol.EventsKey;
+    on(type: "hide", listener: () => void): ol.EventsKey;
+    on(type: "show", listener: () => void): ol.EventsKey;
+    on(type: "dispose", listener: () => void): ol.EventsKey;
+    on(type: (string | string[]), listener: Function, opt_this?: GlobalObject): (ol.EventsKey | ol.EventsKey[]) {
+        return super.on(type, listener);
+    }
+
     hide() {
-        this.isDocked() && this.undock();
         this.setPosition(undefined);
         this.pages.clear();
-        this.dispatch(eventNames.hide);
         this.domNode.classList.add(classNames.hidden);
+        this.dispatchEvent(eventNames.hide);
         return this;
     }
 
@@ -495,6 +506,8 @@ export class Popup extends ol.Overlay implements IPopup {
         map.removeOverlay(this);
         this.domNode.classList.add(classNames.docked);
         this.options.dockContainer.appendChild(this.domNode);
+        this.dispatchEvent(eventNames.dock);
+        return this;
     }
 
     undock() {
@@ -502,9 +515,11 @@ export class Popup extends ol.Overlay implements IPopup {
         this.domNode.classList.remove(classNames.docked);
         this.options.map.addOverlay(this);
         this.setPosition(this.options.position);
+        this.dispatchEvent(eventNames.undock);
+        return this;
     }
 
-    applyOffset([x, y]: [number, number]) {
+    applyOffset([x, y]: number[]) {
         switch (this.getPositioning()) {
             case "bottom-left":
                 this.setOffset([x, -y]);
@@ -520,53 +535,4 @@ export class Popup extends ol.Overlay implements IPopup {
                 break;
         }
     }
-}
-
-// see ./extras/feature-selector
-export class DefaultHandler {
-
-    static asContent(feature: ol.Feature) {
-        let div = document.createElement("div");
-
-        let keys = Object.keys(feature.getProperties()).filter(key => {
-            let v = feature.get(key);
-            if (typeof v === "string") return true;
-            if (typeof v === "number") return true;
-            return false;
-        });
-        div.title = feature.getGeometryName();
-        div.innerHTML = `<table>${keys.map(k => `<tr><td>${k}</td><td>${feature.get(k)}</td></tr>`).join("")}</table>`;
-
-        return div;
-    }
-
-    static create(popup: Popup, asContent = DefaultHandler.asContent) {
-        let map = popup.getMap();
-
-        map.on("click", (args: ol.MapBrowserPointerEvent) => {
-            if (popup.options.autoClose || !ol.events.condition.shiftKeyOnly(args)) {
-                popup.hide();
-            }
-            let count = 0;
-            map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer) => {
-                count++;
-                if (!popup.isOpened()) {
-                    popup.show(args.coordinate, asContent(feature));
-                } else {
-                    popup.content.innerHTML = "";
-                    popup.pages.add(asContent(feature), feature.getGeometry());
-                }
-            });
-            if (count) {
-                popup.pages.goto(popup.pages.count - 1);
-            } else {
-                popup.pages.clear();
-                popup.show(args.coordinate, `<table>
-                <tr><td>lon</td><td>${args.coordinate[0].toFixed(5)}</td></tr>
-                <tr><td>lat</td><td>${args.coordinate[1].toFixed(5)}</td></tr>
-                </table>`);
-            }
-        });
-    }
-
 }

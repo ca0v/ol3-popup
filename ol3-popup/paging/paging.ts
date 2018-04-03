@@ -18,24 +18,39 @@ const classNames = {
 const eventNames = {
     add: "add",
     clear: "clear",
-    goto: "goto"
+    goto: "goto",
+    remove: "remove"
 }
 
+export interface IPaging {
+    indexOf(feature: ol.Feature): number;
+}
+
+export interface IPage {
+    element: HTMLElement;
+    uid: string;
+    callback?: SourceCallback;
+    feature?: ol.Feature;
+    location?: ol.geom.Geometry;
+};
+
+function getId() {
+    return `_${Math.random() * 1000000}`
+}
 /**
  * Collection of "pages"
  */
-export class Paging {
+export class Paging extends ol.Observable implements IPaging {
 
-    private _pages: Array<{
-        callback?: SourceCallback;
-        element: HTMLElement;
-        location: ol.geom.Geometry;
-    }>;
+    private _pages: Array<IPage>;
 
-    private _activeIndex: number;
+    private _activePage: IPage;
     domNode: HTMLDivElement;
 
-    constructor(public options: { popup: Popup }) {
+    constructor(public options: {
+        popup: Popup
+    }) {
+        super();
         this._pages = [];
         this.domNode = document.createElement("div");
         this.domNode.classList.add(classNames.pages);
@@ -43,72 +58,139 @@ export class Paging {
     }
 
     get activePage() {
-        return this._pages[this._activeIndex];
+        return this._activePage;
     }
 
     get activeIndex() {
-        return this._activeIndex;
+        return this._pages.indexOf(this._activePage);
     }
 
     get count() {
         return this._pages.length;
     }
 
-    dispatch(name: string) {
-        this.domNode.dispatchEvent(new Event(name));
+    on(name: string, listener: () => void);
+    on(name: "add", listener: (evt: {
+        pageIndex: number;
+        feature: ol.Feature;
+        element: HTMLElement;
+        geom: ol.geom.Geometry;
+    }) => void);
+    on(name: "clear", listener: () => void);
+    on(name: "goto", listener: () => void);
+    on(name: "remove", listener: (evt: {
+        pageIndex: number;
+        feature: ol.Feature;
+        element: HTMLElement;
+        geom: ol.geom.Geometry;
+    }) => void);
+    on(name: string, listener: (evt?: any) => void) {
+        super.on(name, listener);
     }
 
-    on(name: string, listener: EventListener) {
-        this.domNode.addEventListener(name, listener);
+    private findPage(feature: ol.Feature) {
+        return this._pages.filter(p => p.feature === feature)[0];
+    }
+
+    private removePage(page: IPage) {
+        let index = this._pages.indexOf(page);
+        if (0 <= index) {
+            this._pages.splice(index, 1);
+            let count = this._pages.length;
+            if (index >= count) index == count - 1;
+            this.goto(index);
+        }
+    }
+
+    addFeature(feature: ol.Feature, options: {
+        searchCoordinate: ol.Coordinate
+    }) {
+
+        let page = this.findPage(feature);
+        if (page) {
+            this.goto(this._pages.indexOf(page));
+            return page;
+        }
+
+        // if click location intersects with geometry then
+        // use it as the page location otherwise use closest point        
+        let geom = feature.getGeometry();
+        if (geom.intersectsCoordinate(options.searchCoordinate)) {
+            geom = new ol.geom.Point(options.searchCoordinate);
+        } else {
+            geom = new ol.geom.Point(geom.getClosestPoint(options.searchCoordinate));
+        }
+
+        page = {
+            element: document.createElement("div"),
+            feature: feature,
+            location: geom,
+            uid: getId()
+        };
+        this._pages.push(page);
+
+        this.dispatchEvent({
+            type: eventNames.add,
+            element: page.element,
+            feature: page.feature,
+            geom: page.location,
+            pageIndex: page.uid,
+        });
+
+        return page;
     }
 
     add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry) {
+        let page: IPage;
+
+        let pageDiv = document.createElement("div");
+
         if (false) {
         }
 
         else if (typeof source === "string") {
-            let page = document.createElement("div");
-            page.innerHTML = source;
-            this._pages.push({
-                element: <HTMLElement>page,
-                location: geom
+            pageDiv.innerHTML = source;
+            this._pages.push(page = {
+                element: <HTMLElement>pageDiv,
+                location: geom,
+                uid: getId(),
             });
         }
 
         else if (source["appendChild"]) {
-            let page = <HTMLElement>source;
-            page.classList.add(classNames.page);
-            this._pages.push({
-                element: page,
-                location: geom
+            pageDiv.classList.add(classNames.page);
+            this._pages.push(page = {
+                element: pageDiv,
+                location: geom,
+                uid: getId(),
             });
         }
 
         else if (source["then"]) {
             let d = <JQueryDeferred<HTMLElement | string>>source;
-            let page = document.createElement("div");
-            page.classList.add(classNames.page);
-            this._pages.push({
-                element: page,
-                location: geom
+            pageDiv.classList.add(classNames.page);
+            this._pages.push(page = {
+                element: pageDiv,
+                location: geom,
+                uid: getId(),
             });
             $.when(d).then(v => {
                 if (typeof v === "string") {
-                    page.innerHTML = v;
+                    pageDiv.innerHTML = v;
                 } else {
-                    page.appendChild(v);
+                    pageDiv.appendChild(v);
                 }
             });
         }
 
         else if (typeof source === "function") {
             // response can be a DOM, string or promise            
-            let page = document.createElement("div");
-            page.classList.add("page");
-            this._pages.push({
+            pageDiv.classList.add("page");
+            this._pages.push(page = {
                 callback: <SourceCallback>source,
-                element: page,
-                location: geom
+                element: pageDiv,
+                location: geom,
+                uid: getId(),
             });
         }
 
@@ -116,24 +198,44 @@ export class Paging {
             throw `invalid source value: ${source}`;
         }
 
-        this.dispatch(eventNames.add);
+        this.dispatchEvent({
+            type: eventNames.add,
+            element: pageDiv,
+            feature: null,
+            geom: geom,
+            pageIndex: this._pages.length - 1
+        });
+
+        return page;
     }
 
     clear() {
-        let activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
-        this._activeIndex = -1;
+        this._activePage = null;
         this._pages = [];
-        if (activeChild) {
-            this.domNode.removeChild(activeChild.element);
-            this.dispatch(eventNames.clear);
-        }
+        this.dispatchEvent(eventNames.clear);
     }
 
-    goto(index: number) {
-        let page = this._pages[index];
+    goto(index: number | string) {
+        let page: IPage;
+        if (typeof index === "number") {
+            page = this._pages[index];
+        } else {
+            page = this._pages.filter(p => p.uid === index)[0];
+        }
         if (!page) return;
 
-        let activeChild = this._activeIndex >= 0 && this._pages[this._activeIndex];
+        let popup = this.options.popup;
+
+        if (page.feature) {
+            this.options.popup.show(getInteriorPoint(page.location || page.feature.getGeometry()), popup.options.asContent(page.feature));
+
+            this._activePage = page;
+
+            this.dispatchEvent(eventNames.goto);
+
+            return;
+        }
+
         let d = $.Deferred();
         if (page.callback) {
             let refreshedContent = page.callback();
@@ -155,15 +257,10 @@ export class Paging {
 
         d.then(() => {
             // replace page
-            activeChild && activeChild.element.remove();
-            this._activeIndex = index;
-            this.domNode.appendChild(page.element);
-
+            this._activePage = page;
             // position popup
-            if (page.location) {
-                this.options.popup.setPosition(getInteriorPoint(page.location));
-            }
-            this.dispatch(eventNames.goto);
+            this.options.popup.show(getInteriorPoint(page.location), page.element);
+            this.dispatchEvent(eventNames.goto);
         });
     }
 
@@ -173,6 +270,20 @@ export class Paging {
 
     prev() {
         (0 < this.activeIndex) && this.goto(this.activeIndex - 1);
+    }
+
+    // TODO: add indexOf to ol-fun
+    indexOf(feature: ol.Feature) {
+        let result = -1;
+
+        this._pages.some((f, i) => {
+            if (f.feature === feature) {
+                result = i;
+                return true;
+            }
+        });
+
+        return result;
     }
 }
 

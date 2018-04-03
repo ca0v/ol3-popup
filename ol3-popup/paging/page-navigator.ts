@@ -1,3 +1,4 @@
+import ol = require("openlayers");
 import { Paging } from "./paging";
 
 const classNames = {
@@ -16,11 +17,15 @@ const eventNames = {
     next: "next"
 };
 
+// ie11 compatible
+function toggle(e: HTMLElement, className: string, toggle = false) {
+    !toggle ? e.classList.remove(className) : e.classList.add(className);
+}
 
 /**
  * The prior + next paging buttons and current page indicator
  */
-class PageNavigator {
+export default class PageNavigator extends ol.Observable {
 
     private domNode: HTMLElement;
     prevButton: HTMLButtonElement;
@@ -28,7 +33,7 @@ class PageNavigator {
     pageInfo: HTMLSpanElement;
 
     constructor(public options: { pages: Paging }) {
-
+        super();
         let pages = options.pages;
 
         this.domNode = document.createElement("div");
@@ -40,8 +45,8 @@ class PageNavigator {
         this.pageInfo = <HTMLSpanElement>this.domNode.getElementsByClassName(classNames.pagenum)[0];
 
         pages.options.popup.domNode.appendChild(this.domNode);
-        this.prevButton.addEventListener('click', () => this.dispatch(eventNames.prev));
-        this.nextButton.addEventListener('click', () => this.dispatch(eventNames.next));
+        this.prevButton.addEventListener('click', () => this.dispatchEvent(eventNames.prev));
+        this.nextButton.addEventListener('click', () => this.dispatchEvent(eventNames.next));
 
         pages.on("goto", () => pages.count > 1 ? this.show() : this.hide());
         pages.on("clear", () => this.hide());
@@ -51,22 +56,14 @@ class PageNavigator {
             let count = pages.count;
             let canPrev = 0 < index;
             let canNext = count - 1 > index;
-            this.prevButton.classList.toggle(classNames.inactive, !canPrev);
-            this.prevButton.classList.toggle(classNames.active, canPrev);
-            this.nextButton.classList.toggle(classNames.inactive, !canNext);
-            this.nextButton.classList.toggle(classNames.active, canNext);
+            toggle(this.prevButton, classNames.inactive, !canPrev);
+            toggle(this.prevButton, classNames.active, canPrev);
+            toggle(this.nextButton, classNames.inactive, !canNext);
+            toggle(this.nextButton, classNames.active, canNext);
             this.prevButton.disabled = !canPrev;
             this.nextButton.disabled = !canNext;
             this.pageInfo.innerHTML = `${1 + index} of ${count}`;
         });
-    }
-
-    dispatch(name: string) {
-        this.domNode.dispatchEvent(new Event(name));
-    }
-
-    on(name: string, listener: EventListener) {
-        this.domNode.addEventListener(name, listener);
     }
 
     template() {
@@ -75,13 +72,11 @@ class PageNavigator {
 
     hide() {
         this.domNode.classList.add(classNames.hidden);
-        this.dispatch(eventNames.hide);
+        this.dispatchEvent(eventNames.hide);
     }
 
     show() {
         this.domNode.classList.remove(classNames.hidden);
-        this.dispatch(eventNames.show);
+        this.dispatchEvent(eventNames.show);
     }
 }
-
-export = PageNavigator;

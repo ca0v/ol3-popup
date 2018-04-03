@@ -2,8 +2,11 @@ export function run() {
     let l = window.location;
     let path = `${l.origin}${l.pathname}?run=ol3-popup/examples/`;
     let labs = `
-    simple
+    activate
+    docking
+    multi
     paging
+    simple
     style-offset
     index
     `;
