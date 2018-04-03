@@ -158,6 +158,7 @@ export class Paging extends ol.Observable implements IPaging {
         }
 
         else if (source["appendChild"]) {
+            pageDiv.appendChild(source as HTMLElement);
             pageDiv.classList.add(classNames.page);
             this._pages.push(page = {
                 element: pageDiv,
@@ -259,7 +260,7 @@ export class Paging extends ol.Observable implements IPaging {
             // replace page
             this._activePage = page;
             // position popup
-            this.options.popup.show(getInteriorPoint(page.location), page.element);
+            this.options.popup.show(page.location ? getInteriorPoint(page.location) : this.options.popup.options.position, page.element);
             this.dispatchEvent(eventNames.goto);
         });
     }

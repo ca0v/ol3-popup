@@ -257,7 +257,8 @@ This page was resolved after 3 seconds.
             }
             let div = document.createElement("div");
             div.innerHTML = `PAGE ${pages}<br/>${sample_content[pages % sample_content.length]}`;
-            popup.pages.add(div);
+            let page = popup.pages.add(div);
+            popup.pages.goto(page.uid);
         }, 200);
     }, 500);
 

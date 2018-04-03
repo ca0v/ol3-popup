@@ -121,6 +121,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 });
             }
             else if (source["appendChild"]) {
+                pageDiv.appendChild(source);
                 pageDiv.classList.add(classNames.page);
                 this._pages.push(page = {
                     element: pageDiv,
@@ -213,7 +214,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             }
             d.then(function () {
                 _this._activePage = page;
-                _this.options.popup.show(getInteriorPoint(page.location), page.element);
+                _this.options.popup.show(page.location ? getInteriorPoint(page.location) : _this.options.popup.options.position, page.element);
                 _this.dispatchEvent(eventNames.goto);
             });
         };
@@ -1859,7 +1860,8 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
                 }
                 var div = document.createElement("div");
                 div.innerHTML = "PAGE " + pages + "<br/>" + sample_content[pages % sample_content.length];
-                popup.pages.add(div);
+                var page = popup.pages.add(div);
+                popup.pages.goto(page.uid);
             }, 200);
         }, 500);
         FeatureCreator.create({

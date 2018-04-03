@@ -206,7 +206,7 @@ export interface PopupOptions extends olx.OverlayOptions {
     asContent?: (feature: ol.Feature) => HTMLElement;
     // which layers to consider
     layers?: ol.layer.Vector[];
-    // when no features found show coordinates isntead
+    // when no features found show coordinates instead
     showCoordinates?: boolean;
 }
 
