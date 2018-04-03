@@ -90,7 +90,7 @@ export function run() {
         })
     });
 
-    Popup.create({
+    let popup = Popup.create({
         map: map,
         // shift+click multi-selects
         multi: true,
@@ -140,6 +140,11 @@ export function run() {
             return div;
         },
     });
+
+    popup.on("change:active", () => console.log("change:active"));
+    popup.on("hide", () => console.log("hide"));
+    popup.on("show", () => console.log("show", popup.content.outerHTML));
+    popup.on("dispose", () => console.log("dispose"));
 
     let vectorLayer = new ol.layer.Vector({
         source: new ol.source.Vector()

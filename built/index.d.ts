@@ -8,6 +8,7 @@ declare module "ol3-popup/paging/paging" {
     }
     export interface IPage {
         element: HTMLElement;
+        uid: string;
         callback?: SourceCallback;
         feature?: ol.Feature;
         location?: ol.geom.Geometry;
@@ -42,7 +43,7 @@ declare module "ol3-popup/paging/paging" {
         }) => void): any;
         private findPage(feature);
         private removePage(page);
-        toggleFeature(feature: ol.Feature, options: {
+        addFeature(feature: ol.Feature, options: {
             searchCoordinate: ol.Coordinate;
         }): IPage;
         add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry): void;

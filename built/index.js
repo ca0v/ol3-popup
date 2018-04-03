@@ -27,6 +27,9 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
         remove: "remove"
     };
     ;
+    function getId() {
+        return "_" + Math.random() * 1000000;
+    }
     var Paging = (function (_super) {
         __extends(Paging, _super);
         function Paging(options) {
@@ -72,27 +75,14 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 var count = this._pages.length;
                 if (index >= count)
                     index == count - 1;
-                if (index >= 0) {
-                    this.goto(index);
-                }
-                else {
-                    this.clear();
-                }
+                this.goto(index);
             }
         };
-        Paging.prototype.toggleFeature = function (feature, options) {
+        Paging.prototype.addFeature = function (feature, options) {
             var page = this.findPage(feature);
             if (page) {
-                var pageIndex = this._pages.indexOf(page);
-                this.removePage(page);
-                this.dispatchEvent({
-                    type: eventNames.remove,
-                    element: page.element,
-                    feature: page.feature,
-                    geom: page.location,
-                    pageIndex: pageIndex
-                });
-                return null;
+                this.goto(this._pages.indexOf(page));
+                return page;
             }
             var geom = feature.getGeometry();
             if (geom.intersectsCoordinate(options.searchCoordinate)) {
@@ -104,7 +94,8 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             page = {
                 element: document.createElement("div"),
                 feature: feature,
-                location: geom
+                location: geom,
+                uid: getId()
             };
             this._pages.push(page);
             this.dispatchEvent({
@@ -112,7 +103,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 element: page.element,
                 feature: page.feature,
                 geom: page.location,
-                pageIndex: this._pages.length - 1,
+                pageIndex: page.uid,
             });
             return page;
         };
@@ -124,14 +115,16 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 page.innerHTML = source;
                 this._pages.push({
                     element: page,
-                    location: geom
+                    location: geom,
+                    uid: getId(),
                 });
             }
             else if (source["appendChild"]) {
                 page.classList.add(classNames.page);
                 this._pages.push({
                     element: page,
-                    location: geom
+                    location: geom,
+                    uid: getId(),
                 });
             }
             else if (source["then"]) {
@@ -139,7 +132,8 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 page.classList.add(classNames.page);
                 this._pages.push({
                     element: page,
-                    location: geom
+                    location: geom,
+                    uid: getId(),
                 });
                 $.when(d).then(function (v) {
                     if (typeof v === "string") {
@@ -155,7 +149,8 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 this._pages.push({
                     callback: source,
                     element: page,
-                    location: geom
+                    location: geom,
+                    uid: getId(),
                 });
             }
             else {
@@ -494,11 +489,12 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
                     if (!layers_1) {
                         layers_1 = map.getLayers().getArray().filter(function (l) { return l instanceof ol.layer.Vector; });
                     }
+                    var page_1;
                     layers_1.forEach(function (layer) {
                         if (layer === overlay)
                             return;
                         layer.getSource().forEachFeatureIntersectingExtent(extent_1, function (feature) {
-                            popup.pages.toggleFeature(feature, {
+                            page_1 = popup.pages.addFeature(feature, {
                                 searchCoordinate: args.coordinate
                             });
                             found_1 = true;
@@ -510,7 +506,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "bower_comp
                             if (!layer || layer === overlay || -1 === layers_1.indexOf(layer)) {
                                 return;
                             }
-                            popup.pages.toggleFeature(feature, {
+                            page_1 = popup.pages.addFeature(feature, {
                                 searchCoordinate: args.coordinate
                             });
                             found_1 = true;
@@ -1091,10 +1087,10 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         docked: 'docked'
     };
     var eventNames = {
-        show: "show",
-        hide: "hide",
         dispose: "dispose",
         dock: "dock",
+        hide: "hide",
+        show: "show",
         undock: "undock"
     };
     function asContent(feature) {
@@ -1602,7 +1598,7 @@ define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "jquer
                     hello: "Hello",
                     geometry: new ol.geom.Point(p1.options.position)
                 });
-                p.pages.toggleFeature(feature, { searchCoordinate: p1.options.position });
+                p.pages.addFeature(feature, { searchCoordinate: p1.options.position });
                 p.pages.goto(0);
             });
             p1.once(["undock", "dispose"], function () { return ol.Observable.unByKey(h); });
@@ -1676,7 +1672,7 @@ define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-pop
                 zoom: 16
             })
         });
-        ol3_popup_3.Popup.create({
+        var popup = ol3_popup_3.Popup.create({
             map: map,
             multi: true,
             css: popupCss,
@@ -1722,6 +1718,10 @@ define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-pop
                 return div;
             },
         });
+        popup.on("change:active", function () { return console.log("change:active"); });
+        popup.on("hide", function () { return console.log("hide"); });
+        popup.on("show", function () { return console.log("show", popup.content.outerHTML); });
+        popup.on("dispose", function () { return console.log("dispose"); });
         var vectorLayer = new ol.layer.Vector({
             source: new ol.source.Vector()
         });

@@ -28,11 +28,15 @@ export interface IPaging {
 
 export interface IPage {
     element: HTMLElement;
+    uid: string;
     callback?: SourceCallback;
     feature?: ol.Feature;
     location?: ol.geom.Geometry;
 };
 
+function getId() {
+    return `_${Math.random() * 1000000}`
+}
 /**
  * Collection of "pages"
  */
@@ -94,30 +98,18 @@ export class Paging extends ol.Observable implements IPaging {
             this._pages.splice(index, 1);
             let count = this._pages.length;
             if (index >= count) index == count - 1;
-            if (index >= 0) {
-                this.goto(index);
-            } else {
-                this.clear();
-            }
+            this.goto(index);
         }
     }
 
-    toggleFeature(feature: ol.Feature, options: {
+    addFeature(feature: ol.Feature, options: {
         searchCoordinate: ol.Coordinate
     }) {
 
         let page = this.findPage(feature);
         if (page) {
-            let pageIndex = this._pages.indexOf(page);
-            this.removePage(page);
-            this.dispatchEvent({
-                type: eventNames.remove,
-                element: page.element,
-                feature: page.feature,
-                geom: page.location,
-                pageIndex: pageIndex
-            });
-                return null;
+            this.goto(this._pages.indexOf(page));
+            return page;
         }
 
         // if click location intersects with geometry then
@@ -132,7 +124,8 @@ export class Paging extends ol.Observable implements IPaging {
         page = {
             element: document.createElement("div"),
             feature: feature,
-            location: geom
+            location: geom,
+            uid: getId()
         };
         this._pages.push(page);
 
@@ -141,7 +134,7 @@ export class Paging extends ol.Observable implements IPaging {
             element: page.element,
             feature: page.feature,
             geom: page.location,
-            pageIndex: this._pages.length - 1,
+            pageIndex: page.uid,
         });
 
         return page;
@@ -157,7 +150,8 @@ export class Paging extends ol.Observable implements IPaging {
             page.innerHTML = source;
             this._pages.push({
                 element: <HTMLElement>page,
-                location: geom
+                location: geom,
+                uid: getId(),
             });
         }
 
@@ -165,7 +159,8 @@ export class Paging extends ol.Observable implements IPaging {
             page.classList.add(classNames.page);
             this._pages.push({
                 element: page,
-                location: geom
+                location: geom,
+                uid: getId(),
             });
         }
 
@@ -174,7 +169,8 @@ export class Paging extends ol.Observable implements IPaging {
             page.classList.add(classNames.page);
             this._pages.push({
                 element: page,
-                location: geom
+                location: geom,
+                uid: getId(),
             });
             $.when(d).then(v => {
                 if (typeof v === "string") {
@@ -191,7 +187,8 @@ export class Paging extends ol.Observable implements IPaging {
             this._pages.push({
                 callback: <SourceCallback>source,
                 element: page,
-                location: geom
+                location: geom,
+                uid: getId(),
             });
         }
 

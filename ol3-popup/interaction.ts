@@ -1,5 +1,6 @@
 import ol = require("openlayers");
 import { Popup } from "./ol3-popup";
+import { IPage } from "./paging/paging";
 import { defaults } from "ol3-fun/ol3-fun/common";
 
 export interface SelectOptions extends olx.interaction.SelectOptions {
@@ -73,10 +74,12 @@ export class SelectInteraction extends ol.interaction.Select {
                     layers = <ol.layer.Vector[]>map.getLayers().getArray().filter(l => l instanceof ol.layer.Vector);
                 }
 
+                let page: IPage;
+
                 layers.forEach(layer => {
                     if (layer === overlay) return;
                     layer.getSource().forEachFeatureIntersectingExtent(extent, (feature: ol.Feature) => {
-                        popup.pages.toggleFeature(feature, {
+                        page = popup.pages.addFeature(feature, {
                             searchCoordinate: args.coordinate
                         });
                         found = true;
@@ -90,7 +93,7 @@ export class SelectInteraction extends ol.interaction.Select {
                         if (!layer || layer === overlay || -1 === layers.indexOf(layer)) {
                             return;
                         }
-                        popup.pages.toggleFeature(feature, {
+                        page = popup.pages.addFeature(feature, {
                             searchCoordinate: args.coordinate
                         });
                         found = true;

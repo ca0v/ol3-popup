@@ -128,10 +128,10 @@ const classNames = {
 };
 
 const eventNames = {
-    show: "show",
-    hide: "hide",
     dispose: "dispose",
     dock: "dock",
+    hide: "hide",
+    show: "show",
     undock: "undock"
 };
 
@@ -440,7 +440,7 @@ export class Popup extends ol.Overlay implements IPopup {
         if (!this.isOpened()) return;
         if (this.isDocked()) return;
         let p = this.getPosition();
-        p && this.setPosition(p.map(v => v)); // clone p to force change
+        p && this.setPosition(p.map(v => v) as [number, number]); // clone p to force change
     }
 
     destroy() {
