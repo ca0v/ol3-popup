@@ -1068,7 +1068,7 @@ define("bower_components/ol3-symbolizer/index", ["require", "exports", "bower_co
     "use strict";
     return Symbolizer;
 });
-define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "bower_components/ol3-symbolizer/index"], function (require, exports, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer) {
+define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "bower_components/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "bower_components/ol3-symbolizer/index"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.StyleConverter();
@@ -1226,12 +1226,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             var popup = new Popup(options);
             options.map && options.map.addOverlay(popup);
             return popup;
-        };
-        Popup.prototype.setMap = function (map) {
-            _super.prototype.setMap.call(this, map);
-            if (this.options.autoPopup) {
-                DefaultHandler.create(this);
-            }
         };
         Popup.prototype.injectCss = function (css) {
             var style = common_2.html("<style type='text/css'>" + css + "</style>");
@@ -1978,26 +1972,6 @@ define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "
         FeatureCreator
             .create({ map: map })
             .addSomeFeatures(vectorLayer, center);
-        var markerFeature2 = new ol.Feature();
-        markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
-        setStyle(markerFeature2, {
-            popup: {
-                offset: [0, -36],
-                pointerPosition: -1,
-                positioning: "bottom-right"
-            },
-            "circle": {
-                "fill": {
-                    color: "rgba(100,100,100,0.5)"
-                },
-                "opacity": 1,
-                "stroke": {
-                    "color": "rgba(100,100,100,1)",
-                    "width": 8
-                },
-                "radius": 32
-            }
-        });
         popup.on("show", function () {
             popup.applyOffset(popup.options.offset || [0, 0]);
             popup.setPointerPosition(popup.options.pointerPosition);

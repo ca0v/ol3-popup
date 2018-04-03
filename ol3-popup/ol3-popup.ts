@@ -1,6 +1,7 @@
 /**
  * OpenLayers 3 Popup Overlay.
  */
+import $ = require("jquery");
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
 import { default as PageNavigator } from "./paging/page-navigator";
@@ -376,13 +377,6 @@ export class Popup extends ol.Overlay implements IPopup {
             this.handlers.push(() => autoPopup.destroy());
         }
 
-    }
-
-    setMap(map: ol.Map) {
-        super.setMap(map);
-        if (this.options.autoPopup) {
-            DefaultHandler.create(this);
-        }
     }
 
     private injectCss(css: string) {

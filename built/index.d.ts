@@ -293,7 +293,6 @@ declare module "ol3-popup/ol3-popup" {
         private handlers;
         static create(options: PopupOptions): Popup;
         private constructor();
-        setMap(map: ol.Map): void;
         private injectCss(css);
         setIndictorPosition(): void;
         setPointerPosition(offset: number): void;

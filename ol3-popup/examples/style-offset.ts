@@ -113,27 +113,6 @@ export function run() {
         .create({ map: map })
         .addSomeFeatures(vectorLayer, center);
 
-    let markerFeature2 = new ol.Feature();
-    markerFeature2.setGeometry(new ol.geom.Point([center[0], center[1] + 1000]));
-    setStyle(markerFeature2, {
-        popup: {
-            offset: [0, -36],
-            pointerPosition: -1,
-            positioning: "bottom-right"
-        },
-        "circle": {
-            "fill": {
-                color: "rgba(100,100,100,0.5)"
-            },
-            "opacity": 1,
-            "stroke": {
-                "color": "rgba(100,100,100,1)",
-                "width": 8
-            },
-            "radius": 32
-        }
-    });
-
     popup.on("show", () => {
         popup.applyOffset(popup.options.offset || [0, 0]);
         popup.setPointerPosition(popup.options.pointerPosition);
