@@ -116,7 +116,7 @@ const html = `
 <div class='dock-container'></div>
 `;
 
-let center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
+let center = ol.proj.transform([-85, 35], 'EPSG:4326', 'EPSG:3857');
 
 
 export function run() {
@@ -130,8 +130,13 @@ export function run() {
     let map = new ol.Map({
         target: mapContainer,
         layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM()
+            new ol.layer.Image({
+                source: new ol.source.ImageArcGISRest({
+                    projection: "EPSG:3857",
+                    ratio: 1,
+                    params: {},
+                    url: "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Specialty/ESRI_StateCityHighway_USA/MapServer"
+                })
             })
         ],
         view: new ol.View({
