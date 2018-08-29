@@ -1,7 +1,9 @@
 .vscode
 node_modules
-bower_components
-typings
+static/**
+.cache/**
+built/**
+*.js
 *.css
 *.d.ts
 *.log

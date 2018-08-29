@@ -3,13 +3,14 @@
  */
 import $ = require("jquery");
 import ol = require("openlayers");
+import { olx } from "openlayers";
 import { Paging } from "./paging/paging";
 import { default as PageNavigator } from "./paging/page-navigator";
 import { cssin, defaults, html } from "ol3-fun/ol3-fun/common";
 import { SelectInteraction } from "./interaction";
-import Symbolizer = require("ol3-symbolizer");
+import Symbolizer = require("ol3-symbolizer/index");
 
-const symbolizer = new Symbolizer.StyleConverter();
+const symbolizer = new Symbolizer.Symbolizer.StyleConverter();
 
 const css = `
 .ol-popup {
@@ -134,6 +135,13 @@ const eventNames = {
     show: "show",
     undock: "undock"
 };
+
+function arrayEqual<T>(a: T[], b: T[]) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.length !== b.length) return false;
+    return a.every((v, i) => v == b[i]);
+}
 
 function asContent(feature: ol.Feature) {
     let div = document.createElement("div");
@@ -424,11 +432,13 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     setPosition(position: ol.Coordinate) {
-        // make popup visisble
+        // make popup visible
         this.options.position = <any>position;
         if (!this.isDocked()) {
-            super.setPosition(position);
+            // ol cannot determine if the position changes so triggers that it has changed creating a circular callback
+            !arrayEqual(this.getPosition(), position) && super.setPosition(position);
         } else {
+            // move map to this position
             let view = this.options.map.getView();
             view.animate({
                 center: position
@@ -472,7 +482,7 @@ export class Popup extends ol.Overlay implements IPopup {
     on(type: "hide", listener: () => void): ol.EventsKey;
     on(type: "show", listener: () => void): ol.EventsKey;
     on(type: "dispose", listener: () => void): ol.EventsKey;
-    on(type: (string | string[]), listener: Function, opt_this?: GlobalObject): (ol.EventsKey | ol.EventsKey[]) {
+    on(type: (string | string[]), listener: () => void): (ol.EventsKey | ol.EventsKey[]) {
         return super.on(type, listener);
     }
 

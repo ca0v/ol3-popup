@@ -70,7 +70,9 @@ export function run() {
         target: mapContainer,
         layers: [
             new ol.layer.Tile({
-                source: new ol.source.OSM()
+                source: new ol.source.OSM({
+                    crossOrigin: null
+                })
             })
         ],
         view: new ol.View({
@@ -98,11 +100,11 @@ export function run() {
 
     Popup.create({
         map: map,
-        css: popupCss,        
-        layers: [vectorLayer]
+        // css: popupCss,        
+        //layers: [vectorLayer]
     });
 
-    Popup.create({
+    false && Popup.create({
         map: map, 
         className: "ol-popup black",
         css: `.ol-popup.black { background-color: black; color: white }`,

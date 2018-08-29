@@ -1,10 +1,10 @@
 import ol = require("openlayers");
 import { Popup } from "../ol3-popup";
-import Symbolizer = require("ol3-symbolizer");
+import Symbolizer = require("ol3-symbolizer/index");
 import { cssin, html as asHtml } from "ol3-fun/ol3-fun/common";
 import FeatureCreator = require("./extras/feature-creator");
 
-const symbolizer = new Symbolizer.StyleConverter();
+const symbolizer = new Symbolizer.Symbolizer.StyleConverter();
 
 const css = `
 head, body {

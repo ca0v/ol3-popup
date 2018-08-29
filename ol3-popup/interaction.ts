@@ -1,4 +1,5 @@
 import ol = require("openlayers");
+import { olx } from "openlayers";
 import { Popup } from "./ol3-popup";
 import { IPage } from "./paging/paging";
 import { defaults } from "ol3-fun/ol3-fun/common";
@@ -9,7 +10,7 @@ export interface SelectOptions extends olx.interaction.SelectOptions {
 }
 
 // to be shared across all disposables via ol3-fun
-type Disposables = Array<ol.Object | ol.Object[] | (() => void)>;
+type Disposables = Array<ol.GlobalObject | ol.GlobalObject[] | (() => void)>;
 const dispose = (handlers: Disposables) =>
     handlers.forEach(h => (h instanceof Function) ? h() : ol.Observable.unByKey(h));
 

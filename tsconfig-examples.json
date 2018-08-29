@@ -2,15 +2,16 @@
     "compilerOptions": {
         "module": "amd",
         "target": "es5",
-        "declaration": true,
+        "declaration": false,
         "noImplicitAny": false,
         "removeComments": true,
-        "outFile": "built/index.js",
+        "outFile": "built/index.max.js",
         "sourceMap": true,
-        "moduleResolution": "node",
+        "moduleResolution": "classic",
         "baseUrl": "./node_modules"
     },
     "include": [
-        "index.ts"
+        "index.ts",
+        "ol3-popup/examples"
     ]
 }
