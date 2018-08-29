@@ -13,7 +13,7 @@
     let localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (localhost && !debug) debug = getParameterByName("debug") !== "0";
 
-    let deps = [debug ? "built/index.max" : "built/index"];
+    let deps = [debug ? "built/examples.max" : "built/examples"];
     deps.push("xstyle/css!openlayers/css/ol.css")
 
     if (typeof Path2D !== 'function')

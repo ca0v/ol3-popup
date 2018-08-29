@@ -11,4 +11,4 @@ Adds paging to [ol3-popup](https://github.com/walkermatt/ol3-popup).
 * tsc -w
 
 ## Consume
-* `npm install https://github.com/ca0v/ol3-popup/rollup/v5.1.3`
+* `npm install https://github.com/ca0v/ol3-popup/tarball/v5.1.3`

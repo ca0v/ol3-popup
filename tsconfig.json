@@ -5,7 +5,7 @@
         "declaration": true,
         "noImplicitAny": false,
         "removeComments": true,
-        "outFile": "built/index.js",
+        "outFile": "built/index.max.js",
         "sourceMap": true,
         "moduleResolution": "node",
         "baseUrl": "./node_modules"
