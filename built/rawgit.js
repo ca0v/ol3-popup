@@ -14,7 +14,7 @@
     if (localhost && !debug)
         debug = getParameterByName("debug") !== "0";
     var deps = [];
-    deps.push(debug ? "built/index.max" : "built/index");
+    //deps.push(debug ? "built/index.max" : "built/index");
     deps.push(debug ? "built/examples.max" : "built/examples");
     deps.push(localhost ? "xstyle/css!openlayers/css/ol.css" : "xstyle/css!openlayers/../../css/ol.css");
     if (typeof Path2D !== 'function')
