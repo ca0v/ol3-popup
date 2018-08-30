@@ -14,28 +14,10 @@ const symbolizer = new Symbolizer.Symbolizer.StyleConverter();
 
 const css = `
 .ol-popup {
-    position: absolute;
-    bottom: 12px;
-    left: -50px;
 }
 
 .ol-popup.hidden {
     display: none;
-}
-
-.ol-popup:after {
-    top: auto;
-    bottom: -20px;
-    left: 50px;
-    border: solid transparent;
-    border-top-color: inherit;
-    content: " ";
-    height: 0;
-    width: 0;
-    position: absolute;
-    pointer-events: none;
-    border-width: 10px;
-    margin-left: -10px;
 }
 
 .ol-popup.docked {
@@ -204,10 +186,6 @@ export interface PopupOptions extends olx.OverlayOptions {
     css?: string;
     // where should the infoviewer callout be placed relative to the edge?
     pointerPosition?: number;
-    // indicator position
-    xOffset?: number;
-    // indicator position
-    yOffset?: number;
     // how to style paged features
     pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style[];
     // how to render a feature
@@ -257,9 +235,8 @@ const DEFAULT_OPTIONS: PopupOptions = {
     // determines if this should be the first (or last) element in its container
     insertFirst: true,
     pointerPosition: 50,
-    xOffset: 0,
-    yOffset: 0,
-    positioning: "top-right", // ol.OverlayPositioning.TOP_RIGHT
+    offset: [0, -10],
+    positioning: "bottom-center",
     stopEvent: true,
     showCoordinates: false
 }
@@ -283,7 +260,7 @@ export interface IPopup_4_0_1<T> extends ol.Overlay {
     // changes the infoViewer relative to actual target location (pixels)
     applyOffset([x, y]: [number, number]);
     // sets the pointer position
-    setPointerPosition(offset: number);
+    setPointerPosition(number?);
 }
 
 export interface IPopup extends IPopup_4_0_1<Popup> {
@@ -324,16 +301,12 @@ export class Popup extends ol.Overlay implements IPopup {
 
 
         cssin("ol3-popup", css);
-        options.css && this.injectCss(options.css);
+        options.css && this.injectCss("options", options.css);
 
         let domNode = this.domNode = document.createElement('div');
-        domNode.className = options.className;
+        domNode.className = "popup-element";
         this.setElement(domNode);
         this.handlers.push(() => domNode.remove());
-
-        if (typeof this.options.pointerPosition === "number") {
-            this.setPointerPosition(this.options.pointerPosition);
-        }
 
         if (this.options.dockContainer) {
             let dockContainer = this.options.dockContainer;
@@ -387,48 +360,107 @@ export class Popup extends ol.Overlay implements IPopup {
 
     }
 
-    private injectCss(css: string) {
-        let style = html(`<style type='text/css'>${css}</style>`);
+    private injectCss(id: string, css: string) {
+        id = this.getId() + "_" + id;
+        let style = document.getElementById(id) as HTMLStyleElement;
+        if (style) style.remove();
+        style = html(`<style type='text/css' id='${id}'>${css}</style>`) as HTMLStyleElement;
         $(document.head).append(style);
         this.handlers.push(() => style.remove());
     }
 
-    setIndictorPosition() {
-        throw "removed in 4.0.1: use setPointerPosition";
-    }
+    private indicator: ol.Overlay;
 
-    setPointerPosition(offset: number) {
+    setPointerPosition(offset = this.options.pointerPosition || 0) {
         // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
         let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
 
-        let css = <string[]>[];
+        let overlay = this.indicator;
+        if (!overlay) {
+            overlay = this.indicator = new ol.Overlay({
+                element: html(`<span class="simple-popup-down-arrow"></span>`),
+            });
+            this.options.map.addOverlay(overlay);
+        }
+
+        overlay.setPositioning(this.getPositioning());
+        overlay.setPosition(this.getPosition());
+
         switch (verticalPosition) {
-            case "bottom":
-                css.push(`.ol-popup { top: ${10 + this.options.yOffset}px; bottom: auto; }`);
-                css.push(`.ol-popup:after {  top: -20px; bottom: auto; transform: rotate(180deg);}`);
-                break;
-            case "center":
-                break;
             case "top":
-                css.push(`.ol-popup { top: auto; bottom: ${10 + this.options.yOffset}px; }`);
-                css.push(`.ol-popup:after {  top: auto; bottom: -20px; transform: rotate(0deg);}`);
+                {
+                    overlay.setElement(html(`<span class="simple-popup-up-arrow"></span>`));
+                    overlay.setOffset([0, 0 + offset]);
+                    overlay.setPositioning("top-center");
+                    switch (horizontalPosition) {
+                        case "center":
+                            this.setOffset([0, 8 + offset]);
+                            break;
+                        case "left":
+                            this.setOffset([-7, 8 + offset]);
+                            break;
+                        case "right":
+                            this.setOffset([7, 8 + offset]);
+                            break;
+                    }
+                }
                 break;
+            case "bottom":
+                {
+                    overlay.setElement(html(`<span class="simple-popup-down-arrow"></span>`));
+                    overlay.setOffset([0, 0 - offset]);
+                    overlay.setPositioning("bottom-center");
+                    let dx = 7;
+                    let dy = -10 - offset;                    
+                    switch (horizontalPosition) {
+                        case "center":
+                            this.setOffset([0, dy]);
+                            break;
+                        case "left":
+                            this.setOffset([-dx, dy]);
+                            break;
+                        case "right":
+                            this.setOffset([dx, dy]);
+                            break;
+                    }
+                }
+                break;
+
+            case "center":
+                switch (horizontalPosition) {
+                    case "center":
+                        overlay.setPosition(null);
+                        break;
+                    case "left":
+                        overlay.setElement(html(`<span class="simple-popup-left-arrow"></span>`));
+                        overlay.setOffset([offset, 0]);
+                        overlay.setPositioning("center-left");
+                        this.setOffset([5 + offset, 0]);
+                        break;
+                    case "right":
+                        overlay.setElement(html(`<span class="simple-popup-right-arrow"></span>`));
+                        overlay.setOffset([-offset, 0]);
+                        overlay.setPositioning("center-right");
+                        this.setOffset([-5 - offset, 0]);
+                        break;
+                }
+                break;
+            default:
+                throw `unknown value: ${verticalPosition}`;
         }
 
         switch (horizontalPosition) {
             case "center":
                 break;
             case "left":
-                css.push(`.ol-popup { left: auto; right: ${this.options.xOffset - offset - 10}px; }`);
-                css.push(`.ol-popup:after { left: auto; right: ${offset}px; }`);
                 break;
             case "right":
-                css.push(`.ol-popup { left: ${this.options.xOffset - offset - 10}px; right: auto; }`);
-                css.push(`.ol-popup:after { left: ${10 + offset}px; right: auto; }`);
                 break;
+            default:
+                throw `unknown value: ${verticalPosition}`;
         }
 
-        css.forEach(css => this.injectCss(css));
+
     }
 
     setPosition(position: ol.Coordinate) {
@@ -444,6 +476,8 @@ export class Popup extends ol.Overlay implements IPopup {
                 center: position
             });
         }
+
+        this.setPointerPosition(this.options.pointerPosition);
     }
 
     panIntoView() {

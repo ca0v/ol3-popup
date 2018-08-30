@@ -1,7 +1,7 @@
 //import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
 import $ = require("jquery");
-import { Popup } from "ol3-popup";
+import { Popup } from "../ol3-popup/ol3-popup";
 import { debounce, html as asHtml } from "ol3-fun/ol3-fun/common";
 
 const css = `
@@ -158,8 +158,6 @@ export function run() {
         css: css_popup,
         dockContainer: dockContainer,
         pointerPosition: 150,
-        xOffset: -4, // offset padding
-        yOffset: 3,
         multi: true
     });
 

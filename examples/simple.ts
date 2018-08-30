@@ -1,6 +1,8 @@
 import ol = require("openlayers");
-import { Popup } from "ol3-popup";
-import { cssin, html as asHtml } from "ol3-fun/ol3-fun/common";
+import { cssin, html as asHtml, pair } from "ol3-fun/ol3-fun/common";
+
+import { Popup } from "../ol3-popup/ol3-popup";
+
 import FeatureCreator = require("./extras/feature-creator");
 
 const css = `
@@ -31,50 +33,75 @@ body * {
     bottom: 0;
 }
 
-`;
+.simple-popup {
+    border: 1px solid black;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: rgba(80, 80, 80, 0.5);
+    color: rgb(250, 250, 250);
+    max-width: 120px;
+}
 
-const popupCss = `
-.ol-popup {
-    background-color: white;
-    padding: 4px;
-    padding-top: 24px;
-    border: 1px solid rgba(0, 0, 0, 1);
+.simple-popup-down-arrow {
+    color: black;
+    font-size: 20px;
 }
-.pagination {
-    min-width: 160px;
+
+.simple-popup-down-arrow:after {
+    content: "⇩";
 }
-.pagination .page-num {
-    min-width: 100px;
-    display: inline-block;
-    text-align: center; 
+
+.simple-popup-up-arrow {
+    color: black;
+    font-size: 20px;
 }
-.pagination .arrow.btn-next {
-    float: right;
-}`;
+
+.simple-popup-up-arrow:after {
+    content: "⇧";
+}
+
+.simple-popup-left-arrow {
+    color: black;
+    font-size: 20px;
+}
+
+.simple-popup-left-arrow:after {
+    content: "⇦";
+}
+
+.simple-popup-right-arrow {
+    color: black;
+    font-size: 20px;
+}
+
+.simple-popup-right-arrow:after {
+    content: "⇨";
+}
+
+`;
 
 const html = `
 <div class="map"></div>
 `;
 
-const center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
+const center = ol.proj.transform([-85, 35], 'EPSG:4326', 'EPSG:3857');
 
 
 export function run() {
 
+    console.log("the purpose of this example is to show the techniques and complexities of creating a popup control");
+
     cssin("simple", css);
+
     document.body.appendChild(asHtml(`<div>${html}</div>`));
 
-    let mapContainer = document.getElementsByClassName("map")[0];
+    let vectorLayer = new ol.layer.Vector({
+        source: new ol.source.Vector()
+    });
 
     let map = new ol.Map({
-        target: mapContainer,
-        layers: [
-            new ol.layer.Tile({
-                source: new ol.source.OSM({
-                    crossOrigin: null
-                })
-            })
-        ],
+        target: document.getElementsByClassName("map")[0],
+        layers: [vectorLayer],
         view: new ol.View({
             projection: "EPSG:3857",
             center: center,
@@ -82,34 +109,66 @@ export function run() {
         })
     });
 
-    let vectorLayer = new ol.layer.Vector({
-        source: new ol.source.Vector()
-    });
-
-    let unclickableLayer = new ol.layer.Vector({
-        source: new ol.source.Vector()
-    });
-
-    map.addLayer(vectorLayer);
-    map.addLayer(unclickableLayer);
-
     FeatureCreator
         .create({ map: map })
-        .addSomeFeatures(vectorLayer, center)
-        .addSomeFeatures(unclickableLayer, center);
+        .addSomeFeatures(vectorLayer, center);
 
-    Popup.create({
+    {
+        let overlay = new ol.Overlay({
+            autoPan: true,
+            position: center,
+            positioning: "center-center",
+            element: asHtml(`<div border="1px solid red">❌</div>`),
+        });
+        map.addOverlay(overlay);
+    }
+
+    if (1) {
+        {
+            let overlay = new ol.Overlay({
+                autoPan: true,
+                position: center,
+                positioning: "bottom-center",
+                element: asHtml(`<div style="text-align: center"><div class="simple-popup">Overlay with positioning set to bottom-center</div><span class="simple-popup-down-arrow"></span></div>`),
+            });
+            map.addOverlay(overlay);
+            setTimeout(() => map.removeOverlay(overlay), 1000);
+        }
+
+        {
+            let overlay = new ol.Overlay({
+                autoPan: true,
+                position: center,
+                positioning: "top-center",
+                element: asHtml(`<div style="text-align: center"><span class="simple-popup-up-arrow"></span><div class="simple-popup">Overlay with positioning set to top-center</div>`),
+            });
+            map.addOverlay(overlay);
+            setTimeout(() => map.removeOverlay(overlay), 1000);
+        }
+
+        setTimeout(() => {
+            let original = popup.getPositioning();
+            let items = pair("top,center,bottom".split(","), "left,center,right".split(","));
+            let h = setInterval(() => {
+                let positioning: string;
+                if (!items.length) {
+                    clearInterval(h);
+                    positioning = original;
+                } else {
+                    positioning = items.pop().join("-");
+                }
+                popup.setPositioning(<any>positioning);
+                popup.setPosition(center);
+            }, 1000);
+        }, 1000);
+
+    }
+
+    let popup = Popup.create({
         map: map,
-        // css: popupCss,        
-        //layers: [vectorLayer]
-    });
+        pointerPosition: 12,
+    }).show(center, "simple popup");
 
-    false && Popup.create({
-        map: map, 
-        className: "ol-popup black",
-        css: `.ol-popup.black { background-color: black; color: white }`,
-        layers: [unclickableLayer],
-        showCoordinates: true
-    });
+
 
 }

@@ -11,7 +11,7 @@
         "baseUrl": "./node_modules",
         "paths": {
             "ol3-popup": [
-                "./ol3-popup"
+                "../ol3-popup/ol3-popup.ts"
             ]
         }
     },
