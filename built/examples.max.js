@@ -1447,7 +1447,37 @@ define("node_modules/ol3-symbolizer/index", ["require", "exports", "node_modules
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Symbolizer = Symbolizer;
 });
-define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer) {
+define("ol3-popup/commands/smartpick", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function smartpick(popup) {
+        var _a = popup.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
+        var threshold = popup.options.autoPanMargin;
+        var targetPosition = popup.getPosition();
+        var _b = popup.options.map.getPixelFromCoordinate(targetPosition), x = _b[0], y = _b[1];
+        var _c = popup.options.map.getSize(), width = _c[0], height = _c[1];
+        var distanceToLeft = x;
+        var distanceToTop = y;
+        var distanceToRight = width - x;
+        var distanceToBottom = height - y;
+        if (distanceToTop < threshold)
+            verticalPosition = "top";
+        else if (distanceToBottom < threshold)
+            verticalPosition = "bottom";
+        else
+            verticalPosition = verticalPosition || "center";
+        if (distanceToLeft < threshold)
+            horizontalPosition = "left";
+        else if (distanceToRight < threshold)
+            horizontalPosition = "right";
+        else
+            horizontalPosition = "center";
+        return verticalPosition + "-" + horizontalPosition;
+    }
+    exports.smartpick = smartpick;
+    ;
+});
+define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer, smartpick_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -1531,11 +1561,9 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         asContent: asContent,
         multi: false,
         autoPan: true,
-        autoPanAnimation: {
-            source: null,
-            duration: 250
-        },
         autoPopup: true,
+        autoPanMargin: 20,
+        autoPositioning: true,
         className: classNames.olPopup,
         css: "\n.ol-popup {\n    background-color: white;\n    border: 1px solid black;\n    padding: 4px;\n    padding-top: 24px;\n}\n.ol-popup .ol-popup-content {\n    overflow: auto;\n    min-width: 120px;\n    max-width: 360px;\n    max-height: 240px;\n}\n.ol-popup .pages {\n    overflow: auto;\n    max-width: 360px;\n    max-height: 240px;\n}\n.ol-popup .ol-popup-closer {\n    right: 4px;\n}\n".trim(),
         insertFirst: true,
@@ -1622,10 +1650,18 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         };
         Popup.prototype.setPointerPosition = function (offset) {
             if (offset === void 0) { offset = this.options.pointerPosition || 0; }
+            if (!this.getPosition() && this.indicator) {
+                this.indicator.setPosition(undefined);
+                return;
+            }
+            if (this.options.autoPositioning) {
+                this.setPositioning(smartpick_1.smartpick(this));
+            }
             var _a = this.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
             var overlay = this.indicator;
             if (!overlay) {
                 overlay = this.indicator = new ol.Overlay({
+                    autoPan: false,
                     element: common_2.html("<span class=\"simple-popup-down-arrow\"></span>"),
                 });
                 this.options.map.addOverlay(overlay);
@@ -1707,7 +1743,9 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         Popup.prototype.setPosition = function (position) {
             this.options.position = position;
             if (!this.isDocked()) {
-                !arrayEqual(this.getPosition(), position) && _super.prototype.setPosition.call(this, position);
+                if (!arrayEqual(this.getPosition(), position)) {
+                    _super.prototype.setPosition.call(this, position);
+                }
             }
             else {
                 var view = this.options.map.getView();
@@ -1722,8 +1760,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 return;
             if (this.isDocked())
                 return;
-            var p = this.getPosition();
-            p && this.setPosition(p.map(function (v) { return v; }));
+            _super.prototype.panIntoView.call(this);
         };
         Popup.prototype.destroy = function () {
             this.handlers.forEach(function (h) { return h(); });
@@ -1749,6 +1786,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         };
         Popup.prototype.hide = function () {
             this.setPosition(undefined);
+            this.indicator && this.indicator.setPosition(undefined);
             this.pages.clear();
             this.domNode.classList.add(classNames.hidden);
             this.dispatchEvent(eventNames.hide);
@@ -2339,7 +2377,18 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
             });
             map.addOverlay(overlay);
         }
+        var popup = ol3_popup_5.Popup.create({
+            map: map,
+            pointerPosition: 12,
+            autoPan: true,
+            positioning: "bottom-center",
+        });
         if (1) {
+            setTimeout(function () {
+                popup.show(center, "simple popup");
+            }, 1000);
+        }
+        else {
             {
                 var overlay_1 = new ol.Overlay({
                     autoPan: true,
@@ -2361,26 +2410,24 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
                 setTimeout(function () { return map.removeOverlay(overlay_2); }, 1000);
             }
             setTimeout(function () {
+                popup.options.autoPositioning = false;
                 var original = popup.getPositioning();
                 var items = common_7.pair("top,center,bottom".split(","), "left,center,right".split(","));
                 var h = setInterval(function () {
                     var positioning;
                     if (!items.length) {
                         clearInterval(h);
+                        popup.options.autoPositioning = true;
                         positioning = original;
                     }
                     else {
                         positioning = items.pop().join("-");
                     }
                     popup.setPositioning(positioning);
-                    popup.setPosition(center);
+                    popup.show(center, positioning);
                 }, 1000);
             }, 1000);
         }
-        var popup = ol3_popup_5.Popup.create({
-            map: map,
-            pointerPosition: 12,
-        }).show(center, "simple popup");
     }
     exports.run = run;
 });

@@ -123,7 +123,19 @@ export function run() {
         map.addOverlay(overlay);
     }
 
+    let popup = Popup.create({
+        map: map,
+        pointerPosition: 12,
+        autoPan: true,
+        positioning: "bottom-center",
+    });
+
     if (1) {
+        setTimeout(() => {
+            popup.show(center, "simple popup")
+        }, 1000);
+
+    } else {
         {
             let overlay = new ol.Overlay({
                 autoPan: true,
@@ -147,28 +159,22 @@ export function run() {
         }
 
         setTimeout(() => {
+            popup.options.autoPositioning = false;
             let original = popup.getPositioning();
             let items = pair("top,center,bottom".split(","), "left,center,right".split(","));
             let h = setInterval(() => {
                 let positioning: string;
                 if (!items.length) {
                     clearInterval(h);
+                    popup.options.autoPositioning = true;
                     positioning = original;
                 } else {
                     positioning = items.pop().join("-");
                 }
                 popup.setPositioning(<any>positioning);
-                popup.setPosition(center);
+                popup.show(center, positioning);
             }, 1000);
         }, 1000);
 
     }
-
-    let popup = Popup.create({
-        map: map,
-        pointerPosition: 12,
-    }).show(center, "simple popup");
-
-
-
 }

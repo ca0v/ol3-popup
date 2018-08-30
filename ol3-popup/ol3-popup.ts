@@ -9,6 +9,8 @@ import { default as PageNavigator } from "./paging/page-navigator";
 import { cssin, defaults, html } from "ol3-fun/ol3-fun/common";
 import { SelectInteraction } from "./interaction";
 import Symbolizer = require("ol3-symbolizer/index");
+import { IPopup } from "./@types/popup";
+import { smartpick } from "./commands/smartpick";
 
 const symbolizer = new Symbolizer.Symbolizer.StyleConverter();
 
@@ -178,6 +180,8 @@ export interface PopupOptions extends olx.OverlayOptions {
     multi?: boolean;
     // automatically listen for map click event and open popup
     autoPopup?: boolean;
+    // automatically adjust the positioning to minimize panning
+    autoPositioning?: boolean;
     // allows popup to dock w/in this container
     dockContainer?: HTMLElement;
     // facilitates styling by adding a class name
@@ -204,11 +208,9 @@ const DEFAULT_OPTIONS: PopupOptions = {
     asContent: asContent,
     multi: false,
     autoPan: true,
-    autoPanAnimation: {
-        source: null,
-        duration: 250
-    },
     autoPopup: true,
+    autoPanMargin: 20,
+    autoPositioning: true,
     className: classNames.olPopup,
     css: `
 .ol-popup {
@@ -239,31 +241,6 @@ const DEFAULT_OPTIONS: PopupOptions = {
     positioning: "bottom-center",
     stopEvent: true,
     showCoordinates: false
-}
-
-/**
- * This is the contract that will not break between versions
- */
-export interface IPopup_4_0_1<T> extends ol.Overlay {
-    // show popup at this coordinate
-    show(position: ol.Coordinate, markup: string): T;
-    // close popup
-    hide(): T;
-    // true when open
-    isOpened(): boolean;
-    // destroy and cleanup
-    destroy(): void;
-    // pan map so infoviewer is fully within view
-    panIntoView(): void;
-    // true when docked
-    isDocked(): boolean;
-    // changes the infoViewer relative to actual target location (pixels)
-    applyOffset([x, y]: [number, number]);
-    // sets the pointer position
-    setPointerPosition(number?);
-}
-
-export interface IPopup extends IPopup_4_0_1<Popup> {
 }
 
 /**
@@ -372,12 +349,21 @@ export class Popup extends ol.Overlay implements IPopup {
     private indicator: ol.Overlay;
 
     setPointerPosition(offset = this.options.pointerPosition || 0) {
-        // "bottom-left" | "bottom-center" | "bottom-right" | "center-left" | "center-center" | "center-right" | "top-left" | "top-center" | "top-right"
+        if (!this.getPosition() && this.indicator) {
+            this.indicator.setPosition(undefined);
+            return;
+        }
+
+        if (this.options.autoPositioning) {
+            this.setPositioning(smartpick(this));
+        }
+
         let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
 
         let overlay = this.indicator;
         if (!overlay) {
             overlay = this.indicator = new ol.Overlay({
+                autoPan: false,
                 element: html(`<span class="simple-popup-down-arrow"></span>`),
             });
             this.options.map.addOverlay(overlay);
@@ -411,7 +397,7 @@ export class Popup extends ol.Overlay implements IPopup {
                     overlay.setOffset([0, 0 - offset]);
                     overlay.setPositioning("bottom-center");
                     let dx = 7;
-                    let dy = -10 - offset;                    
+                    let dy = -10 - offset;
                     switch (horizontalPosition) {
                         case "center":
                             this.setOffset([0, dy]);
@@ -460,7 +446,6 @@ export class Popup extends ol.Overlay implements IPopup {
                 throw `unknown value: ${verticalPosition}`;
         }
 
-
     }
 
     setPosition(position: ol.Coordinate) {
@@ -468,7 +453,9 @@ export class Popup extends ol.Overlay implements IPopup {
         this.options.position = <any>position;
         if (!this.isDocked()) {
             // ol cannot determine if the position changes so triggers that it has changed creating a circular callback
-            !arrayEqual(this.getPosition(), position) && super.setPosition(position);
+            if (!arrayEqual(this.getPosition(), position)) {
+                super.setPosition(position);
+            }
         } else {
             // move map to this position
             let view = this.options.map.getView();
@@ -483,8 +470,7 @@ export class Popup extends ol.Overlay implements IPopup {
     panIntoView() {
         if (!this.isOpened()) return;
         if (this.isDocked()) return;
-        let p = this.getPosition();
-        p && this.setPosition(p.map(v => v) as [number, number]); // clone p to force change
+        super.panIntoView();
     }
 
     destroy() {
@@ -522,6 +508,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
     hide() {
         this.setPosition(undefined);
+        this.indicator && this.indicator.setPosition(undefined);
         this.pages.clear();
         this.domNode.classList.add(classNames.hidden);
         this.dispatchEvent(eventNames.hide);
