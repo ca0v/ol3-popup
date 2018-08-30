@@ -1,6 +1,6 @@
 //import "xstyle/css!ol3-popup/css/ol3-popup.css";
 import ol = require("openlayers");
-import { Popup } from "../ol3-popup";
+import { Popup } from "ol3-popup";
 import Symbolizer = require("ol3-symbolizer/index");
 import { html as asHtml } from "ol3-fun/ol3-fun/common";
 import FeatureCreator = require("./extras/feature-creator");

@@ -1,5 +1,5 @@
 import ol = require("openlayers");
-import { Popup } from "../ol3-popup";
+import { Popup } from "ol3-popup";
 import { cssin, html as asHtml } from "ol3-fun/ol3-fun/common";
 import FeatureCreator = require("./extras/feature-creator");
 
@@ -31,6 +31,12 @@ body * {
     bottom: 0;
 }
 
+.map .toggle-active {
+    position: absolute;
+    top: 1em;
+    left: 3em;
+    z-index: 1;
+}
 `;
 
 const popupCss = `
@@ -53,7 +59,9 @@ const popupCss = `
 }`;
 
 const html = `
-<div class="map"></div>
+<div class="map">
+    <input type="button" class="toggle-active" value="Toggle Popup"></input>
+</div>
 `;
 
 const center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
@@ -61,7 +69,7 @@ const center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
 
 export function run() {
 
-    cssin("simple", css);
+    cssin("activate", css);
     document.body.appendChild(asHtml(`<div>${html}</div>`));
 
     let mapContainer = document.getElementsByClassName("map")[0];
@@ -70,9 +78,7 @@ export function run() {
         target: mapContainer,
         layers: [
             new ol.layer.Tile({
-                source: new ol.source.OSM({
-                    crossOrigin: null
-                })
+                source: new ol.source.OSM()
             })
         ],
         view: new ol.View({
@@ -86,30 +92,21 @@ export function run() {
         source: new ol.source.Vector()
     });
 
-    let unclickableLayer = new ol.layer.Vector({
-        source: new ol.source.Vector()
-    });
-
     map.addLayer(vectorLayer);
-    map.addLayer(unclickableLayer);
 
     FeatureCreator
         .create({ map: map })
         .addSomeFeatures(vectorLayer, center)
-        .addSomeFeatures(unclickableLayer, center);
 
-    Popup.create({
+    let popup = Popup.create({
         map: map,
-        // css: popupCss,        
-        //layers: [vectorLayer]
+        css: popupCss,
+        layers: [vectorLayer]
     });
 
-    false && Popup.create({
-        map: map, 
-        className: "ol-popup black",
-        css: `.ol-popup.black { background-color: black; color: white }`,
-        layers: [unclickableLayer],
-        showCoordinates: true
-    });
+    popup.set("active", false);
+
+    let toggleButton = document.getElementsByClassName("toggle-active")[0];
+    toggleButton.addEventListener("click", () => popup.set("active", !popup.get("active")));
 
 }
