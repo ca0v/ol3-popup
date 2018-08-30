@@ -1747,11 +1747,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
     }(ol.Overlay));
     exports.Popup = Popup;
 });
-define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require, exports, Popup) {
-    "use strict";
-    return Popup;
-});
-define("ol3-popup/examples/extras/feature-creator", ["require", "exports", "openlayers", "node_modules/ol3-symbolizer/index"], function (require, exports, ol, index_1) {
+define("examples/extras/feature-creator", ["require", "exports", "openlayers", "node_modules/ol3-symbolizer/index"], function (require, exports, ol, index_1) {
     "use strict";
     var symbolizer = new index_1.Symbolizer.StyleConverter();
     function random(center, scale) {
@@ -1898,7 +1894,7 @@ define("ol3-popup/examples/extras/feature-creator", ["require", "exports", "open
     }());
     return FeatureCreator;
 });
-define("ol3-popup/examples/activate", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_1, common_3, FeatureCreator) {
+define("examples/activate", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_1, common_3, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.map .toggle-active {\n    position: absolute;\n    top: 1em;\n    left: 3em;\n    z-index: 1;\n}\n";
@@ -1940,7 +1936,7 @@ define("ol3-popup/examples/activate", ["require", "exports", "openlayers", "ol3-
     }
     exports.run = run;
 });
-define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, $, ol3_popup_2, common_4) {
+define("examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, $, ol3_popup_2, common_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
@@ -2007,7 +2003,7 @@ define("ol3-popup/examples/docking", ["require", "exports", "openlayers", "jquer
     }
     exports.run = run;
 });
-define("ol3-popup/examples/flash-style", ["require", "exports"], function (require, exports) {
+define("examples/flash-style", ["require", "exports"], function (require, exports) {
     "use strict";
     var style = [
         {
@@ -2030,12 +2026,12 @@ define("ol3-popup/examples/flash-style", ["require", "exports"], function (requi
     ];
     return style;
 });
-define("ol3-popup/examples/index", ["require", "exports"], function (require, exports) {
+define("examples/index", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function run() {
         var l = window.location;
-        var path = "" + l.origin + l.pathname + "?run=ol3-popup/examples/";
+        var path = "" + l.origin + l.pathname + "?run=examples/";
         var labs = "\n    activate\n    docking\n    multi\n    paging\n    simple\n    style-offset\n    index\n    ";
         document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
         document.writeln(labs
@@ -2049,7 +2045,7 @@ define("ol3-popup/examples/index", ["require", "exports"], function (require, ex
     exports.run = run;
     ;
 });
-define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_3, Symbolizer, common_5, FeatureCreator) {
+define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_3, Symbolizer, common_5, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -2133,7 +2129,7 @@ define("ol3-popup/examples/multi", ["require", "exports", "openlayers", "ol3-pop
     }
     exports.run = run;
 });
-define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "ol3-popup/examples/extras/feature-creator", "node_modules/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_4, FeatureCreator, common_6, $) {
+define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "examples/extras/feature-creator", "node_modules/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_4, FeatureCreator, common_6, $) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
@@ -2261,7 +2257,7 @@ define("ol3-popup/examples/paging", ["require", "exports", "openlayers", "ol3-po
     }
     exports.run = run;
 });
-define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_5, common_7, FeatureCreator) {
+define("examples/simple", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_5, common_7, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
@@ -2312,7 +2308,7 @@ define("ol3-popup/examples/simple", ["require", "exports", "openlayers", "ol3-po
     }
     exports.run = run;
 });
-define("ol3-popup/examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_6, Symbolizer, common_8, FeatureCreator) {
+define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_6, Symbolizer, common_8, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();

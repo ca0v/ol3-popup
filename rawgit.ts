@@ -13,7 +13,9 @@
     let localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (localhost && !debug) debug = getParameterByName("debug") !== "0";
 
-    let deps = [debug ? "built/examples.max" : "built/examples"];
+    let deps = [];
+    deps.push(debug ? "built/index.max" : "built/index");
+    deps.push(debug ? "built/examples.max" : "built/examples");
     deps.push("xstyle/css!openlayers/css/ol.css")
 
     if (typeof Path2D !== 'function')
@@ -53,7 +55,7 @@
         deps: deps,
 
         callback: function () {
-            require([getParameterByName("run") || "ol3-popup/examples/index"], function (test) { test.run(); });
+            require([getParameterByName("run") || "examples/index"], function (test) { test.run(); });
         }
     });
 
