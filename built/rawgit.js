@@ -16,7 +16,7 @@
     var deps = [];
     deps.push(debug ? "built/index.max" : "built/index");
     deps.push(debug ? "built/examples.max" : "built/examples");
-    deps.push("xstyle/css!openlayers/css/ol.css");
+    deps.push(localhost ? "xstyle/css!openlayers/css/ol.css" : "xstyle/css!openlayers/../../css/ol.css");
     if (typeof Path2D !== 'function')
         deps.push("https://rawgit.com/google/canvas-5-polyfill/0.1.1/canvas.js");
     require.config({
