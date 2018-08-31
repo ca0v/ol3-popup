@@ -3,7 +3,6 @@
  */
 import $ = require("jquery");
 import ol = require("openlayers");
-import { olx } from "openlayers";
 import { Paging } from "./paging/paging";
 import { default as PageNavigator } from "./paging/page-navigator";
 import { cssin, defaults, html } from "ol3-fun/ol3-fun/common";
@@ -11,6 +10,7 @@ import { SelectInteraction } from "./interaction";
 import Symbolizer = require("ol3-symbolizer/index");
 import { IPopup } from "./@types/popup";
 import { smartpick } from "./commands/smartpick";
+import { PopupOptions } from "./@types/popup-options";
 
 const symbolizer = new Symbolizer.Symbolizer.StyleConverter();
 
@@ -172,35 +172,6 @@ function pagingStyleFactory(popup: Popup) {
 }
 
 /**
- * The constructor options 'must' conform, most interesting is autoPan
- */
-export interface PopupOptions extends olx.OverlayOptions {
-    map: ol.Map,
-    // allow multiple popups or automatically close before re-opening?
-    multi?: boolean;
-    // automatically listen for map click event and open popup
-    autoPopup?: boolean;
-    // automatically adjust the positioning to minimize panning
-    autoPositioning?: boolean;
-    // allows popup to dock w/in this container
-    dockContainer?: HTMLElement;
-    // facilitates styling by adding a class name
-    className?: string;
-    // css content to add to DOM for the lifecycle of this control
-    css?: string;
-    // where should the infoviewer callout be placed relative to the edge?
-    pointerPosition?: number;
-    // how to style paged features
-    pagingStyle?: (feature: ol.Feature, resolution: number, page: number) => ol.style.Style[];
-    // how to render a feature
-    asContent?: (feature: ol.Feature) => HTMLElement;
-    // which layers to consider
-    layers?: ol.layer.Vector[];
-    // when no features found show coordinates isntead
-    showCoordinates?: boolean;
-}
-
-/**
  * Default options for the popup control so it can be created without any contructor arguments
  */
 const DEFAULT_OPTIONS: PopupOptions = {
@@ -256,12 +227,16 @@ export class Popup extends ol.Overlay implements IPopup {
 
     private handlers: Array<() => void>;
 
+    /**
+     * @param options Options to be applied to a newly created popup
+     * @returns IPopup
+     */
     static create(options: PopupOptions) {
         options = defaults({}, options, DEFAULT_OPTIONS);
 
         let popup = new Popup(options);
         options.map && options.map.addOverlay(popup);
-        return popup;
+        return popup as IPopup;
     }
 
     private constructor(options: PopupOptions) {
@@ -276,65 +251,74 @@ export class Popup extends ol.Overlay implements IPopup {
         this.options = options;
         this.handlers = [];
 
+        this.configureDom(options);
+        this.configureDockContainer(this.domNode);
+        this.createCloser(this.domNode);
+        this.configureContentContainer();
+        this.configurePaging();
+        this.configureAutoPopup();
+    }
 
+    private configureDom(options: PopupOptions) {
         cssin("ol3-popup", css);
         options.css && this.injectCss("options", options.css);
-
         let domNode = this.domNode = document.createElement('div');
         domNode.className = "popup-element";
         this.setElement(domNode);
         this.handlers.push(() => domNode.remove());
+    }
 
+    private configureContentContainer() {
+        {
+            let content = this.content = document.createElement('div');
+            content.className = classNames.olPopupContent;
+            this.domNode.appendChild(content);
+        }
+    }
+
+    private configureDockContainer(domNode: HTMLDivElement) {
         if (this.options.dockContainer) {
             let dockContainer = this.options.dockContainer;
             if (dockContainer) {
                 let docker = this.docker = document.createElement('label');
                 docker.className = classNames.olPopupDocker;
                 domNode.appendChild(docker);
-
                 docker.addEventListener('click', evt => {
                     this.isDocked() ? this.undock() : this.dock();
                     evt.preventDefault();
                 }, false);
             }
         }
+    }
 
-        {
-            let closer = this.closer = document.createElement('label');
-            closer.className = classNames.olPopupCloser;
-            domNode.appendChild(closer);
+    private createCloser(domNode: HTMLDivElement) {
+        let closer = this.closer = document.createElement('label');
+        closer.className = classNames.olPopupCloser;
+        domNode.appendChild(closer);
+        closer.addEventListener('click', evt => {
+            this.hide();
+            evt.preventDefault();
+        }, false);
+    }
 
-            closer.addEventListener('click', evt => {
-                this.hide();
-                evt.preventDefault();
-            }, false);
-        }
+    private configurePaging() {
+        let pages = this.pages = new Paging({ popup: this });
+        let pageNavigator = new PageNavigator({ pages: pages });
+        pageNavigator.hide();
+        pageNavigator.on("prev", () => pages.prev());
+        pageNavigator.on("next", () => pages.next());
+        pages.on("goto", () => this.panIntoView());
+    }
 
-        {
-            let content = this.content = document.createElement('div');
-            content.className = classNames.olPopupContent;
-            this.domNode.appendChild(content);
-        }
-
-        {
-            let pages = this.pages = new Paging({ popup: this });
-            let pageNavigator = new PageNavigator({ pages: pages });
-            pageNavigator.hide();
-            pageNavigator.on("prev", () => pages.prev());
-            pageNavigator.on("next", () => pages.next());
-            pages.on("goto", () => this.panIntoView());
-        }
-
-        if (this.options.autoPopup) {
-            let autoPopup = SelectInteraction.create({
-                popup: this
-            });
-            this.on("change:active", () => {
-                autoPopup.set("active", this.get("active"));
-            });
-            this.handlers.push(() => autoPopup.destroy());
-        }
-
+    private configureAutoPopup() {
+        if (!this.options.autoPopup) return;
+        let autoPopup = SelectInteraction.create({
+            popup: this
+        });
+        this.on("change:active", () => {
+            autoPopup.set("active", this.get("active"));
+        });
+        this.handlers.push(() => autoPopup.destroy());
     }
 
     private injectCss(id: string, css: string) {
@@ -355,7 +339,7 @@ export class Popup extends ol.Overlay implements IPopup {
         }
 
         if (this.options.autoPositioning) {
-            this.setPositioning(smartpick(this));
+            this.setPositioning(smartpick(this, this.options.autoPanMargin));
         }
 
         let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);

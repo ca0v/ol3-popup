@@ -1,13 +1,18 @@
+import "./activate";
+import "./docking";
+import "./flash-style";
+import "./multi";
+import "./overlay";
+import "./paging";
+import "./style-offset";
+import "./simple";
+
 export function run() {
     let l = window.location;
     let path = `${l.origin}${l.pathname}?run=examples/`;
     let labs = `
-    activate
-    docking
-    multi
-    paging
+    overlay
     simple
-    style-offset
     index
     `;
     

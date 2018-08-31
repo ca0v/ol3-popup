@@ -636,9 +636,11 @@ define("node_modules/ol3-symbolizer/index", ["require", "exports", "node_modules
 define("ol3-popup/commands/smartpick", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    function smartpick(popup) {
+    function smartpick(popup, threshold) {
+        if (typeof threshold !== "number") {
+            threshold = (popup.options.autoPanMargin || 0) + (popup.options.pointerPosition || 0);
+        }
         var _a = popup.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
-        var threshold = popup.options.autoPanMargin;
         var targetPosition = popup.getPosition();
         var _b = popup.options.map.getPixelFromCoordinate(targetPosition), x = _b[0], y = _b[1];
         var _c = popup.options.map.getSize(), width = _c[0], height = _c[1];
@@ -651,13 +653,18 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
         else if (distanceToBottom < threshold)
             verticalPosition = "bottom";
         else
-            verticalPosition = verticalPosition || "center";
+            verticalPosition = null;
         if (distanceToLeft < threshold)
             horizontalPosition = "left";
         else if (distanceToRight < threshold)
             horizontalPosition = "right";
         else
             horizontalPosition = "center";
+        if (!verticalPosition && horizontalPosition !== "center") {
+            verticalPosition = "center";
+        }
+        horizontalPosition = horizontalPosition || "center";
+        verticalPosition = verticalPosition || ((distanceToTop < distanceToBottom) ? "top" : "bottom");
         return verticalPosition + "-" + horizontalPosition;
     }
     exports.smartpick = smartpick;
@@ -768,16 +775,41 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             }
             _this.options = options;
             _this.handlers = [];
+            _this.configureDom(options);
+            _this.configureDockContainer(_this.domNode);
+            _this.createCloser(_this.domNode);
+            _this.configureContentContainer();
+            _this.configurePaging();
+            _this.configureAutoPopup();
+            return _this;
+        }
+        Popup.create = function (options) {
+            options = common_2.defaults({}, options, DEFAULT_OPTIONS);
+            var popup = new Popup(options);
+            options.map && options.map.addOverlay(popup);
+            return popup;
+        };
+        Popup.prototype.configureDom = function (options) {
             common_2.cssin("ol3-popup", css);
-            options.css && _this.injectCss("options", options.css);
-            var domNode = _this.domNode = document.createElement('div');
+            options.css && this.injectCss("options", options.css);
+            var domNode = this.domNode = document.createElement('div');
             domNode.className = "popup-element";
-            _this.setElement(domNode);
-            _this.handlers.push(function () { return domNode.remove(); });
-            if (_this.options.dockContainer) {
-                var dockContainer = _this.options.dockContainer;
+            this.setElement(domNode);
+            this.handlers.push(function () { return domNode.remove(); });
+        };
+        Popup.prototype.configureContentContainer = function () {
+            {
+                var content = this.content = document.createElement('div');
+                content.className = classNames.olPopupContent;
+                this.domNode.appendChild(content);
+            }
+        };
+        Popup.prototype.configureDockContainer = function (domNode) {
+            var _this = this;
+            if (this.options.dockContainer) {
+                var dockContainer = this.options.dockContainer;
                 if (dockContainer) {
-                    var docker = _this.docker = document.createElement('label');
+                    var docker = this.docker = document.createElement('label');
                     docker.className = classNames.olPopupDocker;
                     domNode.appendChild(docker);
                     docker.addEventListener('click', function (evt) {
@@ -786,44 +818,37 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     }, false);
                 }
             }
-            {
-                var closer = _this.closer = document.createElement('label');
-                closer.className = classNames.olPopupCloser;
-                domNode.appendChild(closer);
-                closer.addEventListener('click', function (evt) {
-                    _this.hide();
-                    evt.preventDefault();
-                }, false);
-            }
-            {
-                var content = _this.content = document.createElement('div');
-                content.className = classNames.olPopupContent;
-                _this.domNode.appendChild(content);
-            }
-            {
-                var pages_1 = _this.pages = new paging_1.Paging({ popup: _this });
-                var pageNavigator = new page_navigator_1.default({ pages: pages_1 });
-                pageNavigator.hide();
-                pageNavigator.on("prev", function () { return pages_1.prev(); });
-                pageNavigator.on("next", function () { return pages_1.next(); });
-                pages_1.on("goto", function () { return _this.panIntoView(); });
-            }
-            if (_this.options.autoPopup) {
-                var autoPopup_1 = interaction_1.SelectInteraction.create({
-                    popup: _this
-                });
-                _this.on("change:active", function () {
-                    autoPopup_1.set("active", _this.get("active"));
-                });
-                _this.handlers.push(function () { return autoPopup_1.destroy(); });
-            }
-            return _this;
-        }
-        Popup.create = function (options) {
-            options = common_2.defaults({}, options, DEFAULT_OPTIONS);
-            var popup = new Popup(options);
-            options.map && options.map.addOverlay(popup);
-            return popup;
+        };
+        Popup.prototype.createCloser = function (domNode) {
+            var _this = this;
+            var closer = this.closer = document.createElement('label');
+            closer.className = classNames.olPopupCloser;
+            domNode.appendChild(closer);
+            closer.addEventListener('click', function (evt) {
+                _this.hide();
+                evt.preventDefault();
+            }, false);
+        };
+        Popup.prototype.configurePaging = function () {
+            var _this = this;
+            var pages = this.pages = new paging_1.Paging({ popup: this });
+            var pageNavigator = new page_navigator_1.default({ pages: pages });
+            pageNavigator.hide();
+            pageNavigator.on("prev", function () { return pages.prev(); });
+            pageNavigator.on("next", function () { return pages.next(); });
+            pages.on("goto", function () { return _this.panIntoView(); });
+        };
+        Popup.prototype.configureAutoPopup = function () {
+            var _this = this;
+            if (!this.options.autoPopup)
+                return;
+            var autoPopup = interaction_1.SelectInteraction.create({
+                popup: this
+            });
+            this.on("change:active", function () {
+                autoPopup.set("active", _this.get("active"));
+            });
+            this.handlers.push(function () { return autoPopup.destroy(); });
         };
         Popup.prototype.injectCss = function (id, css) {
             id = this.getId() + "_" + id;
@@ -841,7 +866,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 return;
             }
             if (this.options.autoPositioning) {
-                this.setPositioning(smartpick_1.smartpick(this));
+                this.setPositioning(smartpick_1.smartpick(this, this.options.autoPanMargin));
             }
             var _a = this.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
             var overlay = this.indicator;

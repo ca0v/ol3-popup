@@ -1450,9 +1450,11 @@ define("node_modules/ol3-symbolizer/index", ["require", "exports", "node_modules
 define("ol3-popup/commands/smartpick", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    function smartpick(popup) {
+    function smartpick(popup, threshold) {
+        if (typeof threshold !== "number") {
+            threshold = (popup.options.autoPanMargin || 0) + (popup.options.pointerPosition || 0);
+        }
         var _a = popup.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
-        var threshold = popup.options.autoPanMargin;
         var targetPosition = popup.getPosition();
         var _b = popup.options.map.getPixelFromCoordinate(targetPosition), x = _b[0], y = _b[1];
         var _c = popup.options.map.getSize(), width = _c[0], height = _c[1];
@@ -1465,13 +1467,18 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
         else if (distanceToBottom < threshold)
             verticalPosition = "bottom";
         else
-            verticalPosition = verticalPosition || "center";
+            verticalPosition = null;
         if (distanceToLeft < threshold)
             horizontalPosition = "left";
         else if (distanceToRight < threshold)
             horizontalPosition = "right";
         else
             horizontalPosition = "center";
+        if (!verticalPosition && horizontalPosition !== "center") {
+            verticalPosition = "center";
+        }
+        horizontalPosition = horizontalPosition || "center";
+        verticalPosition = verticalPosition || ((distanceToTop < distanceToBottom) ? "top" : "bottom");
         return verticalPosition + "-" + horizontalPosition;
     }
     exports.smartpick = smartpick;
@@ -1582,16 +1589,41 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             }
             _this.options = options;
             _this.handlers = [];
+            _this.configureDom(options);
+            _this.configureDockContainer(_this.domNode);
+            _this.createCloser(_this.domNode);
+            _this.configureContentContainer();
+            _this.configurePaging();
+            _this.configureAutoPopup();
+            return _this;
+        }
+        Popup.create = function (options) {
+            options = common_2.defaults({}, options, DEFAULT_OPTIONS);
+            var popup = new Popup(options);
+            options.map && options.map.addOverlay(popup);
+            return popup;
+        };
+        Popup.prototype.configureDom = function (options) {
             common_2.cssin("ol3-popup", css);
-            options.css && _this.injectCss("options", options.css);
-            var domNode = _this.domNode = document.createElement('div');
+            options.css && this.injectCss("options", options.css);
+            var domNode = this.domNode = document.createElement('div');
             domNode.className = "popup-element";
-            _this.setElement(domNode);
-            _this.handlers.push(function () { return domNode.remove(); });
-            if (_this.options.dockContainer) {
-                var dockContainer = _this.options.dockContainer;
+            this.setElement(domNode);
+            this.handlers.push(function () { return domNode.remove(); });
+        };
+        Popup.prototype.configureContentContainer = function () {
+            {
+                var content = this.content = document.createElement('div');
+                content.className = classNames.olPopupContent;
+                this.domNode.appendChild(content);
+            }
+        };
+        Popup.prototype.configureDockContainer = function (domNode) {
+            var _this = this;
+            if (this.options.dockContainer) {
+                var dockContainer = this.options.dockContainer;
                 if (dockContainer) {
-                    var docker = _this.docker = document.createElement('label');
+                    var docker = this.docker = document.createElement('label');
                     docker.className = classNames.olPopupDocker;
                     domNode.appendChild(docker);
                     docker.addEventListener('click', function (evt) {
@@ -1600,44 +1632,37 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     }, false);
                 }
             }
-            {
-                var closer = _this.closer = document.createElement('label');
-                closer.className = classNames.olPopupCloser;
-                domNode.appendChild(closer);
-                closer.addEventListener('click', function (evt) {
-                    _this.hide();
-                    evt.preventDefault();
-                }, false);
-            }
-            {
-                var content = _this.content = document.createElement('div');
-                content.className = classNames.olPopupContent;
-                _this.domNode.appendChild(content);
-            }
-            {
-                var pages_1 = _this.pages = new paging_1.Paging({ popup: _this });
-                var pageNavigator = new page_navigator_1.default({ pages: pages_1 });
-                pageNavigator.hide();
-                pageNavigator.on("prev", function () { return pages_1.prev(); });
-                pageNavigator.on("next", function () { return pages_1.next(); });
-                pages_1.on("goto", function () { return _this.panIntoView(); });
-            }
-            if (_this.options.autoPopup) {
-                var autoPopup_1 = interaction_1.SelectInteraction.create({
-                    popup: _this
-                });
-                _this.on("change:active", function () {
-                    autoPopup_1.set("active", _this.get("active"));
-                });
-                _this.handlers.push(function () { return autoPopup_1.destroy(); });
-            }
-            return _this;
-        }
-        Popup.create = function (options) {
-            options = common_2.defaults({}, options, DEFAULT_OPTIONS);
-            var popup = new Popup(options);
-            options.map && options.map.addOverlay(popup);
-            return popup;
+        };
+        Popup.prototype.createCloser = function (domNode) {
+            var _this = this;
+            var closer = this.closer = document.createElement('label');
+            closer.className = classNames.olPopupCloser;
+            domNode.appendChild(closer);
+            closer.addEventListener('click', function (evt) {
+                _this.hide();
+                evt.preventDefault();
+            }, false);
+        };
+        Popup.prototype.configurePaging = function () {
+            var _this = this;
+            var pages = this.pages = new paging_1.Paging({ popup: this });
+            var pageNavigator = new page_navigator_1.default({ pages: pages });
+            pageNavigator.hide();
+            pageNavigator.on("prev", function () { return pages.prev(); });
+            pageNavigator.on("next", function () { return pages.next(); });
+            pages.on("goto", function () { return _this.panIntoView(); });
+        };
+        Popup.prototype.configureAutoPopup = function () {
+            var _this = this;
+            if (!this.options.autoPopup)
+                return;
+            var autoPopup = interaction_1.SelectInteraction.create({
+                popup: this
+            });
+            this.on("change:active", function () {
+                autoPopup.set("active", _this.get("active"));
+            });
+            this.handlers.push(function () { return autoPopup.destroy(); });
         };
         Popup.prototype.injectCss = function (id, css) {
             id = this.getId() + "_" + id;
@@ -1655,7 +1680,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 return;
             }
             if (this.options.autoPositioning) {
-                this.setPositioning(smartpick_1.smartpick(this));
+                this.setPositioning(smartpick_1.smartpick(this, this.options.autoPanMargin));
             }
             var _a = this.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
             var overlay = this.indicator;
@@ -2114,25 +2139,6 @@ define("examples/flash-style", ["require", "exports"], function (require, export
     ];
     return style;
 });
-define("examples/index", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function run() {
-        var l = window.location;
-        var path = "" + l.origin + l.pathname + "?run=examples/";
-        var labs = "\n    activate\n    docking\n    multi\n    paging\n    simple\n    style-offset\n    index\n    ";
-        document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
-        document.writeln(labs
-            .split(/ /)
-            .map(function (v) { return v.trim(); })
-            .filter(function (v) { return !!v; })
-            .sort()
-            .map(function (lab) { return "<a href=\"" + path + lab + "&debug=1\">" + lab + "</a>"; })
-            .join("<br/>"));
-    }
-    exports.run = run;
-    ;
-});
 define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_3, Symbolizer, common_5, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2217,7 +2223,58 @@ define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-pop
     }
     exports.run = run;
 });
-define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "examples/extras/feature-creator", "node_modules/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_4, FeatureCreator, common_6, $) {
+define("examples/overlay", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_6) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.ol-control.simple-infobox {\n    top: 1em;\n    left: 25%;\n    max-width: 50%;\n  }\n\n.simple-popup {\n    border: 1px solid black;\n    border-radius: 4px;\n    padding: 10px;\n    background-color: rgba(80, 80, 80, 0.5);\n    color: rgb(250, 250, 250);\n    max-width: 120px;\n}\n\n.simple-popup-arrow {\n    color: black;\n    font-size: 36px;\n}\n\n.simple-popup-down-arrow:after {\n    content: \"\u21E9\";\n    position: relative;\n    top: -8px;\n}\n\n.simple-popup-up-arrow:after {\n    content: \"\u21E7\";\n    position: relative;\n    top: 10px;\n}\n\n.simple-popup-left-arrow:after {\n    content: \"\u21E6\";\n}\n\n.simple-popup-right-arrow:after {\n    content: \"\u21E8\";\n}\n\n";
+    var html = "\n<div class=\"map\"></div>\n";
+    var center = ol.proj.transform([-85, 35], 'EPSG:4326', 'EPSG:3857');
+    function run() {
+        common_6.cssin("simple", css);
+        document.body.appendChild(common_6.html("<div>" + html + "</div>"));
+        var vectorLayer = new ol.layer.Vector({
+            source: new ol.source.Vector()
+        });
+        var map = new ol.Map({
+            target: document.getElementsByClassName("map")[0],
+            layers: [vectorLayer],
+            view: new ol.View({
+                projection: "EPSG:3857",
+                center: center,
+                zoom: 16
+            })
+        });
+        {
+            var message = "the purpose of this example is to show the techniques and complexities of creating a popup control";
+            map.addControl(new ol.control.Control({
+                element: common_6.html("<div class=\"simple-infobox ol-unselectable ol-control\"><label>" + message + "</label></div>"),
+            }));
+        }
+        var marker = new ol.Overlay({
+            autoPan: true,
+            position: center,
+            positioning: "center-center",
+            element: common_6.html("<div class=\"ol-unselectable\" border=\"1px solid red\">\u274C</div>"),
+        });
+        map.addOverlay(marker);
+        var topOverlay = new ol.Overlay({
+            autoPan: true,
+            position: center,
+            positioning: "bottom-center",
+            element: common_6.html("<div class=\"ol-unselectable\" style=\"text-align: center\"><div class=\"simple-popup\">Overlay with positioning set to bottom-center</div><span class=\"simple-popup-arrow simple-popup-down-arrow\"></span></div>"),
+        });
+        map.addOverlay(topOverlay);
+        var bottomOverlay = new ol.Overlay({
+            autoPan: true,
+            position: center,
+            positioning: "top-center",
+            element: common_6.html("<div class=\"ol-unselectable\" style=\"text-align: center\"><span class=\"simple-popup-arrow simple-popup-up-arrow\"></span><div class=\"simple-popup\">Overlay with positioning set to top-center</div>"),
+        });
+        map.addOverlay(bottomOverlay);
+    }
+    exports.run = run;
+});
+define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "examples/extras/feature-creator", "node_modules/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_4, FeatureCreator, common_7, $) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
@@ -2233,8 +2290,8 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-po
     ];
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        document.head.appendChild(common_6.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
-        document.body.appendChild(common_6.html("<div>" + html + "</div>"));
+        document.head.appendChild(common_7.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(common_7.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var dockContainer = document.getElementsByClassName("dock-container")[0];
         var map = new ol.Map({
@@ -2343,95 +2400,7 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-po
     }
     exports.run = run;
 });
-define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/ol3-popup", "examples/extras/feature-creator"], function (require, exports, ol, common_7, ol3_popup_5, FeatureCreator) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.simple-popup {\n    border: 1px solid black;\n    border-radius: 4px;\n    padding: 10px;\n    background-color: rgba(80, 80, 80, 0.5);\n    color: rgb(250, 250, 250);\n    max-width: 120px;\n}\n\n.simple-popup-down-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-down-arrow:after {\n    content: \"\u21E9\";\n}\n\n.simple-popup-up-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-up-arrow:after {\n    content: \"\u21E7\";\n}\n\n.simple-popup-left-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-left-arrow:after {\n    content: \"\u21E6\";\n}\n\n.simple-popup-right-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-right-arrow:after {\n    content: \"\u21E8\";\n}\n\n";
-    var html = "\n<div class=\"map\"></div>\n";
-    var center = ol.proj.transform([-85, 35], 'EPSG:4326', 'EPSG:3857');
-    function run() {
-        console.log("the purpose of this example is to show the techniques and complexities of creating a popup control");
-        common_7.cssin("simple", css);
-        document.body.appendChild(common_7.html("<div>" + html + "</div>"));
-        var vectorLayer = new ol.layer.Vector({
-            source: new ol.source.Vector()
-        });
-        var map = new ol.Map({
-            target: document.getElementsByClassName("map")[0],
-            layers: [vectorLayer],
-            view: new ol.View({
-                projection: "EPSG:3857",
-                center: center,
-                zoom: 16
-            })
-        });
-        FeatureCreator
-            .create({ map: map })
-            .addSomeFeatures(vectorLayer, center);
-        {
-            var overlay = new ol.Overlay({
-                autoPan: true,
-                position: center,
-                positioning: "center-center",
-                element: common_7.html("<div border=\"1px solid red\">\u274C</div>"),
-            });
-            map.addOverlay(overlay);
-        }
-        var popup = ol3_popup_5.Popup.create({
-            map: map,
-            pointerPosition: 12,
-            autoPan: true,
-            positioning: "bottom-center",
-        });
-        if (1) {
-            setTimeout(function () {
-                popup.show(center, "simple popup");
-            }, 1000);
-        }
-        else {
-            {
-                var overlay_1 = new ol.Overlay({
-                    autoPan: true,
-                    position: center,
-                    positioning: "bottom-center",
-                    element: common_7.html("<div style=\"text-align: center\"><div class=\"simple-popup\">Overlay with positioning set to bottom-center</div><span class=\"simple-popup-down-arrow\"></span></div>"),
-                });
-                map.addOverlay(overlay_1);
-                setTimeout(function () { return map.removeOverlay(overlay_1); }, 1000);
-            }
-            {
-                var overlay_2 = new ol.Overlay({
-                    autoPan: true,
-                    position: center,
-                    positioning: "top-center",
-                    element: common_7.html("<div style=\"text-align: center\"><span class=\"simple-popup-up-arrow\"></span><div class=\"simple-popup\">Overlay with positioning set to top-center</div>"),
-                });
-                map.addOverlay(overlay_2);
-                setTimeout(function () { return map.removeOverlay(overlay_2); }, 1000);
-            }
-            setTimeout(function () {
-                popup.options.autoPositioning = false;
-                var original = popup.getPositioning();
-                var items = common_7.pair("top,center,bottom".split(","), "left,center,right".split(","));
-                var h = setInterval(function () {
-                    var positioning;
-                    if (!items.length) {
-                        clearInterval(h);
-                        popup.options.autoPositioning = true;
-                        positioning = original;
-                    }
-                    else {
-                        positioning = items.pop().join("-");
-                    }
-                    popup.setPositioning(positioning);
-                    popup.show(center, positioning);
-                }, 1000);
-            }, 1000);
-        }
-    }
-    exports.run = run;
-});
-define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_6, Symbolizer, common_8, FeatureCreator) {
+define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_5, Symbolizer, common_8, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -2460,7 +2429,7 @@ define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/
                 zoom: 16
             })
         });
-        var popup = ol3_popup_6.Popup.create({
+        var popup = ol3_popup_5.Popup.create({
             map: map,
             autoPan: true,
             autoPanMargin: 20,
@@ -2513,5 +2482,82 @@ define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/
         });
     }
     exports.run = run;
+});
+define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/ol3-popup", "examples/extras/feature-creator"], function (require, exports, ol, common_9, ol3_popup_6, FeatureCreator) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var css = "\nhead, body, .map {\n    padding: 0;\n    margin: 0;\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.simple-popup {\n    border: 1px solid black;\n    border-radius: 4px;\n    padding: 10px;\n    background-color: rgba(80, 80, 80, 0.5);\n    color: rgb(250, 250, 250);\n    max-width: 120px;\n}\n\n.simple-popup-down-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-down-arrow:after {\n    content: \"\u21E9\";\n}\n\n.simple-popup-up-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-up-arrow:after {\n    content: \"\u21E7\";\n}\n\n.simple-popup-left-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-left-arrow:after {\n    content: \"\u21E6\";\n}\n\n.simple-popup-right-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-right-arrow:after {\n    content: \"\u21E8\";\n}\n\n";
+    var html = "\n<div class=\"map\"></div>\n";
+    var center = ol.proj.transform([-85, 35], 'EPSG:4326', 'EPSG:3857');
+    function run() {
+        console.log("the purpose of this example is to show the techniques and complexities of creating a popup control");
+        common_9.cssin("simple", css);
+        document.body.appendChild(common_9.html("<div>" + html + "</div>"));
+        var vectorLayer = new ol.layer.Vector({
+            source: new ol.source.Vector()
+        });
+        var map = new ol.Map({
+            target: document.getElementsByClassName("map")[0],
+            layers: [vectorLayer],
+            view: new ol.View({
+                projection: "EPSG:3857",
+                center: center,
+                zoom: 16
+            })
+        });
+        FeatureCreator
+            .create({ map: map })
+            .addSomeFeatures(vectorLayer, center);
+        map.addOverlay(new ol.Overlay({
+            position: center,
+            positioning: "center-center",
+            element: common_9.html("<div border=\"1px solid red\">\u274C</div>"),
+        }));
+        var popup = ol3_popup_6.Popup.create({
+            map: map,
+            pointerPosition: 5,
+            autoPan: true,
+            autoPanMargin: 20,
+            positioning: "bottom-center",
+        });
+        setTimeout(function () {
+            popup.options.autoPositioning = false;
+            var original = popup.getPositioning();
+            var items = common_9.pair("top,center,bottom".split(","), "left,center,right".split(","));
+            var h = setInterval(function () {
+                var positioning;
+                if (!items.length) {
+                    clearInterval(h);
+                    popup.options.autoPositioning = true;
+                    positioning = original;
+                }
+                else {
+                    positioning = items.pop().join("-");
+                }
+                popup.setPositioning(positioning);
+                popup.show(center, positioning);
+            }, 200);
+        }, 500);
+    }
+    exports.run = run;
+});
+define("examples/index", ["require", "exports", "examples/activate", "examples/docking", "examples/flash-style", "examples/multi", "examples/overlay", "examples/paging", "examples/style-offset", "examples/simple"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function run() {
+        var l = window.location;
+        var path = "" + l.origin + l.pathname + "?run=examples/";
+        var labs = "\n    overlay\n    simple\n    index\n    ";
+        document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
+        document.writeln(labs
+            .split(/ /)
+            .map(function (v) { return v.trim(); })
+            .filter(function (v) { return !!v; })
+            .sort()
+            .map(function (lab) { return "<a href=\"" + path + lab + "&debug=1\">" + lab + "</a>"; })
+            .join("<br/>"));
+    }
+    exports.run = run;
+    ;
 });
 //# sourceMappingURL=examples.max.js.map
