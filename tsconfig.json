@@ -3,8 +3,9 @@
         "module": "amd",
         "target": "es5",
         "declaration": true,
-        "noImplicitAny": false,
+        "noImplicitAny": true,
         "removeComments": true,
+        "noImplicitReturns": true,
         "outFile": "built/index.max.js",
         "sourceMap": true,
         "moduleResolution": "node",
@@ -14,8 +15,5 @@
                 "../ol3-popup/ol3-popup.ts"
             ]
         }
-    },
-    "include": [
-        "index.ts"
-    ]
+    }
 }

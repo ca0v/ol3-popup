@@ -15,8 +15,8 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function getInteriorPoint(geom) {
-        if (geom["getInteriorPoint"])
-            return geom["getInteriorPoint"]().getCoordinates();
+        if (geom.getInteriorPoint)
+            return (geom["getInteriorPoint"]()).getCoordinates();
         return ol.extent.getCenter(geom.getExtent());
     }
     var classNames = {
@@ -66,7 +66,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             configurable: true
         });
         Paging.prototype.on = function (name, listener) {
-            _super.prototype.on.call(this, name, listener);
+            return _super.prototype.on.call(this, name, listener);
         };
         Paging.prototype.findPage = function (feature) {
             return this._pages.filter(function (p) { return p.feature === feature; })[0];
@@ -123,7 +123,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                     uid: getId(),
                 });
             }
-            else if (source["appendChild"]) {
+            else if (source.appendChild) {
                 pageDiv.classList.add(classNames.page);
                 this._pages.push(page = {
                     element: pageDiv,
@@ -233,6 +233,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                     result = i;
                     return true;
                 }
+                return false;
             });
             return result;
         };
@@ -409,7 +410,6 @@ define("node_modules/ol3-fun/ol3-fun/common", ["require", "exports"], function (
     }
     exports.cssin = cssin;
     function debounce(func, wait, immediate) {
-        var _this = this;
         if (wait === void 0) { wait = 50; }
         if (immediate === void 0) { immediate = false; }
         var timeout;
@@ -421,13 +421,13 @@ define("node_modules/ol3-fun/ol3-fun/common", ["require", "exports"], function (
             var later = function () {
                 timeout = null;
                 if (!immediate)
-                    func.apply(_this, args);
+                    func.apply({}, args);
             };
             var callNow = immediate && !timeout;
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
             if (callNow)
-                func.call(_this, args);
+                func.apply({}, args);
         });
     }
     exports.debounce = debounce;
@@ -518,7 +518,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                     if (!found_1) {
                         map.forEachFeatureAtPixel(args.pixel, function (feature, layer) {
                             if (!layer || layer === overlay || -1 === layers_1.indexOf(layer)) {
-                                return;
+                                return null;
                             }
                             page_1 = popup.pages.addFeature(feature, {
                                 searchCoordinate: args.coordinate
@@ -594,6 +594,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                         source.removeFeature(f);
                         return true;
                     }
+                    return false;
                 });
             });
             popup.pages.on("add", function (args) {
@@ -781,7 +782,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         className: classNames.olPopup,
         css: "\n.ol-popup {\n    background-color: white;\n    border: 1px solid black;\n    padding: 4px;\n    padding-top: 24px;\n}\n.ol-popup .ol-popup-content {\n    overflow: auto;\n    min-width: 120px;\n    max-width: 360px;\n    max-height: 240px;\n}\n.ol-popup .pages {\n    overflow: auto;\n    max-width: 360px;\n    max-height: 240px;\n}\n.ol-popup .ol-popup-closer {\n    right: 4px;\n}\n".trim(),
         insertFirst: true,
-        pointerPosition: 50,
+        pointerPosition: 20,
         offset: [0, -10],
         positioning: "bottom-center",
         stopEvent: true,

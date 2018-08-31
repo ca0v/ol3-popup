@@ -94,7 +94,7 @@ export class SelectInteraction extends ol.interaction.Select {
                     // this technique considers styling (e.g. point features and large borders)
                     map.forEachFeatureAtPixel(args.pixel, (feature: ol.Feature, layer: ol.layer.Vector) => {
                         if (!layer || layer === overlay || -1 === layers.indexOf(layer)) {
-                            return;
+                            return null;
                         }
                         page = popup.pages.addFeature(feature, {
                             searchCoordinate: args.coordinate
@@ -173,6 +173,7 @@ export class SelectInteraction extends ol.interaction.Select {
                     source.removeFeature(f);
                     return true;
                 }
+                return false;
             });
         });
 

@@ -62,7 +62,7 @@ class FeatureCreator {
         map.on("click", (event: ol.MapBrowserEvent) => {
             if (!ol.events.condition.altKeyOnly(event)) return;
 
-            event = event["mapBrowserEvent"] || event;
+            event = (<any>event).mapBrowserEvent || event;
             let coord = event.coordinate;
             let geom = new ol.geom.Point(coord);
             let feature = new ol.Feature({

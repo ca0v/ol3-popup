@@ -84,7 +84,7 @@ export function run() {
 
     map.once('postrender', () => {
         // test autoPositioning
-        let d = new Promise((resolve, reject) => {
+        let d = new Promise((resolve: () => void) => {
             popup.options.autoPositioning = false;
             let original = popup.getPositioning();
             let items = pair("top,center,bottom".split(","), "left,center,right".split(","));

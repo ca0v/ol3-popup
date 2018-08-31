@@ -1,5 +1,5 @@
 (function () {
-    function getParameterByName(name, url?) {
+    function getParameterByName(name: string, url?: string) {
         url = url || window.location.href;
         name = name.replace(/[\[\]]/g, "\\$&");
         var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
@@ -55,7 +55,7 @@
         deps: deps,
 
         callback: function () {
-            require([getParameterByName("run") || "examples/index"], function (test) { test.run(); });
+            require([getParameterByName("run") || "examples/index"], function (test: { run: Function }) { test.run(); });
         }
     });
 

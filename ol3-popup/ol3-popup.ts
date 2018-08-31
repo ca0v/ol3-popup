@@ -266,7 +266,7 @@ const DEFAULT_OPTIONS: PopupOptions = {
 `.trim(),
     // determines if this should be the first (or last) element in its container
     insertFirst: true,
-    pointerPosition: 50,
+    pointerPosition: 20,
     offset: [0, -10],
     positioning: "bottom-center",
     stopEvent: true,
@@ -517,7 +517,7 @@ export class Popup extends ol.Overlay implements IPopup {
     public panIntoView() {
         if (!this.isOpened()) return;
         if (this.isDocked()) return;
-        super.panIntoView();
+        super.panIntoView(); // need to add to typings
     }
 
     public destroy() {

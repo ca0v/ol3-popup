@@ -3,7 +3,7 @@ import { Popup } from "../ol3-popup";
 import $ = require("jquery");
 
 function getInteriorPoint(geom: ol.geom.Geometry) {
-    if (geom["getInteriorPoint"]) return (<ol.geom.Point>geom["getInteriorPoint"]()).getCoordinates();
+    if ((<any>geom).getInteriorPoint) return ((<any>geom)["getInteriorPoint"]()).getCoordinates();
     return ol.extent.getCenter(geom.getExtent());
 }
 
@@ -69,23 +69,23 @@ export class Paging extends ol.Observable implements IPaging {
         return this._pages.length;
     }
 
-    on(name: string, listener: () => void);
+    on(name: string, listener: () => void): (ol.EventsKey | ol.EventsKey[]);
     on(name: "add", listener: (evt: {
         pageIndex: number;
         feature: ol.Feature;
         element: HTMLElement;
         geom: ol.geom.Geometry;
-    }) => void);
-    on(name: "clear", listener: () => void);
-    on(name: "goto", listener: () => void);
+    }) => void): (ol.EventsKey | ol.EventsKey[]);
+    on(name: "clear", listener: () => void): (ol.EventsKey | ol.EventsKey[]);
+    on(name: "goto", listener: () => void): (ol.EventsKey | ol.EventsKey[]);
     on(name: "remove", listener: (evt: {
         pageIndex: number;
         feature: ol.Feature;
         element: HTMLElement;
         geom: ol.geom.Geometry;
-    }) => void);
+    }) => void): (ol.EventsKey | ol.EventsKey[]);
     on(name: string, listener: (evt?: any) => void) {
-        super.on(name, listener);
+        return super.on(name, listener);
     }
 
     private findPage(feature: ol.Feature) {
@@ -157,7 +157,7 @@ export class Paging extends ol.Observable implements IPaging {
             });
         }
 
-        else if (source["appendChild"]) {
+        else if ((<any>source).appendChild) {
             pageDiv.classList.add(classNames.page);
             this._pages.push(page = {
                 element: pageDiv,
@@ -166,7 +166,7 @@ export class Paging extends ol.Observable implements IPaging {
             });
         }
 
-        else if (source["then"]) {
+        else if ((<any>source)["then"]) {
             let d = <JQueryDeferred<HTMLElement | string>>source;
             pageDiv.classList.add(classNames.page);
             this._pages.push(page = {
@@ -281,6 +281,7 @@ export class Paging extends ol.Observable implements IPaging {
                 result = i;
                 return true;
             }
+            return false;
         });
 
         return result;

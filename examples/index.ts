@@ -1,6 +1,5 @@
 import "./activate";
 import "./docking";
-import "./flash-style";
 import "./multi";
 import "./overlay";
 import "./paging";
@@ -13,7 +12,8 @@ export function run() {
     let labs = `
     overlay
     simple
-    multi
+    activate
+    multi    
     docking
     index
     `;
