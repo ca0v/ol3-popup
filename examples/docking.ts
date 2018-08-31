@@ -41,8 +41,8 @@ const css_popup = `
     top: 20px;
     right: 20px;
     width: 200px;
-    height: 300px;
-    border: 1px solid rgba(0,0,0,0.1);
+    height: 200px;
+    border: 1px solid rgba(0,0,0,0.05);
     display: inline-block;
     padding: 20px;
     background: transparent;
@@ -77,20 +77,20 @@ const css_popup = `
     background:transparent;
 }
 
-.ol-popup .ol-popup-closer {
-    width: 24px;
-    height: 24px;    
-    text-align: center;
-    border-top-right-radius: 8px;
-}
-
 .ol-popup .ol-popup-docker {
     width: 24px;
     height: 24px;
     text-align: center;
 }
 
-.ol-popup .ol-popup-closer:hover {
+.ol-popup-element .ol-popup-closer {
+    width: 24px;
+    height: 24px;    
+    text-align: center;
+    border-top-right-radius: 8px;
+}
+
+.ol-popup-element .ol-popup-closer:hover {
     background-color: red;
     color: white;
 }
@@ -130,14 +130,6 @@ export function run() {
     let map = new ol.Map({
         target: mapContainer,
         layers: [
-            new ol.layer.Image({
-                source: new ol.source.ImageArcGISRest({
-                    projection: "EPSG:3857",
-                    ratio: 1,
-                    params: {},
-                    url: "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Specialty/ESRI_StateCityHighway_USA/MapServer"
-                })
-            })
         ],
         view: new ol.View({
             center: center,
@@ -157,11 +149,11 @@ export function run() {
         showCoordinates: true,
         css: css_popup,
         dockContainer: dockContainer,
-        pointerPosition: 150,
+        pointerPosition: 15,
         multi: true
     });
 
-    p1.on("dock", debounce(() => {
+    0 && p1.on("dock", debounce(() => {
 
         let h = p1.on("show", () => {
             let p = Popup.create({
@@ -185,7 +177,18 @@ export function run() {
 
         p1.once(["undock", "dispose"], () => ol.Observable.unByKey(h));
 
-
     }));
+
+    map.once('postrender', function (event) {
+        p1.show(center, "Docking...");
+        setTimeout(() => {
+            p1.dock();
+            p1.show(center, "Docked");
+            setTimeout(() => {
+                p1.undock();
+                p1.show(center, "Undocked");
+            }, 1000);
+        }, 1000);
+    });
 
 }

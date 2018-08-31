@@ -23,7 +23,7 @@ const css = `
     display: none;
 }
 
-.ol-popup.docked {
+.ol-popup-element.docked {
     position:absolute;
     bottom:0;
     top:0;
@@ -34,17 +34,17 @@ const css = `
     pointer-events: all;
 }
 
-.ol-popup.docked:after {
+.ol-popup-element.docked:after {
     display:none;
 }
 
-.ol-popup.docked .pages {
+.ol-popup-element.docked .pages {
     max-height: inherit;
     overflow: auto;
     height: calc(100% - 60px);
 }
 
-.ol-popup.docked .pagination {
+.ol-popup-element.docked .pagination {
     position: absolute;
     bottom: 0;
 }
@@ -61,7 +61,19 @@ const css = `
     display: none;
 }
 
-.ol-popup .ol-popup-closer {
+.ol-popup-element .pagination .btn-prev::after {
+    content: "⇦"; 
+}
+
+.ol-popup-element .pagination .btn-next::after {
+    content: "⇨"; 
+}
+
+.ol-popup-element .pagination.hidden {
+    display: none;
+}
+
+.ol-popup-element .ol-popup-closer {
     border: none;
     background: transparent;
     color: inherit;
@@ -71,7 +83,7 @@ const css = `
     text-decoration: none;
 }
     
-.ol-popup .ol-popup-closer:after {
+.ol-popup-element .ol-popup-closer:after {
     content:'✖';
 }
 
@@ -87,6 +99,51 @@ const css = `
 
 .ol-popup .ol-popup-docker:after {
     content:'□';
+}
+
+.simple-popup {
+    border: 1px solid black;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: rgba(80, 80, 80, 0.5);
+    color: rgb(250, 250, 250);
+    max-width: 120px;
+}
+
+.simple-popup-down-arrow {
+    color: black;
+    font-size: 20px;
+}
+
+.simple-popup-down-arrow:after {
+    content: "⇩";
+}
+
+.simple-popup-up-arrow {
+    color: black;
+    font-size: 20px;
+}
+
+.simple-popup-up-arrow:after {
+    content: "⇧";
+}
+
+.simple-popup-left-arrow {
+    color: black;
+    font-size: 20px;
+}
+
+.simple-popup-left-arrow:after {
+    content: "⇦";
+}
+
+.simple-popup-right-arrow {
+    color: black;
+    font-size: 20px;
+}
+
+.simple-popup-right-arrow:after {
+    content: "⇨";
 }
 `;
 
@@ -109,6 +166,7 @@ const classNames = {
     olPopupDocker: 'ol-popup-docker',
     olPopupCloser: 'ol-popup-closer',
     olPopupContent: 'ol-popup-content',
+    olPopupElement: 'ol-popup-element',
     hidden: 'hidden',
     docked: 'docked'
 };
@@ -253,8 +311,8 @@ export class Popup extends ol.Overlay implements IPopup {
         this.handlers = [];
 
         this.configureDom(options);
-        this.configureDockContainer(this.domNode);
-        this.createCloser(this.domNode);
+        this.configureDockerButton(this.domNode);
+        this.configureCloserButton(this.domNode);
         this.configureContentContainer();
         this.configurePaging();
         this.configureAutoPopup();
@@ -264,40 +322,36 @@ export class Popup extends ol.Overlay implements IPopup {
         cssin("ol3-popup", css);
         options.css && this.injectCss("options", options.css);
         let domNode = this.domNode = document.createElement('div');
-        domNode.className = "popup-element";
+        domNode.className = classNames.olPopupElement;
         this.setElement(domNode);
         this.handlers.push(() => domNode.remove());
     }
 
     private configureContentContainer() {
-        {
-            let content = this.content = document.createElement('div');
-            content.className = classNames.olPopupContent;
-            this.domNode.appendChild(content);
-        }
+        let content = this.content = document.createElement('div');
+        content.className = classNames.olPopupContent;
+        this.domNode.appendChild(content);
     }
 
-    private configureDockContainer(domNode: HTMLDivElement) {
-        if (this.options.dockContainer) {
-            let dockContainer = this.options.dockContainer;
-            if (dockContainer) {
-                let docker = this.docker = document.createElement('label');
-                docker.className = classNames.olPopupDocker;
-                domNode.appendChild(docker);
-                docker.addEventListener('click', evt => {
-                    this.isDocked() ? this.undock() : this.dock();
-                    evt.preventDefault();
-                }, false);
-            }
-        }
+    private configureDockerButton(domNode: HTMLDivElement) {
+        if (!this.options.dockContainer) return;
+        let docker = this.docker = document.createElement('label');
+        docker.title = "docker";
+        docker.className = classNames.olPopupDocker;
+        domNode.appendChild(docker);
+        docker.addEventListener('click', evt => {
+            this.isDocked() ? this.undock() : this.dock();
+            evt.preventDefault();
+        }, false);
     }
 
-    private createCloser(domNode: HTMLDivElement) {
+    private configureCloserButton(domNode: HTMLDivElement) {
         let closer = this.closer = document.createElement('label');
+        closer.title = "closer";
         closer.className = classNames.olPopupCloser;
         domNode.appendChild(closer);
         closer.addEventListener('click', evt => {
-            this.hide();
+            this.isDocked() ? this.undock() : this.hide();
             evt.preventDefault();
         }, false);
     }
@@ -332,55 +386,43 @@ export class Popup extends ol.Overlay implements IPopup {
     }
 
     private indicator: ol.Overlay;
+    private hideIndicator() {
+        this.indicator && this.indicator.setPosition(undefined);
+    }
 
-    setPointerPosition(offset = this.options.pointerPosition || 0) {
-        if (!this.getPosition() && this.indicator) {
-            this.indicator.setPosition(undefined);
-            return;
-        }
-
-        let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
-
-        let overlay = this.indicator;
-        if (!overlay) {
-            overlay = this.indicator = new ol.Overlay({
+    private showIndicator() {
+        let indicator = this.indicator;
+        if (!indicator) {
+            indicator = this.indicator = new ol.Overlay({
                 autoPan: this.options.autoPan,
                 autoPanMargin: this.options.autoPanMargin,
                 autoPanAnimation: this.options.autoPanAnimation,
                 element: html(`<span class="simple-popup-down-arrow"></span>`),
             });
-            this.options.map.addOverlay(overlay);
+            this.options.map.addOverlay(indicator);
         }
 
-        overlay.setPositioning(this.getPositioning());
-        overlay.setPosition(this.getPosition());
+        indicator.setPositioning(this.getPositioning());
+        indicator.setPosition(this.getPosition());
+        return indicator;
+    }
+
+    private positionIndicator(offset = this.options.pointerPosition || 0) {
+        if (!this.getPosition() && this.indicator) {
+            this.hideIndicator();
+            return;
+        }
+
+        let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
+        let indicator = this.showIndicator();
 
         switch (verticalPosition) {
             case "top":
                 {
-                    overlay.setElement(html(`<span class="simple-popup-up-arrow"></span>`));
-                    overlay.setOffset([0, 0 + offset]);
-                    overlay.setPositioning("top-center");
-                    switch (horizontalPosition) {
-                        case "center":
-                            this.setOffset([0, 8 + offset]);
-                            break;
-                        case "left":
-                            this.setOffset([-7, 8 + offset]);
-                            break;
-                        case "right":
-                            this.setOffset([7, 8 + offset]);
-                            break;
-                    }
-                }
-                break;
-            case "bottom":
-                {
-                    overlay.setElement(html(`<span class="simple-popup-down-arrow"></span>`));
-                    overlay.setOffset([0, 0 - offset]);
-                    overlay.setPositioning("bottom-center");
-                    let dx = 7;
-                    let dy = -10 - offset;
+                    indicator.setElement(html(`<span class="simple-popup-up-arrow"></span>`));
+                    indicator.setOffset([0, 0 + offset]);
+                    indicator.setPositioning("top-center");
+                    let [dx, dy] = [7, 8 + offset];
                     switch (horizontalPosition) {
                         case "center":
                             this.setOffset([0, dy]);
@@ -391,39 +433,57 @@ export class Popup extends ol.Overlay implements IPopup {
                         case "right":
                             this.setOffset([dx, dy]);
                             break;
+                        default:
+                            throw `unknown value: ${horizontalPosition}`;
+                    }
+                }
+                break;
+            case "bottom":
+                {
+                    indicator.setElement(html(`<span class="simple-popup-down-arrow"></span>`));
+                    indicator.setOffset([0, 0 - offset]);
+                    indicator.setPositioning("bottom-center");
+                    let [dx, dy] = [7, -(10 + offset)];
+                    switch (horizontalPosition) {
+                        case "center":
+                            this.setOffset([0, dy]);
+                            break;
+                        case "left":
+                            this.setOffset([-dx, dy]);
+                            break;
+                        case "right":
+                            this.setOffset([dx, dy]);
+                            break;
+                        default:
+                            throw `unknown value: ${horizontalPosition}`;
                     }
                 }
                 break;
 
             case "center":
-                switch (horizontalPosition) {
-                    case "center":
-                        overlay.setPosition(null);
-                        break;
-                    case "left":
-                        overlay.setElement(html(`<span class="simple-popup-left-arrow"></span>`));
-                        overlay.setOffset([offset, 0]);
-                        overlay.setPositioning("center-left");
-                        this.setOffset([5 + offset, 0]);
-                        break;
-                    case "right":
-                        overlay.setElement(html(`<span class="simple-popup-right-arrow"></span>`));
-                        overlay.setOffset([-offset, 0]);
-                        overlay.setPositioning("center-right");
-                        this.setOffset([-5 - offset, 0]);
-                        break;
-                }
-                break;
-            default:
-                throw `unknown value: ${verticalPosition}`;
-        }
+                {
+                    let [dx, dy] = [5 + offset, 0];
+                    switch (horizontalPosition) {
+                        case "center":
+                            indicator.setPosition(null);
+                            break;
+                        case "left":
+                            indicator.setElement(html(`<span class="simple-popup-left-arrow"></span>`));
+                            indicator.setOffset([offset, 0]);
+                            indicator.setPositioning("center-left");
+                            this.setOffset([dx, dy]);
+                            break;
+                        case "right":
+                            indicator.setElement(html(`<span class="simple-popup-right-arrow"></span>`));
+                            indicator.setOffset([-offset, 0]);
+                            indicator.setPositioning("center-right");
+                            this.setOffset([-dx, dy]);
+                            break;
+                        default:
+                            throw `unknown value: ${horizontalPosition}`;
 
-        switch (horizontalPosition) {
-            case "center":
-                break;
-            case "left":
-                break;
-            case "right":
+                    }
+                }
                 break;
             default:
                 throw `unknown value: ${verticalPosition}`;
@@ -431,7 +491,7 @@ export class Popup extends ol.Overlay implements IPopup {
 
     }
 
-    setPosition(position: ol.Coordinate) {
+    public setPosition(position: ol.Coordinate) {
         // make popup visible
         this.options.position = <any>position;
         if (!this.isDocked()) {
@@ -439,6 +499,7 @@ export class Popup extends ol.Overlay implements IPopup {
             if (!arrayEqual(this.getPosition(), position)) {
                 super.setPosition(position);
             }
+            this.positionIndicator(this.options.pointerPosition);
         } else {
             // move map to this position
             let animation = <ol.olx.animation.AnimateOptions>{
@@ -450,29 +511,32 @@ export class Popup extends ol.Overlay implements IPopup {
             view.animate(animation);
         }
 
-        this.setPointerPosition(this.options.pointerPosition);
     }
 
-    panIntoView() {
+    public panIntoView() {
         if (!this.isOpened()) return;
         if (this.isDocked()) return;
         super.panIntoView();
     }
 
-    destroy() {
+    public destroy() {
         this.handlers.forEach(h => h());
         this.handlers = [];
         this.getMap() && this.getMap().removeOverlay(this);
         this.dispatchEvent(eventNames.dispose);
     }
 
-    show(coord: ol.Coordinate, html: string | HTMLElement) {
+    public show(coord: ol.Coordinate, html: string | HTMLElement = null) {
 
-        if (html instanceof HTMLElement) {
+        if (html === null) {
+            // leave the content along
+        } else if (html instanceof HTMLElement) {
             this.content.innerHTML = "";
             this.content.appendChild(html);
-        } else {
+        } else if (typeof html === "string") {
             this.content.innerHTML = html;
+        } else {
+            throw "unexpected html";
         }
 
         // determine the positioning before assigning a position to prevent launching unwanted panning animations
@@ -493,11 +557,11 @@ export class Popup extends ol.Overlay implements IPopup {
     on(type: "hide", listener: () => void): ol.EventsKey;
     on(type: "show", listener: () => void): ol.EventsKey;
     on(type: "dispose", listener: () => void): ol.EventsKey;
-    on(type: (string | string[]), listener: () => void): (ol.EventsKey | ol.EventsKey[]) {
+    public on(type: (string | string[]), listener: () => void): (ol.EventsKey | ol.EventsKey[]) {
         return super.on(type, listener);
     }
 
-    hide() {
+    public hide() {
         this.setPosition(undefined);
         this.indicator && this.indicator.setPosition(undefined);
         this.pages.clear();
@@ -506,32 +570,36 @@ export class Popup extends ol.Overlay implements IPopup {
         return this;
     }
 
-    isOpened() {
+    public isOpened() {
         return !this.domNode.classList.contains(classNames.hidden);
     }
 
-    isDocked() {
+    public isDocked() {
         return this.domNode.classList.contains(classNames.docked);
     }
 
-    dock() {
+    public dock() {
         let map = this.getMap();
         this.options.map = map;
         this.options.parentNode = this.domNode.parentElement;
 
         map.removeOverlay(this);
+        map.removeOverlay(this.indicator);
         this.domNode.classList.add(classNames.docked);
         this.options.dockContainer.appendChild(this.domNode);
         this.dispatchEvent(eventNames.dock);
         return this;
     }
 
-    undock() {
+    public undock() {
+        let map = this.options.map;
         this.options.parentNode.appendChild(this.domNode);
         this.domNode.classList.remove(classNames.docked);
-        this.options.map.addOverlay(this);
-        this.setPosition(this.options.position);
+        map.addOverlay(this);
+        map.addOverlay(this.indicator);
         this.dispatchEvent(eventNames.undock);
+        // probably should be a "undock" listener?
+        this.show(this.options.position);
         return this;
     }
 

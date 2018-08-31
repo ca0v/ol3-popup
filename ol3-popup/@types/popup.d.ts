@@ -5,7 +5,6 @@ import { PopupOptions } from "./popup-options";
  * This is the contract that will not break between versions
  */
 export interface IPopup_4_0_1<T> extends ol.Overlay {
-    options: PopupOptions;
     // show popup at this coordinate
     show(position: ol.Coordinate, markup: string): T;
     // close popup
@@ -20,9 +19,11 @@ export interface IPopup_4_0_1<T> extends ol.Overlay {
     isDocked(): boolean;
     // changes the infoViewer relative to actual target location (pixels)
     applyOffset([x, y]: [number, number]);
-    // sets the pointer position
-    setPointerPosition(number?);
 }
 
-export interface IPopup extends IPopup_4_0_1<any> {
+export interface IPopup_5_1_3<T> extends IPopup_4_0_1<T> {
+    options: PopupOptions;
+}
+
+export interface IPopup extends IPopup_5_1_3<any> {
 }

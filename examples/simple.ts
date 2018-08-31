@@ -27,51 +27,6 @@ body * {
     box-sizing: border-box;
 }
 
-.simple-popup {
-    border: 1px solid black;
-    border-radius: 4px;
-    padding: 10px;
-    background-color: rgba(80, 80, 80, 0.5);
-    color: rgb(250, 250, 250);
-    max-width: 120px;
-}
-
-.simple-popup-down-arrow {
-    color: black;
-    font-size: 20px;
-}
-
-.simple-popup-down-arrow:after {
-    content: "⇩";
-}
-
-.simple-popup-up-arrow {
-    color: black;
-    font-size: 20px;
-}
-
-.simple-popup-up-arrow:after {
-    content: "⇧";
-}
-
-.simple-popup-left-arrow {
-    color: black;
-    font-size: 20px;
-}
-
-.simple-popup-left-arrow:after {
-    content: "⇦";
-}
-
-.simple-popup-right-arrow {
-    color: black;
-    font-size: 20px;
-}
-
-.simple-popup-right-arrow:after {
-    content: "⇨";
-}
-
 `;
 
 const html = `
@@ -118,15 +73,16 @@ export function run() {
         map: map,
         pointerPosition: 5,
         autoPan: true,
+        showCoordinates: true,
         autoPanMargin: 20,
         positioning: "bottom-center",
         autoPanAnimation: {
             source: null,
-            duration: 100
+            duration: 20
         }
     });
 
-    setTimeout(() => {
+    map.once('postrender', () => {
         // test autoPositioning
         let d = new Promise((resolve, reject) => {
             popup.options.autoPositioning = false;
@@ -161,9 +117,9 @@ export function run() {
                 }
                 let c = coords.pop();
                 popup.show(c, `${c.map(n => Math.floor(n))}<br/>${coords.length} remaining`);
-            }, 1000);
+            }, 200);
         });
 
-    }, 500);
+    });
 
 }

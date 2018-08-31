@@ -13,6 +13,7 @@ export function run() {
     let labs = `
     overlay
     simple
+    docking
     index
     `;
     
