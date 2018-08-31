@@ -368,7 +368,8 @@ export class Popup extends ol.Overlay implements IPopup {
     private configureAutoPopup() {
         if (!this.options.autoPopup) return;
         let autoPopup = SelectInteraction.create({
-            popup: this
+            popup: this,
+            buffer: 4 // symbology defect?  doesn't seem to find the markers unless you click left-of-center
         });
         this.on("change:active", () => {
             autoPopup.set("active", this.get("active"));

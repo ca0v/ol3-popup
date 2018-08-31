@@ -494,7 +494,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                     var extent_1 = ol.extent.createEmpty();
                     extent_1[0] = extent_1[2] = args.pixel[0];
                     extent_1[1] = extent_1[3] = args.pixel[1];
-                    extent_1 = ol.extent.buffer(extent_1, 4);
+                    extent_1 = ol.extent.buffer(extent_1, _this.options.buffer);
                     _a = [
                         map.getCoordinateFromPixel([extent_1[0], extent_1[1]]),
                         map.getCoordinateFromPixel([extent_1[2], extent_1[3]])
@@ -622,7 +622,8 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
             dispose(this.handlers);
         };
         SelectInteraction.DEFAULT_OPTIONS = {
-            multi: true
+            multi: true,
+            buffer: 8,
         };
         return SelectInteraction;
     }(ol.interaction.Select));
@@ -1665,7 +1666,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             if (!this.options.autoPopup)
                 return;
             var autoPopup = interaction_1.SelectInteraction.create({
-                popup: this
+                popup: this,
+                buffer: 4
             });
             this.on("change:active", function () {
                 autoPopup.set("active", _this.get("active"));
@@ -1954,7 +1956,7 @@ define("examples/extras/feature-creator", ["require", "exports", "openlayers", "
                 bar: "bar",
             });
             circleFeature.setGeometry(new ol.geom.Point(random(center, 100)));
-            setStyle(circleFeature, {
+            var style = {
                 "circle": {
                     "fill": {
                         "color": "rgba(255,0,0,0.90)"
@@ -1966,7 +1968,8 @@ define("examples/extras/feature-creator", ["require", "exports", "openlayers", "
                     },
                     "radius": 6
                 }
-            });
+            };
+            setStyle(circleFeature, style);
             var svgFeature = new ol.Feature({
                 id: 123,
                 foo: "foo",
@@ -2174,7 +2177,7 @@ define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-pop
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var popupCss = "\n.ol-popup {\n    background-color: white;\n    padding: 4px;\n    padding-top: 24px;\n    border: 1px solid rgba(0, 0, 0, 1);\n}\n.pagination {\n    min-width: 160px;\n}\n.pagination .page-num {\n    min-width: 100px;\n    display: inline-block;\n    text-align: center; \n}\n.pagination .arrow.btn-next {\n    float: right;\n}\ndiv.map > label {\n    position: absolute;\n    top: 10px;\n    left: 60px;\n    z-index: 1;\n}\n";
-    var html = "\n<div class=\"map\">\n<label>Hold the shift key down when clicking the marker to multi-select</label>\n</div>\n";
+    var html = "\n<div class=\"map\">\n<label>Hold the shift key down when clicking the marker to multi-select, need to click a little left of the markers..it's looking at feature coordinates not symbols (but still a bit off)</label>\n</div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
         common_5.cssin("multi", css);
@@ -2599,7 +2602,7 @@ define("examples/index", ["require", "exports", "examples/activate", "examples/d
     function run() {
         var l = window.location;
         var path = "" + l.origin + l.pathname + "?run=examples/";
-        var labs = "\n    overlay\n    simple\n    docking\n    index\n    ";
+        var labs = "\n    overlay\n    simple\n    multi\n    docking\n    index\n    ";
         document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
         document.writeln(labs
             .split(/ /)

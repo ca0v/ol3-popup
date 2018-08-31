@@ -7,6 +7,7 @@ import { defaults } from "ol3-fun/ol3-fun/common";
 export interface SelectOptions extends olx.interaction.SelectOptions {
     map?: ol.Map;
     popup?: Popup;
+    buffer?: number;
 }
 
 // to be shared across all disposables via ol3-fun
@@ -21,7 +22,8 @@ export class SelectInteraction extends ol.interaction.Select {
     public options: SelectOptions;
 
     static DEFAULT_OPTIONS = <SelectOptions>{
-        multi: true
+        multi: true,
+        buffer: 8,
     };
 
     static create(options: SelectOptions) {
@@ -62,7 +64,7 @@ export class SelectInteraction extends ol.interaction.Select {
                 let extent = ol.extent.createEmpty();
                 extent[0] = extent[2] = args.pixel[0];
                 extent[1] = extent[3] = args.pixel[1];
-                extent = ol.extent.buffer(extent, 4);
+                extent = ol.extent.buffer(extent, this.options.buffer);
 
                 [[extent[0], extent[3]], [extent[2], extent[1]]] = [
                     map.getCoordinateFromPixel([extent[0], extent[1]]),

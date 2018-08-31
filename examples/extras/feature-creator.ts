@@ -84,7 +84,7 @@ class FeatureCreator {
         });
         circleFeature.setGeometry(new ol.geom.Point(random(center, 100)));
 
-        setStyle(circleFeature, {
+        let style: SymbolizerFormat.Style = {
             "circle": {
                 "fill": {
                     "color": "rgba(255,0,0,0.90)"
@@ -96,7 +96,8 @@ class FeatureCreator {
                 },
                 "radius": 6
             }
-        });
+        };
+        setStyle(circleFeature, style);
 
         let svgFeature = new ol.Feature({
             id: 123,

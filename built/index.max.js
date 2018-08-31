@@ -494,7 +494,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                     var extent_1 = ol.extent.createEmpty();
                     extent_1[0] = extent_1[2] = args.pixel[0];
                     extent_1[1] = extent_1[3] = args.pixel[1];
-                    extent_1 = ol.extent.buffer(extent_1, 4);
+                    extent_1 = ol.extent.buffer(extent_1, _this.options.buffer);
                     _a = [
                         map.getCoordinateFromPixel([extent_1[0], extent_1[1]]),
                         map.getCoordinateFromPixel([extent_1[2], extent_1[3]])
@@ -622,7 +622,8 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
             dispose(this.handlers);
         };
         SelectInteraction.DEFAULT_OPTIONS = {
-            multi: true
+            multi: true,
+            buffer: 8,
         };
         return SelectInteraction;
     }(ol.interaction.Select));
@@ -860,7 +861,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             if (!this.options.autoPopup)
                 return;
             var autoPopup = interaction_1.SelectInteraction.create({
-                popup: this
+                popup: this,
+                buffer: 4
             });
             this.on("change:active", function () {
                 autoPopup.set("active", _this.get("active"));
