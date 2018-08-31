@@ -1450,27 +1450,37 @@ define("node_modules/ol3-symbolizer/index", ["require", "exports", "node_modules
 define("ol3-popup/commands/smartpick", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    function smartpick(popup, threshold) {
+    function smartpick(popup, targetPosition, threshold) {
+        if (!targetPosition) {
+            targetPosition = popup.getPosition();
+        }
+        var padding = [0, 0];
         if (typeof threshold !== "number") {
             threshold = (popup.options.autoPanMargin || 0) + (popup.options.pointerPosition || 0);
+            var content = popup.content;
+            var style = getComputedStyle(content);
+            var _a = [style.width, style.height].map(function (n) { return parseInt(n); }), w = _a[0], h = _a[1];
+            padding = [threshold + w / 2, threshold + h / 2];
         }
-        var _a = popup.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
-        var targetPosition = popup.getPosition();
-        var _b = popup.options.map.getPixelFromCoordinate(targetPosition), x = _b[0], y = _b[1];
-        var _c = popup.options.map.getSize(), width = _c[0], height = _c[1];
+        else {
+            padding = [threshold, threshold];
+        }
+        var _b = popup.getPositioning().split("-", 2), verticalPosition = _b[0], horizontalPosition = _b[1];
+        var _c = popup.options.map.getPixelFromCoordinate(targetPosition), x = _c[0], y = _c[1];
+        var _d = popup.options.map.getSize(), width = _d[0], height = _d[1];
         var distanceToLeft = x;
         var distanceToTop = y;
         var distanceToRight = width - x;
         var distanceToBottom = height - y;
-        if (distanceToTop < threshold)
+        if (distanceToTop < padding[1])
             verticalPosition = "top";
-        else if (distanceToBottom < threshold)
+        else if (distanceToBottom < padding[1])
             verticalPosition = "bottom";
         else
             verticalPosition = null;
-        if (distanceToLeft < threshold)
+        if (distanceToLeft < padding[0])
             horizontalPosition = "left";
-        else if (distanceToRight < threshold)
+        else if (distanceToRight < padding[0])
             horizontalPosition = "right";
         else
             horizontalPosition = "center";
@@ -1484,7 +1494,7 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
     exports.smartpick = smartpick;
     ;
 });
-define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer, smartpick_1) {
+define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer, smartpick_1, mixin_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -1679,14 +1689,13 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 this.indicator.setPosition(undefined);
                 return;
             }
-            if (this.options.autoPositioning) {
-                this.setPositioning(smartpick_1.smartpick(this, this.options.autoPanMargin));
-            }
             var _a = this.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
             var overlay = this.indicator;
             if (!overlay) {
                 overlay = this.indicator = new ol.Overlay({
-                    autoPan: false,
+                    autoPan: this.options.autoPan,
+                    autoPanMargin: this.options.autoPanMargin,
+                    autoPanAnimation: this.options.autoPanAnimation,
                     element: common_2.html("<span class=\"simple-popup-down-arrow\"></span>"),
                 });
                 this.options.map.addOverlay(overlay);
@@ -1773,10 +1782,12 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 }
             }
             else {
-                var view = this.options.map.getView();
-                view.animate({
+                var animation = {
                     center: position
-                });
+                };
+                var view = this.options.map.getView();
+                this.options.autoPanAnimation && mixin_2.mixin(animation, this.options.autoPanAnimation.duration);
+                view.animate(animation);
             }
             this.setPointerPosition(this.options.pointerPosition);
         };
@@ -1800,6 +1811,9 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             }
             else {
                 this.content.innerHTML = html;
+            }
+            if (this.options.autoPositioning) {
+                this.setPositioning(smartpick_1.smartpick(this, coord));
             }
             this.setPosition(coord);
             this.domNode.classList.remove(classNames.hidden);
@@ -2519,24 +2533,46 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
             autoPan: true,
             autoPanMargin: 20,
             positioning: "bottom-center",
+            autoPanAnimation: {
+                source: null,
+                duration: 100
+            }
         });
         setTimeout(function () {
-            popup.options.autoPositioning = false;
-            var original = popup.getPositioning();
-            var items = common_9.pair("top,center,bottom".split(","), "left,center,right".split(","));
-            var h = setInterval(function () {
-                var positioning;
-                if (!items.length) {
-                    clearInterval(h);
-                    popup.options.autoPositioning = true;
-                    positioning = original;
-                }
-                else {
-                    positioning = items.pop().join("-");
-                }
-                popup.setPositioning(positioning);
-                popup.show(center, positioning);
-            }, 200);
+            var d = new Promise(function (resolve, reject) {
+                popup.options.autoPositioning = false;
+                var original = popup.getPositioning();
+                var items = common_9.pair("top,center,bottom".split(","), "left,center,right".split(","));
+                var h = setInterval(function () {
+                    var positioning;
+                    if (!items.length) {
+                        clearInterval(h);
+                        popup.options.autoPositioning = true;
+                        positioning = original;
+                        resolve();
+                    }
+                    else {
+                        positioning = items.pop().join("-");
+                    }
+                    popup.setPositioning(positioning);
+                    popup.show(center, positioning);
+                }, 200);
+            });
+            d.then(function () {
+                map.getView().setZoom(map.getView().getZoom() + 1);
+                var size = map.getSize();
+                var count = 5;
+                var _a = size.map(function (sz) { return common_9.range(count).map(function (n) { return sz * n / (count - 1); }); }), dx = _a[0], dy = _a[1];
+                var coords = common_9.pair(dx, dy).map(function (p) { return map.getCoordinateFromPixel(p); });
+                var h = setInterval(function () {
+                    if (!coords.length) {
+                        clearInterval(h);
+                        return;
+                    }
+                    var c = coords.pop();
+                    popup.show(c, c.map(function (n) { return Math.floor(n); }) + "<br/>" + coords.length + " remaining");
+                }, 1000);
+            });
         }, 500);
     }
     exports.run = run;

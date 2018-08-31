@@ -11,6 +11,7 @@ import Symbolizer = require("ol3-symbolizer/index");
 import { IPopup } from "./@types/popup";
 import { smartpick } from "./commands/smartpick";
 import { PopupOptions } from "./@types/popup-options";
+import { mixin } from "ol3-symbolizer/ol3-symbolizer/common/mixin";
 
 const symbolizer = new Symbolizer.Symbolizer.StyleConverter();
 
@@ -338,16 +339,14 @@ export class Popup extends ol.Overlay implements IPopup {
             return;
         }
 
-        if (this.options.autoPositioning) {
-            this.setPositioning(smartpick(this, this.options.autoPanMargin));
-        }
-
         let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
 
         let overlay = this.indicator;
         if (!overlay) {
             overlay = this.indicator = new ol.Overlay({
-                autoPan: false,
+                autoPan: this.options.autoPan,
+                autoPanMargin: this.options.autoPanMargin,
+                autoPanAnimation: this.options.autoPanAnimation,
                 element: html(`<span class="simple-popup-down-arrow"></span>`),
             });
             this.options.map.addOverlay(overlay);
@@ -442,10 +441,13 @@ export class Popup extends ol.Overlay implements IPopup {
             }
         } else {
             // move map to this position
-            let view = this.options.map.getView();
-            view.animate({
+            let animation = <ol.olx.animation.AnimateOptions>{
                 center: position
-            });
+            };
+
+            let view = this.options.map.getView();
+            this.options.autoPanAnimation && mixin(animation, this.options.autoPanAnimation.duration);
+            view.animate(animation);
         }
 
         this.setPointerPosition(this.options.pointerPosition);
@@ -471,6 +473,11 @@ export class Popup extends ol.Overlay implements IPopup {
             this.content.appendChild(html);
         } else {
             this.content.innerHTML = html;
+        }
+
+        // determine the positioning before assigning a position to prevent launching unwanted panning animations
+        if (this.options.autoPositioning) {
+            this.setPositioning(smartpick(this, coord));
         }
         this.setPosition(coord);
 

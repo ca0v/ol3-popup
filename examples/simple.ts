@@ -1,5 +1,5 @@
 import ol = require("openlayers");
-import { cssin, html as asHtml, pair } from "ol3-fun/ol3-fun/common";
+import { cssin, html as asHtml, pair, range } from "ol3-fun/ol3-fun/common";
 
 import { Popup } from "../ol3-popup/ol3-popup";
 
@@ -120,24 +120,50 @@ export function run() {
         autoPan: true,
         autoPanMargin: 20,
         positioning: "bottom-center",
+        autoPanAnimation: {
+            source: null,
+            duration: 100
+        }
     });
 
     setTimeout(() => {
-        popup.options.autoPositioning = false;
-        let original = popup.getPositioning();
-        let items = pair("top,center,bottom".split(","), "left,center,right".split(","));
-        let h = setInterval(() => {
-            let positioning: string;
-            if (!items.length) {
-                clearInterval(h);
-                popup.options.autoPositioning = true;
-                positioning = original;
-            } else {
-                positioning = items.pop().join("-");
-            }
-            popup.setPositioning(<any>positioning);
-            popup.show(center, positioning);
-        }, 200);
+        // test autoPositioning
+        let d = new Promise((resolve, reject) => {
+            popup.options.autoPositioning = false;
+            let original = popup.getPositioning();
+            let items = pair("top,center,bottom".split(","), "left,center,right".split(","));
+            let h = setInterval(() => {
+                let positioning: string;
+                if (!items.length) {
+                    clearInterval(h);
+                    popup.options.autoPositioning = true;
+                    positioning = original;
+                    resolve();
+                } else {
+                    positioning = items.pop().join("-");
+                }
+                popup.setPositioning(<any>positioning);
+                popup.show(center, positioning);
+            }, 200);
+        });
+
+        // show popup in key locations
+        d.then(() => {
+            map.getView().setZoom(map.getView().getZoom() + 1);
+            let size = map.getSize();
+            let count = 5;
+            let [dx, dy] = size.map(sz => range(count).map(n => sz * n / (count - 1)));
+            let coords = pair(dx, dy).map(p => map.getCoordinateFromPixel(p));
+            let h = setInterval(() => {
+                if (!coords.length) {
+                    clearInterval(h);
+                    return;
+                }
+                let c = coords.pop();
+                popup.show(c, `${c.map(n => Math.floor(n))}<br/>${coords.length} remaining`);
+            }, 1000);
+        });
+
     }, 500);
 
 }

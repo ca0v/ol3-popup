@@ -9,6 +9,10 @@
         "sourceMap": true,
         "moduleResolution": "classic",
         "baseUrl": "../node_modules",
+        "lib": [
+            "es2015",
+            "dom"
+        ],
         "paths": {
             "ol3-popup": [
                 "../ol3-popup/ol3-popup.ts"

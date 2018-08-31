@@ -628,6 +628,15 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
     }(ol.interaction.Select));
     exports.SelectInteraction = SelectInteraction;
 });
+define("node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function mixin(a, b) {
+        Object.keys(b).forEach(function (k) { return a[k] = b[k]; });
+        return a;
+    }
+    exports.mixin = mixin;
+});
 define("node_modules/ol3-symbolizer/index", ["require", "exports", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, Symbolizer) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -636,27 +645,37 @@ define("node_modules/ol3-symbolizer/index", ["require", "exports", "node_modules
 define("ol3-popup/commands/smartpick", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    function smartpick(popup, threshold) {
+    function smartpick(popup, targetPosition, threshold) {
+        if (!targetPosition) {
+            targetPosition = popup.getPosition();
+        }
+        var padding = [0, 0];
         if (typeof threshold !== "number") {
             threshold = (popup.options.autoPanMargin || 0) + (popup.options.pointerPosition || 0);
+            var content = popup.content;
+            var style = getComputedStyle(content);
+            var _a = [style.width, style.height].map(function (n) { return parseInt(n); }), w = _a[0], h = _a[1];
+            padding = [threshold + w / 2, threshold + h / 2];
         }
-        var _a = popup.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
-        var targetPosition = popup.getPosition();
-        var _b = popup.options.map.getPixelFromCoordinate(targetPosition), x = _b[0], y = _b[1];
-        var _c = popup.options.map.getSize(), width = _c[0], height = _c[1];
+        else {
+            padding = [threshold, threshold];
+        }
+        var _b = popup.getPositioning().split("-", 2), verticalPosition = _b[0], horizontalPosition = _b[1];
+        var _c = popup.options.map.getPixelFromCoordinate(targetPosition), x = _c[0], y = _c[1];
+        var _d = popup.options.map.getSize(), width = _d[0], height = _d[1];
         var distanceToLeft = x;
         var distanceToTop = y;
         var distanceToRight = width - x;
         var distanceToBottom = height - y;
-        if (distanceToTop < threshold)
+        if (distanceToTop < padding[1])
             verticalPosition = "top";
-        else if (distanceToBottom < threshold)
+        else if (distanceToBottom < padding[1])
             verticalPosition = "bottom";
         else
             verticalPosition = null;
-        if (distanceToLeft < threshold)
+        if (distanceToLeft < padding[0])
             horizontalPosition = "left";
-        else if (distanceToRight < threshold)
+        else if (distanceToRight < padding[0])
             horizontalPosition = "right";
         else
             horizontalPosition = "center";
@@ -670,7 +689,7 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
     exports.smartpick = smartpick;
     ;
 });
-define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer, smartpick_1) {
+define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer, smartpick_1, mixin_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -865,14 +884,13 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 this.indicator.setPosition(undefined);
                 return;
             }
-            if (this.options.autoPositioning) {
-                this.setPositioning(smartpick_1.smartpick(this, this.options.autoPanMargin));
-            }
             var _a = this.getPositioning().split("-", 2), verticalPosition = _a[0], horizontalPosition = _a[1];
             var overlay = this.indicator;
             if (!overlay) {
                 overlay = this.indicator = new ol.Overlay({
-                    autoPan: false,
+                    autoPan: this.options.autoPan,
+                    autoPanMargin: this.options.autoPanMargin,
+                    autoPanAnimation: this.options.autoPanAnimation,
                     element: common_2.html("<span class=\"simple-popup-down-arrow\"></span>"),
                 });
                 this.options.map.addOverlay(overlay);
@@ -959,10 +977,12 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 }
             }
             else {
-                var view = this.options.map.getView();
-                view.animate({
+                var animation = {
                     center: position
-                });
+                };
+                var view = this.options.map.getView();
+                this.options.autoPanAnimation && mixin_1.mixin(animation, this.options.autoPanAnimation.duration);
+                view.animate(animation);
             }
             this.setPointerPosition(this.options.pointerPosition);
         };
@@ -986,6 +1006,9 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             }
             else {
                 this.content.innerHTML = html;
+            }
+            if (this.options.autoPositioning) {
+                this.setPositioning(smartpick_1.smartpick(this, coord));
             }
             this.setPosition(coord);
             this.domNode.classList.remove(classNames.hidden);
