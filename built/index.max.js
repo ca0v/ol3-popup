@@ -998,7 +998,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 return;
             if (this.isDocked())
                 return;
-            _super.prototype.panIntoView.call(this);
+            var p = this.getPosition();
+            p && this.setPosition(p.map(function (v) { return v; }));
         };
         Popup.prototype.destroy = function () {
             this.handlers.forEach(function (h) { return h(); });

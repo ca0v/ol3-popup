@@ -514,10 +514,11 @@ export class Popup extends ol.Overlay implements IPopup {
 
     }
 
-    public panIntoView() {
+    panIntoView() {
         if (!this.isOpened()) return;
         if (this.isDocked()) return;
-        super.panIntoView(); // need to add to typings
+        let p = this.getPosition();
+        p && this.setPosition(p.map(v => v) as [number, number]); // clone p to force change
     }
 
     public destroy() {

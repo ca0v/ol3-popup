@@ -1,5 +1,6 @@
 # OpenLayers Popup
-Adds paging to [ol3-popup](https://github.com/walkermatt/ol3-popup).
+* See [v5.1.3](https://github.com/ca0v/ol3-popup/tree/v5.1.3)
+* Adds paging to [ol3-popup](https://github.com/walkermatt/ol3-popup).
 
 ## Examples
 * [v5.1.3](https://rawgit.com/ca0v/ol3-popup/v5.1.3/rawgit.html)
