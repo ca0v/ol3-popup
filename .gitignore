@@ -2,8 +2,9 @@
 node_modules
 static/**
 .cache/**
-built/**
 *.js
 *.css
 *.log
 *.yml
+!built/**
+!static/**

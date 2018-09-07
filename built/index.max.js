@@ -16,7 +16,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
     Object.defineProperty(exports, "__esModule", { value: true });
     function getInteriorPoint(geom) {
         if (geom.getInteriorPoint)
-            return (geom["getInteriorPoint"]()).getCoordinates();
+            return geom["getInteriorPoint"]().getCoordinates();
         return ol.extent.getCenter(geom.getExtent());
     }
     var classNames = {
@@ -29,7 +29,6 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
         goto: "goto",
         remove: "remove"
     };
-    ;
     function getId() {
         return "_" + Math.random() * 1000000;
     }
@@ -106,7 +105,7 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
                 element: page.element,
                 feature: page.feature,
                 geom: page.location,
-                pageIndex: page.uid,
+                pageIndex: page.uid
             });
             return page;
         };
@@ -117,28 +116,29 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             }
             else if (typeof source === "string") {
                 pageDiv.innerHTML = source;
-                this._pages.push(page = {
+                this._pages.push((page = {
                     element: pageDiv,
                     location: geom,
-                    uid: getId(),
-                });
+                    uid: getId()
+                }));
             }
-            else if (source.appendChild) {
+            else if (typeof source.appendChild === "function") {
+                pageDiv.appendChild(source);
                 pageDiv.classList.add(classNames.page);
-                this._pages.push(page = {
+                this._pages.push((page = {
                     element: pageDiv,
                     location: geom,
-                    uid: getId(),
-                });
+                    uid: getId()
+                }));
             }
             else if (source["then"]) {
                 var d = source;
                 pageDiv.classList.add(classNames.page);
-                this._pages.push(page = {
+                this._pages.push((page = {
                     element: pageDiv,
                     location: geom,
-                    uid: getId(),
-                });
+                    uid: getId()
+                }));
                 $.when(d).then(function (v) {
                     if (typeof v === "string") {
                         pageDiv.innerHTML = v;
@@ -150,12 +150,12 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             }
             else if (typeof source === "function") {
                 pageDiv.classList.add("page");
-                this._pages.push(page = {
+                this._pages.push((page = {
                     callback: source,
                     element: pageDiv,
                     location: geom,
-                    uid: getId(),
-                });
+                    uid: getId()
+                }));
             }
             else {
                 throw "invalid source value: " + source;
@@ -221,10 +221,10 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
             });
         };
         Paging.prototype.next = function () {
-            (0 <= this.activeIndex) && (this.activeIndex < this.count) && this.goto(this.activeIndex + 1);
+            0 <= this.activeIndex && this.activeIndex < this.count && this.goto(this.activeIndex + 1);
         };
         Paging.prototype.prev = function () {
-            (0 < this.activeIndex) && this.goto(this.activeIndex - 1);
+            0 < this.activeIndex && this.goto(this.activeIndex - 1);
         };
         Paging.prototype.indexOf = function (feature) {
             var result = -1;
@@ -327,9 +327,18 @@ define("node_modules/ol3-fun/ol3-fun/common", ["require", "exports"], function (
         return result;
     }
     exports.asArray = asArray;
-    function toggle(e, className, toggle) {
-        if (toggle === void 0) { toggle = false; }
-        !toggle ? e.classList.remove(className) : e.classList.add(className);
+    function toggle(e, className, force) {
+        var exists = e.classList.contains(className);
+        if (exists && force !== true) {
+            e.classList.remove(className);
+            return false;
+        }
+        ;
+        if (!exists && force !== false) {
+            e.classList.add(className);
+            return true;
+        }
+        return exists;
     }
     exports.toggle = toggle;
     function parse(v, type) {
@@ -425,7 +434,7 @@ define("node_modules/ol3-fun/ol3-fun/common", ["require", "exports"], function (
             };
             var callNow = immediate && !timeout;
             clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
+            timeout = window.setTimeout(later, wait);
             if (callNow)
                 func.apply({}, args);
         });
@@ -697,26 +706,26 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
     var css = "\n.ol-popup {\n}\n\n.ol-popup.hidden {\n    display: none;\n}\n\n.ol-popup-element.docked {\n    position:absolute;\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    width:auto;\n    height:auto;\n    pointer-events: all;\n}\n\n.ol-popup-element.docked:after {\n    display:none;\n}\n\n.ol-popup-element.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n    height: calc(100% - 60px);\n}\n\n.ol-popup-element.docked .pagination {\n    position: absolute;\n    bottom: 0;\n}\n\n.ol-popup .pagination .btn-prev::after {\n    content: \"\u21E6\"; \n}\n\n.ol-popup .pagination .btn-next::after {\n    content: \"\u21E8\"; \n}\n\n.ol-popup .pagination.hidden {\n    display: none;\n}\n\n.ol-popup-element .pagination .btn-prev::after {\n    content: \"\u21E6\"; \n}\n\n.ol-popup-element .pagination .btn-next::after {\n    content: \"\u21E8\"; \n}\n\n.ol-popup-element .pagination.hidden {\n    display: none;\n}\n\n.ol-popup-element .ol-popup-closer {\n    border: none;\n    background: transparent;\n    color: inherit;\n    position: absolute;\n    top: 0;\n    right: 0;\n    text-decoration: none;\n}\n    \n.ol-popup-element .ol-popup-closer:after {\n    content:'\u2716';\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n\n.simple-popup {\n    border: 1px solid black;\n    border-radius: 4px;\n    padding: 10px;\n    background-color: rgba(80, 80, 80, 0.5);\n    color: rgb(250, 250, 250);\n    max-width: 120px;\n}\n\n.simple-popup-down-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-down-arrow:after {\n    content: \"\u21E9\";\n}\n\n.simple-popup-up-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-up-arrow:after {\n    content: \"\u21E7\";\n}\n\n.simple-popup-left-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-left-arrow:after {\n    content: \"\u21E6\";\n}\n\n.simple-popup-right-arrow {\n    color: black;\n    font-size: 20px;\n}\n\n.simple-popup-right-arrow:after {\n    content: \"\u21E8\";\n}\n";
     var baseStyle = symbolizer.fromJson({
-        "circle": {
-            "fill": {
-                "color": "rgba(255,0,0,1)"
+        circle: {
+            fill: {
+                color: "rgba(255,0,0,1)"
             },
-            "opacity": 1,
-            "stroke": {
-                "color": "rgba(255,255,255,1)",
-                "width": 1
+            opacity: 1,
+            stroke: {
+                color: "rgba(255,255,255,1)",
+                width: 1
             },
-            "radius": 3
+            radius: 3
         }
     });
     var classNames = {
-        olPopup: 'ol-popup',
-        olPopupDocker: 'ol-popup-docker',
-        olPopupCloser: 'ol-popup-closer',
-        olPopupContent: 'ol-popup-content',
-        olPopupElement: 'ol-popup-element',
-        hidden: 'hidden',
-        docked: 'docked'
+        olPopup: "ol-popup",
+        olPopupDocker: "ol-popup-docker",
+        olPopupCloser: "ol-popup-closer",
+        olPopupContent: "ol-popup-content",
+        olPopupElement: "ol-popup-element",
+        hidden: "hidden",
+        docked: "docked"
     };
     var eventNames = {
         dispose: "dispose",
@@ -757,7 +766,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     text: {
                         text: "" + (pageIndex + 1),
                         fill: {
-                            color: isActive ? "white" : "black",
+                            color: isActive ? "white" : "black"
                         },
                         stroke: {
                             color: isActive ? "black" : "white",
@@ -771,7 +780,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             return style;
         };
     }
-    var DEFAULT_OPTIONS = {
+    exports.DEFAULT_OPTIONS = {
         map: null,
         asContent: asContent,
         multi: false,
@@ -806,7 +815,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             return _this;
         }
         Popup.create = function (options) {
-            options = common_2.defaults({}, options, DEFAULT_OPTIONS);
+            options = common_2.defaults({}, options || {}, exports.DEFAULT_OPTIONS);
             var popup = new Popup(options);
             options.map && options.map.addOverlay(popup);
             return popup;
@@ -814,13 +823,13 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         Popup.prototype.configureDom = function (options) {
             common_2.cssin("ol3-popup", css);
             options.css && this.injectCss("options", options.css);
-            var domNode = this.domNode = document.createElement('div');
+            var domNode = (this.domNode = document.createElement("div"));
             domNode.className = classNames.olPopupElement;
             this.setElement(domNode);
             this.handlers.push(function () { return domNode.remove(); });
         };
         Popup.prototype.configureContentContainer = function () {
-            var content = this.content = document.createElement('div');
+            var content = (this.content = document.createElement("div"));
             content.className = classNames.olPopupContent;
             this.domNode.appendChild(content);
         };
@@ -828,29 +837,29 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             var _this = this;
             if (!this.options.dockContainer)
                 return;
-            var docker = this.docker = document.createElement('label');
+            var docker = (this.docker = document.createElement("label"));
             docker.title = "docker";
             docker.className = classNames.olPopupDocker;
             domNode.appendChild(docker);
-            docker.addEventListener('click', function (evt) {
+            docker.addEventListener("click", function (evt) {
                 _this.isDocked() ? _this.undock() : _this.dock();
                 evt.preventDefault();
             }, false);
         };
         Popup.prototype.configureCloserButton = function (domNode) {
             var _this = this;
-            var closer = this.closer = document.createElement('label');
+            var closer = (this.closer = document.createElement("label"));
             closer.title = "closer";
             closer.className = classNames.olPopupCloser;
             domNode.appendChild(closer);
-            closer.addEventListener('click', function (evt) {
+            closer.addEventListener("click", function (evt) {
                 _this.isDocked() ? _this.undock() : _this.hide();
                 evt.preventDefault();
             }, false);
         };
         Popup.prototype.configurePaging = function () {
             var _this = this;
-            var pages = this.pages = new paging_1.Paging({ popup: this });
+            var pages = (this.pages = new paging_1.Paging({ popup: this }));
             var pageNavigator = new page_navigator_1.default({ pages: pages });
             pageNavigator.hide();
             pageNavigator.on("prev", function () { return pages.prev(); });
@@ -861,6 +870,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             var _this = this;
             if (!this.options.autoPopup)
                 return;
+            if (!this.options.map)
+                throw "autoPopup feature requires map option";
             var autoPopup = interaction_1.SelectInteraction.create({
                 popup: this,
                 buffer: 4
@@ -889,7 +900,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     autoPan: this.options.autoPan,
                     autoPanMargin: this.options.autoPanMargin,
                     autoPanAnimation: this.options.autoPanAnimation,
-                    element: common_2.html("<span class=\"simple-popup-down-arrow\"></span>"),
+                    element: common_2.html("<span class=\"simple-popup-down-arrow\"></span>")
                 });
                 this.options.map.addOverlay(indicator);
             }
@@ -1088,8 +1099,10 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
     }(ol.Overlay));
     exports.Popup = Popup;
 });
-define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require, exports, Popup) {
+define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require, exports, ol3_popup_1) {
     "use strict";
-    return Popup;
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Popup = ol3_popup_1.Popup;
+    exports.DEFAULT_OPTIONS = ol3_popup_1.DEFAULT_OPTIONS;
 });
 //# sourceMappingURL=index.max.js.map

@@ -1,19 +1,18 @@
 {
-    "compilerOptions": {
-        "module": "amd",
-        "target": "es5",
-        "declaration": true,
-        "noImplicitAny": true,
-        "removeComments": true,
-        "noImplicitReturns": true,
-        "outFile": "built/index.max.js",
-        "sourceMap": true,
-        "moduleResolution": "node",
-        "baseUrl": "./node_modules",
-        "paths": {
-            "ol3-popup": [
-                "../ol3-popup/ol3-popup.ts"
-            ]
-        }
-    }
+	"compilerOptions": {
+		"module": "amd",
+		"target": "es5",
+		"declaration": true,
+		"noImplicitAny": true,
+		"removeComments": true,
+		"noImplicitReturns": true,
+		"outFile": "built/index.max.js",
+		"sourceMap": true,
+		"moduleResolution": "node",
+		"baseUrl": "./node_modules",
+		"paths": {
+			"ol3-popup": ["../ol3-popup/ol3-popup.ts"]
+		}
+	},
+	"include": ["index.ts", "ol3-popup/**/*.ts"]
 }

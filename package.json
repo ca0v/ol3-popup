@@ -1,45 +1,53 @@
 {
-  "name": "ol3-popup",
-  "version": "5.1.3",
-  "description": "OpenLayers Popup",
-  "main": "built/index.js",
-  "scripts": {
-    "clean": "rmdir .\\built /s/q",
-    "uglify-for-package": "pushd built && uglifyjs index.max.js --source-map \"content='index.max.js.map',url='index.js.map'\" --output=index.js --compress --mangle && popd",
-    "build-for-package": "tsc -p tsconfig-module.json --outFile built/index.max.js && mv built/index.max.d.ts built/index.d.ts",
-    "uglify-for-examples": "pushd built && uglifyjs examples.max.js --source-map \"content='examples.max.js.map',url='examples.js.map'\" --output=examples.js --compress --mangle && popd",
-    "build-for-examples": "tsc rawgit.ts -m es2015 --outDir ./built && tsc -p ./examples/tsconfig-examples.json",
-    "live-for-examples": "live-server --port=5000 --wait=200 --watch=./built/examples.max.js --open=rawgit.html?debug=1 --browser=CHROME",
-    "examples": "npm run clean && npm run build-for-examples && start npm run live-for-examples && npm run build-for-examples -- -w",
-    "before-push": "npm run build-for-package && npm run uglify-for-package && npm run build-for-examples && npm run uglify-for-examples",
-    "install": "npm run build-for-package && npm run uglify-for-package"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ca0v/ol3-popup.git"
-  },
-  "keywords": [
-    "OpenLayers"
-  ],
-  "author": "coreyalix@hotmail.com",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ca0v/ol3-popup/issues"
-  },
-  "homepage": "https://github.com/ca0v/ol3-popup#readme",
-  "devDependencies": {
-    "@types/jquery": "^3.3.6",
-    "@types/ol": "^4.6.2",
-    "@types/requirejs": "^2.1.31",
-    "live-server": "^1.2.0",
-    "typescript": "^3.0.1",
-    "uglify-js": "^3.4.8"
-  },
-  "dependencies": {
-    "ol": "^5.1.3",
-    "ol3-fun": "https://github.com/ca0v/ol3-fun/tarball/v5.1.3",
-    "ol3-symbolizer": "https://github.com/ca0v/ol3-symbolizer/tarball/v5.1.3",
-    "requirejs": "^2.3.5",
-    "xstyle": "^0.3.2"
-  }
+	"name": "ol3-popup",
+	"version": "5.1.3",
+	"description": "OpenLayers Popup",
+	"main": "built/index.js",
+	"scripts": {
+		"clean": "rm built/** -rf",
+		"build-for-amd": "tsc -p tsconfig.json --outFile built/index.max.js",
+		"build-for-examples": "tsc -p examples/tsconfig.json --outFile ./built/examples.max.js",
+		"live-for-examples": "live-server --port=5001 --wait=200 --watch=./built/examples.max.js --open=./loaders/examples.html --browser=CHROME",
+		"dev-for-examples": "npm run build-for-examples && start npm run live-for-examples && start npm run build-for-examples -- -w",
+		"examples": "npm run build-for-examples && npm run live-for-examples",
+		"build-for-tests": "tsc -p tests/tsconfig.json --outFile ./built/tests.max.js",
+		"build-for-loaders": "tsc -p loaders/tsconfig.json",
+		"live-for-tests": "live-server --port=5000 --wait=200 --watch=./built/tests.max.js --open=./loaders/tests.html --browser=CHROME",
+		"dev-for-tests": "npm run build-for-tests & start npm run live-for-tests & npm run build-for-tests -- -w",
+		"tests": "npm run dev-for-tests",
+		"install": "npm run build-for-amd",
+		"before-push": "npm run clean && npm run build-for-loaders && npm run build-for-amd && npm run build-for-tests && npm run build-for-examples && mv built/index.max.d.ts built/index.d.ts",
+		"test": "npm run before-push && npm run live-for-tests"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ca0v/ol3-popup.git"
+	},
+	"keywords": [
+		"OpenLayers"
+	],
+	"author": "coreyalix@hotmail.com",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/ca0v/ol3-popup/issues"
+	},
+	"homepage": "https://github.com/ca0v/ol3-popup#readme",
+	"devDependencies": {
+		"@types/mocha": "^5.2.5",
+		"live-server": "^1.2.0",
+		"mocha": "^5.2.0",
+		"uglify-js": "^3.4.8"
+	},
+	"dependencies": {
+		"@types/jquery": "^3.3.6",
+		"@types/ol": "^4.6.2",
+		"@types/requirejs": "^2.1.31",
+		"jquery": "^3.3.1",
+		"ol": "^5.1.3",
+		"ol3-fun": "https://github.com/ca0v/ol3-fun/tarball/v5.1.3",
+		"ol3-symbolizer": "https://github.com/ca0v/ol3-symbolizer/tarball/v5.1.3",
+		"requirejs": "^2.3.5",
+		"typescript": "^3.0.1",
+		"xstyle": "^0.3.2"
+	}
 }

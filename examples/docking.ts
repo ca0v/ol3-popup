@@ -116,79 +116,76 @@ const html = `
 <div class='dock-container'></div>
 `;
 
-let center = ol.proj.transform([-85, 35], 'EPSG:4326', 'EPSG:3857');
-
+let center = ol.proj.transform([-85, 35], "EPSG:4326", "EPSG:3857");
 
 export function run() {
+	$(document.head).append(asHtml(`<style name="paging" type='text/css'>${css}</style>`));
+	$(document.body).append(asHtml(`<div>${html}</div>`));
 
-    $(document.head).append(asHtml(`<style name="paging" type='text/css'>${css}</style>`));
-    $(document.body).append(asHtml(`<div>${html}</div>`));
+	let mapContainer = <HTMLDivElement>document.getElementsByClassName("map")[0];
+	let dockContainer = <HTMLDivElement>document.getElementsByClassName("dock-container")[0];
 
-    let mapContainer = <HTMLDivElement>document.getElementsByClassName("map")[0];
-    let dockContainer = <HTMLDivElement>document.getElementsByClassName("dock-container")[0];
+	let map = new ol.Map({
+		target: mapContainer,
+		layers: [],
+		view: new ol.View({
+			center: center,
+			zoom: 6
+		})
+	});
 
-    let map = new ol.Map({
-        target: mapContainer,
-        layers: [
-        ],
-        view: new ol.View({
-            center: center,
-            zoom: 6
-        })
-    });
+	let p1 = Popup.create({
+		map: map,
+		autoPan: true,
+		autoPanMargin: 20,
+		autoPanAnimation: {
+			source: null,
+			duration: 500
+		},
+		autoPopup: true,
+		showCoordinates: true,
+		css: css_popup,
+		dockContainer: dockContainer,
+		pointerPosition: 15,
+		multi: true
+	});
 
-    let p1 = Popup.create({
-        map: map,
-        autoPan: true,
-        autoPanMargin: 20,
-        autoPanAnimation: {
-            source: null,
-            duration: 500
-        },
-        autoPopup: true,
-        showCoordinates: true,
-        css: css_popup,
-        dockContainer: dockContainer,
-        pointerPosition: 15,
-        multi: true
-    });
+	0 &&
+		p1.on(
+			"dock",
+			debounce(() => {
+				let h = p1.on("show", () => {
+					let p = Popup.create({
+						map: map,
+						autoPopup: false,
+						positioning: "top-center",
+						asContent: feature => asHtml(`<b>Hi ${feature.get("hello")}</b>`)
+					});
 
-    0 && p1.on("dock", debounce(() => {
+					p1.once(["undock", "dispose"], () => p.destroy());
 
-        let h = p1.on("show", () => {
-            let p = Popup.create({
-                map: map,
-                autoPopup: false,
-                positioning: "top-center",
-                asContent: (feature) => asHtml(`<b>Hi ${feature.get("hello")}</b>`)
-            });
+					let feature = new ol.Feature({
+						hello: "Hello",
+						geometry: new ol.geom.Point(p1.options.position)
+					});
 
-            p1.once(["undock", "dispose"], () => p.destroy());
+					p.pages.addFeature(feature, { searchCoordinate: p1.options.position });
+					p.pages.goto(0);
+				});
 
-            let feature = new ol.Feature({
-                hello: "Hello",
-                geometry: new ol.geom.Point(p1.options.position)
-            });
+				p1.once(["undock", "dispose"], () => ol.Observable.unByKey(h));
+			})
+		);
 
-            p.pages.addFeature(feature, { searchCoordinate: p1.options.position });
-            p.pages.goto(0);
-
-        });
-
-        p1.once(["undock", "dispose"], () => ol.Observable.unByKey(h));
-
-    }));
-
-    map.once('postrender', function (event) {
-        p1.show(center, "Docking...");
-        setTimeout(() => {
-            p1.dock();
-            p1.show(center, "Docked");
-            setTimeout(() => {
-                p1.undock();
-                p1.show(center, "Undocked");
-            }, 1000);
-        }, 1000);
-    });
-
+	map.once("postrender", function(event) {
+		p1.show(center, "Docking...");
+		setTimeout(() => {
+			p1.dock();
+			p1.show(center, "Docked");
+			setTimeout(() => {
+				p1.undock();
+				p1.show(center, "Undocked");
+			}, 1000);
+		}, 1000);
+	});
 }
