@@ -19,7 +19,10 @@
     }
     var debug = getParameterByName("debug") === "1";
     var localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-    document.body.classList.toggle("dark", localhost);
+    document.body.classList.toggle("dark", localhost && !debug);
+    document.body.classList.toggle("verbose", debug);
+    document.body.classList.toggle("light", !localhost || debug);
+    document.body.classList.toggle("terse", !debug);
     loadCss(localhost ? "../node_modules/mocha/mocha.css" : "https://cdnjs.cloudflare.com/ajax/libs/mocha/5.2.0/mocha.css");
     loadCss(localhost
         ? "../node_modules/ol3-fun/static/ol/v5.1.3/ol.css"

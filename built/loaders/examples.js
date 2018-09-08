@@ -17,7 +17,12 @@
             return "";
         return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
+    var debug = getParameterByName("debug") === "1";
     var localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    document.body.classList.toggle("dark", localhost && !debug);
+    document.body.classList.toggle("verbose", debug);
+    document.body.classList.toggle("light", !localhost || debug);
+    document.body.classList.toggle("terse", !debug);
     loadCss(localhost
         ? "../node_modules/ol3-fun/static/ol/v5.1.3/ol.css"
         : "https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.1.3/css/ol.css");
@@ -27,7 +32,7 @@
             // build this using the "npm run build-legacy" (see ol package.json)
             openlayers: {
                 deps: [],
-                exports: "ol"
+                exports: "ol" // tell requirejs which global this library defines
             }
         },
         paths: {
@@ -42,7 +47,7 @@
                     ? "../../node_modules/jquery/dist"
                     : "https://cdn.rawgit.com/jquery/jquery-dist/3.1.1/dist",
                 main: "jquery.min"
-            },
+            }
         ],
         deps: ["../examples.max"],
         callback: function () { return requirejs([getParameterByName("run") || "examples/index"], function (test) { return test.run(); }); }

@@ -11,6 +11,352 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+define("node_modules/ol3-fun/ol3-fun/common", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function uuid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+    exports.uuid = uuid;
+    function asArray(list) {
+        var result = new Array(list.length);
+        for (var i = 0; i < list.length; i++) {
+            result[i] = list[i];
+        }
+        return result;
+    }
+    exports.asArray = asArray;
+    function toggle(e, className, force) {
+        var exists = e.classList.contains(className);
+        if (exists && force !== true) {
+            e.classList.remove(className);
+            return false;
+        }
+        ;
+        if (!exists && force !== false) {
+            e.classList.add(className);
+            return true;
+        }
+        return exists;
+    }
+    exports.toggle = toggle;
+    function parse(v, type) {
+        if (typeof type === "string")
+            return v;
+        if (typeof type === "number")
+            return parseFloat(v);
+        if (typeof type === "boolean")
+            return (v === "1" || v === "true");
+        if (Array.isArray(type)) {
+            return (v.split(",").map(function (v) { return parse(v, type[0]); }));
+        }
+        throw "unknown type: " + type;
+    }
+    exports.parse = parse;
+    function getQueryParameters(options, url) {
+        if (url === void 0) { url = window.location.href; }
+        var opts = options;
+        Object.keys(opts).forEach(function (k) {
+            doif(getParameterByName(k, url), function (v) {
+                var value = parse(v, opts[k]);
+                if (value !== undefined)
+                    opts[k] = value;
+            });
+        });
+    }
+    exports.getQueryParameters = getQueryParameters;
+    function getParameterByName(name, url) {
+        if (url === void 0) { url = window.location.href; }
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"), results = regex.exec(url);
+        if (!results)
+            return null;
+        if (!results[2])
+            return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+    exports.getParameterByName = getParameterByName;
+    function doif(v, cb) {
+        if (v !== undefined && v !== null)
+            cb(v);
+    }
+    exports.doif = doif;
+    function mixin(a, b) {
+        Object.keys(b).forEach(function (k) { return a[k] = b[k]; });
+        return a;
+    }
+    exports.mixin = mixin;
+    function defaults(a) {
+        var b = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            b[_i - 1] = arguments[_i];
+        }
+        b.forEach(function (b) {
+            Object.keys(b).filter(function (k) { return a[k] === undefined; }).forEach(function (k) { return a[k] = b[k]; });
+        });
+        return a;
+    }
+    exports.defaults = defaults;
+    function cssin(name, css) {
+        var id = "style-" + name;
+        var styleTag = document.getElementById(id);
+        if (!styleTag) {
+            styleTag = document.createElement("style");
+            styleTag.id = id;
+            styleTag.type = "text/css";
+            document.head.appendChild(styleTag);
+            styleTag.appendChild(document.createTextNode(css));
+        }
+        var dataset = styleTag.dataset;
+        dataset["count"] = parseInt(dataset["count"] || "0") + 1 + "";
+        return function () {
+            dataset["count"] = parseInt(dataset["count"] || "0") - 1 + "";
+            if (dataset["count"] === "0") {
+                styleTag.remove();
+            }
+        };
+    }
+    exports.cssin = cssin;
+    function debounce(func, wait, immediate) {
+        if (wait === void 0) { wait = 50; }
+        if (immediate === void 0) { immediate = false; }
+        var timeout;
+        return (function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var later = function () {
+                timeout = null;
+                if (!immediate)
+                    func.apply({}, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = window.setTimeout(later, wait);
+            if (callNow)
+                func.apply({}, args);
+        });
+    }
+    exports.debounce = debounce;
+    function html(html) {
+        var a = document.createElement("div");
+        a.innerHTML = html;
+        return (a.firstElementChild || a.firstChild);
+    }
+    exports.html = html;
+    function pair(a1, a2) {
+        var result = new Array(a1.length * a2.length);
+        var i = 0;
+        a1.forEach(function (v1) { return a2.forEach(function (v2) { return result[i++] = [v1, v2]; }); });
+        return result;
+    }
+    exports.pair = pair;
+    function range(n) {
+        var result = new Array(n);
+        for (var i = 0; i < n; i++)
+            result[i] = i;
+        return result;
+    }
+    exports.range = range;
+    function shuffle(array) {
+        var currentIndex = array.length;
+        var temporaryValue;
+        var randomIndex;
+        while (0 !== currentIndex) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+            temporaryValue = array[currentIndex];
+            array[currentIndex] = array[randomIndex];
+            array[randomIndex] = temporaryValue;
+        }
+        return array;
+    }
+    exports.shuffle = shuffle;
+});
+define("node_modules/ol3-fun/ol3-fun/navigation", ["require", "exports", "openlayers", "jquery", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, $, common_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function zoomToFeature(map, feature, options) {
+        var promise = $.Deferred();
+        options = common_1.defaults(options || {}, {
+            duration: 1000,
+            padding: 256,
+            minResolution: 2 * map.getView().getMinResolution()
+        });
+        var view = map.getView();
+        var currentExtent = view.calculateExtent(map.getSize());
+        var targetExtent = feature.getGeometry().getExtent();
+        var doit = function (duration) {
+            view.fit(targetExtent, {
+                size: map.getSize(),
+                padding: [options.padding, options.padding, options.padding, options.padding],
+                minResolution: options.minResolution,
+                duration: duration,
+                callback: function () { return promise.resolve(); },
+            });
+        };
+        if (ol.extent.containsExtent(currentExtent, targetExtent)) {
+            doit(options.duration);
+        }
+        else if (ol.extent.containsExtent(currentExtent, targetExtent)) {
+            doit(options.duration);
+        }
+        else {
+            var fullExtent = ol.extent.createEmpty();
+            ol.extent.extend(fullExtent, currentExtent);
+            ol.extent.extend(fullExtent, targetExtent);
+            var dscale = ol.extent.getWidth(fullExtent) / ol.extent.getWidth(currentExtent);
+            var duration = 0.5 * options.duration;
+            view.fit(fullExtent, {
+                size: map.getSize(),
+                padding: [options.padding, options.padding, options.padding, options.padding],
+                minResolution: options.minResolution,
+                duration: duration
+            });
+            setTimeout(function () { return doit(0.5 * options.duration); }, duration);
+        }
+        return promise;
+    }
+    exports.zoomToFeature = zoomToFeature;
+});
+define("node_modules/ol3-fun/ol3-fun/parse-dms", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function decDegFromMatch(m) {
+        var signIndex = {
+            "-": -1,
+            "N": 1,
+            "S": -1,
+            "E": 1,
+            "W": -1
+        };
+        var latLonIndex = {
+            "-": "",
+            "N": "lat",
+            "S": "lat",
+            "E": "lon",
+            "W": "lon"
+        };
+        var degrees, minutes, seconds, sign, latLon;
+        sign = signIndex[m[2]] || signIndex[m[1]] || signIndex[m[6]] || 1;
+        degrees = Number(m[3]);
+        minutes = m[4] ? Number(m[4]) : 0;
+        seconds = m[5] ? Number(m[5]) : 0;
+        latLon = latLonIndex[m[1]] || latLonIndex[m[6]];
+        if (!inRange(degrees, 0, 180))
+            throw 'Degrees out of range';
+        if (!inRange(minutes, 0, 60))
+            throw 'Minutes out of range';
+        if (!inRange(seconds, 0, 60))
+            throw 'Seconds out of range';
+        return {
+            decDeg: sign * (degrees + minutes / 60 + seconds / 3600),
+            latLon: latLon
+        };
+    }
+    function inRange(value, a, b) {
+        return value >= a && value <= b;
+    }
+    function parse(dmsString) {
+        var _a;
+        dmsString = dmsString.trim();
+        var dmsRe = /([NSEW])?(-)?(\d+(?:\.\d+)?)[°º:d\s]?\s?(?:(\d+(?:\.\d+)?)['’‘′:]\s?(?:(\d{1,2}(?:\.\d+)?)(?:"|″|’’|'')?)?)?\s?([NSEW])?/i;
+        var dmsString2;
+        var m1 = dmsString.match(dmsRe);
+        if (!m1)
+            throw 'Could not parse string';
+        if (m1[1]) {
+            m1[6] = undefined;
+            dmsString2 = dmsString.substr(m1[0].length - 1).trim();
+        }
+        else {
+            dmsString2 = dmsString.substr(m1[0].length).trim();
+        }
+        var decDeg1 = decDegFromMatch(m1);
+        var m2 = dmsString2.match(dmsRe);
+        var decDeg2 = m2 && decDegFromMatch(m2);
+        if (typeof decDeg1.latLon === 'undefined') {
+            if (!isNaN(decDeg1.decDeg) && decDeg2 && isNaN(decDeg2.decDeg)) {
+                return decDeg1.decDeg;
+            }
+            else if (!isNaN(decDeg1.decDeg) && decDeg2 && !isNaN(decDeg2.decDeg)) {
+                decDeg1.latLon = 'lat';
+                decDeg2.latLon = 'lon';
+            }
+            else {
+                throw 'Could not parse string';
+            }
+        }
+        if (typeof decDeg2.latLon === 'undefined') {
+            decDeg2.latLon = decDeg1.latLon === 'lat' ? 'lon' : 'lat';
+        }
+        return _a = {},
+            _a[decDeg1.latLon] = decDeg1.decDeg,
+            _a[decDeg2.latLon] = decDeg2.decDeg,
+            _a;
+    }
+    exports.parse = parse;
+});
+define("node_modules/ol3-fun/ol3-fun/slowloop", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function slowloop(functions, interval, cycles) {
+        if (interval === void 0) { interval = 1000; }
+        if (cycles === void 0) { cycles = 1; }
+        var d = $.Deferred();
+        var index = 0;
+        if (!functions || 0 >= cycles) {
+            d.resolve();
+            return d;
+        }
+        var h = setInterval(function () {
+            if (index === functions.length) {
+                index = 0;
+                cycles--;
+                if (cycles <= 0) {
+                    d.resolve();
+                    return;
+                }
+            }
+            functions[index++]();
+        }, interval);
+        d.done(function () { return clearInterval(h); });
+        return d;
+    }
+    exports.slowloop = slowloop;
+});
+define("node_modules/ol3-fun/index", ["require", "exports", "node_modules/ol3-fun/ol3-fun/common", "node_modules/ol3-fun/ol3-fun/navigation", "node_modules/ol3-fun/ol3-fun/parse-dms", "node_modules/ol3-fun/ol3-fun/slowloop"], function (require, exports, common_2, navigation_1, parse_dms_1, slowloop_1) {
+    "use strict";
+    var index = {
+        asArray: common_2.asArray,
+        cssin: common_2.cssin,
+        debounce: common_2.debounce,
+        defaults: common_2.defaults,
+        doif: common_2.doif,
+        getParameterByName: common_2.getParameterByName,
+        getQueryParameters: common_2.getQueryParameters,
+        html: common_2.html,
+        mixin: common_2.mixin,
+        pair: common_2.pair,
+        parse: common_2.parse,
+        range: common_2.range,
+        shuffle: common_2.shuffle,
+        toggle: common_2.toggle,
+        uuid: common_2.uuid,
+        slowloop: slowloop_1.slowloop,
+        dms: {
+            parse: parse_dms_1.parse,
+        },
+        navigation: {
+            zoomToFeature: navigation_1.zoomToFeature,
+        },
+    };
+    return index;
+});
 define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"], function (require, exports, ol, $) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -309,173 +655,7 @@ define("ol3-popup/paging/page-navigator", ["require", "exports", "openlayers"], 
     }(ol.Observable));
     exports.default = PageNavigator;
 });
-define("node_modules/ol3-fun/ol3-fun/common", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function uuid() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-    exports.uuid = uuid;
-    function asArray(list) {
-        var result = new Array(list.length);
-        for (var i = 0; i < list.length; i++) {
-            result[i] = list[i];
-        }
-        return result;
-    }
-    exports.asArray = asArray;
-    function toggle(e, className, force) {
-        var exists = e.classList.contains(className);
-        if (exists && force !== true) {
-            e.classList.remove(className);
-            return false;
-        }
-        ;
-        if (!exists && force !== false) {
-            e.classList.add(className);
-            return true;
-        }
-        return exists;
-    }
-    exports.toggle = toggle;
-    function parse(v, type) {
-        if (typeof type === "string")
-            return v;
-        if (typeof type === "number")
-            return parseFloat(v);
-        if (typeof type === "boolean")
-            return (v === "1" || v === "true");
-        if (Array.isArray(type)) {
-            return (v.split(",").map(function (v) { return parse(v, type[0]); }));
-        }
-        throw "unknown type: " + type;
-    }
-    exports.parse = parse;
-    function getQueryParameters(options, url) {
-        if (url === void 0) { url = window.location.href; }
-        var opts = options;
-        Object.keys(opts).forEach(function (k) {
-            doif(getParameterByName(k, url), function (v) {
-                var value = parse(v, opts[k]);
-                if (value !== undefined)
-                    opts[k] = value;
-            });
-        });
-    }
-    exports.getQueryParameters = getQueryParameters;
-    function getParameterByName(name, url) {
-        if (url === void 0) { url = window.location.href; }
-        name = name.replace(/[\[\]]/g, "\\$&");
-        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"), results = regex.exec(url);
-        if (!results)
-            return null;
-        if (!results[2])
-            return '';
-        return decodeURIComponent(results[2].replace(/\+/g, " "));
-    }
-    exports.getParameterByName = getParameterByName;
-    function doif(v, cb) {
-        if (v !== undefined && v !== null)
-            cb(v);
-    }
-    exports.doif = doif;
-    function mixin(a, b) {
-        Object.keys(b).forEach(function (k) { return a[k] = b[k]; });
-        return a;
-    }
-    exports.mixin = mixin;
-    function defaults(a) {
-        var b = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            b[_i - 1] = arguments[_i];
-        }
-        b.forEach(function (b) {
-            Object.keys(b).filter(function (k) { return a[k] === undefined; }).forEach(function (k) { return a[k] = b[k]; });
-        });
-        return a;
-    }
-    exports.defaults = defaults;
-    function cssin(name, css) {
-        var id = "style-" + name;
-        var styleTag = document.getElementById(id);
-        if (!styleTag) {
-            styleTag = document.createElement("style");
-            styleTag.id = id;
-            styleTag.type = "text/css";
-            document.head.appendChild(styleTag);
-            styleTag.appendChild(document.createTextNode(css));
-        }
-        var dataset = styleTag.dataset;
-        dataset["count"] = parseInt(dataset["count"] || "0") + 1 + "";
-        return function () {
-            dataset["count"] = parseInt(dataset["count"] || "0") - 1 + "";
-            if (dataset["count"] === "0") {
-                styleTag.remove();
-            }
-        };
-    }
-    exports.cssin = cssin;
-    function debounce(func, wait, immediate) {
-        if (wait === void 0) { wait = 50; }
-        if (immediate === void 0) { immediate = false; }
-        var timeout;
-        return (function () {
-            var args = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                args[_i] = arguments[_i];
-            }
-            var later = function () {
-                timeout = null;
-                if (!immediate)
-                    func.apply({}, args);
-            };
-            var callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = window.setTimeout(later, wait);
-            if (callNow)
-                func.apply({}, args);
-        });
-    }
-    exports.debounce = debounce;
-    function html(html) {
-        var a = document.createElement("div");
-        a.innerHTML = html;
-        return (a.firstElementChild || a.firstChild);
-    }
-    exports.html = html;
-    function pair(a1, a2) {
-        var result = new Array(a1.length * a2.length);
-        var i = 0;
-        a1.forEach(function (v1) { return a2.forEach(function (v2) { return result[i++] = [v1, v2]; }); });
-        return result;
-    }
-    exports.pair = pair;
-    function range(n) {
-        var result = new Array(n);
-        for (var i = 0; i < n; i++)
-            result[i] = i;
-        return result;
-    }
-    exports.range = range;
-    function shuffle(array) {
-        var currentIndex = array.length;
-        var temporaryValue;
-        var randomIndex;
-        while (0 !== currentIndex) {
-            randomIndex = Math.floor(Math.random() * currentIndex);
-            currentIndex -= 1;
-            temporaryValue = array[currentIndex];
-            array[currentIndex] = array[randomIndex];
-            array[randomIndex] = temporaryValue;
-        }
-        return array;
-    }
-    exports.shuffle = shuffle;
-});
-define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_1) {
+define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dispose = function (handlers) {
@@ -567,7 +747,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                 if (!options.map)
                     "map is a require option";
             }
-            options = common_1.defaults(options, SelectInteraction.DEFAULT_OPTIONS);
+            options = common_3.defaults(options, SelectInteraction.DEFAULT_OPTIONS);
             options.addCondition = options.addCondition || ol.events.condition.shiftKeyOnly;
             options.removeCondition = options.removeCondition || ol.events.condition.never;
             options.toggleCondition = options.addCondition || ol.events.condition.shiftKeyOnly;
@@ -1501,7 +1681,7 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
     exports.smartpick = smartpick;
     ;
 });
-define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer, smartpick_1, mixin_2) {
+define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, $, ol, paging_1, page_navigator_1, common_4, interaction_1, Symbolizer, smartpick_1, mixin_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -1616,13 +1796,13 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             return _this;
         }
         Popup.create = function (options) {
-            options = common_2.defaults({}, options || {}, exports.DEFAULT_OPTIONS);
+            options = common_4.defaults({}, options || {}, exports.DEFAULT_OPTIONS);
             var popup = new Popup(options);
             options.map && options.map.addOverlay(popup);
             return popup;
         };
         Popup.prototype.configureDom = function (options) {
-            common_2.cssin("ol3-popup", css);
+            common_4.cssin("ol3-popup", css);
             options.css && this.injectCss("options", options.css);
             var domNode = (this.domNode = document.createElement("div"));
             domNode.className = classNames.olPopupElement;
@@ -1687,7 +1867,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             var style = document.getElementById(id);
             if (style)
                 style.remove();
-            style = common_2.html("<style type='text/css' id='" + id + "'>" + css + "</style>");
+            style = common_4.html("<style type='text/css' id='" + id + "'>" + css + "</style>");
             $(document.head).append(style);
             this.handlers.push(function () { return style.remove(); });
         };
@@ -1701,7 +1881,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     autoPan: this.options.autoPan,
                     autoPanMargin: this.options.autoPanMargin,
                     autoPanAnimation: this.options.autoPanAnimation,
-                    element: common_2.html("<span class=\"simple-popup-down-arrow\"></span>")
+                    element: common_4.html("<span class=\"simple-popup-down-arrow\"></span>")
                 });
                 this.options.map.addOverlay(indicator);
             }
@@ -1720,7 +1900,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             switch (verticalPosition) {
                 case "top":
                     {
-                        indicator.setElement(common_2.html("<span class=\"simple-popup-up-arrow\"></span>"));
+                        indicator.setElement(common_4.html("<span class=\"simple-popup-up-arrow\"></span>"));
                         indicator.setOffset([0, 0 + offset]);
                         indicator.setPositioning("top-center");
                         var _b = [7, 8 + offset], dx = _b[0], dy = _b[1];
@@ -1741,7 +1921,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     break;
                 case "bottom":
                     {
-                        indicator.setElement(common_2.html("<span class=\"simple-popup-down-arrow\"></span>"));
+                        indicator.setElement(common_4.html("<span class=\"simple-popup-down-arrow\"></span>"));
                         indicator.setOffset([0, 0 - offset]);
                         indicator.setPositioning("bottom-center");
                         var _c = [7, -(10 + offset)], dx = _c[0], dy = _c[1];
@@ -1768,13 +1948,13 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                                 indicator.setPosition(null);
                                 break;
                             case "left":
-                                indicator.setElement(common_2.html("<span class=\"simple-popup-left-arrow\"></span>"));
+                                indicator.setElement(common_4.html("<span class=\"simple-popup-left-arrow\"></span>"));
                                 indicator.setOffset([offset, 0]);
                                 indicator.setPositioning("center-left");
                                 this.setOffset([dx, dy]);
                                 break;
                             case "right":
-                                indicator.setElement(common_2.html("<span class=\"simple-popup-right-arrow\"></span>"));
+                                indicator.setElement(common_4.html("<span class=\"simple-popup-right-arrow\"></span>"));
                                 indicator.setOffset([-offset, 0]);
                                 indicator.setPositioning("center-right");
                                 this.setOffset([-dx, dy]);
@@ -2048,7 +2228,7 @@ define("examples/extras/feature-creator", ["require", "exports", "openlayers", "
     }());
     return FeatureCreator;
 });
-define("examples/activate", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_1, common_3, FeatureCreator) {
+define("examples/activate", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_1, common_5, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.map .toggle-active {\n    position: absolute;\n    top: 1em;\n    left: 3em;\n    z-index: 1;\n}\n";
@@ -2056,8 +2236,8 @@ define("examples/activate", ["require", "exports", "openlayers", "ol3-popup/ol3-
     var html = "\n<div class=\"map\">\n    <input type=\"button\" class=\"toggle-active\" value=\"Toggle Popup\"></input>\n</div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        common_3.cssin("activate", css);
-        document.body.appendChild(common_3.html("<div>" + html + "</div>"));
+        common_5.cssin("activate", css);
+        document.body.appendChild(common_5.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
             target: mapContainer,
@@ -2090,7 +2270,7 @@ define("examples/activate", ["require", "exports", "openlayers", "ol3-popup/ol3-
     }
     exports.run = run;
 });
-define("examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, $, ol3_popup_2, common_4) {
+define("examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, $, ol3_popup_2, common_6) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
@@ -2098,8 +2278,8 @@ define("examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-p
     var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
     var center = ol.proj.transform([-85, 35], "EPSG:4326", "EPSG:3857");
     function run() {
-        $(document.head).append(common_4.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
-        $(document.body).append(common_4.html("<div>" + html + "</div>"));
+        $(document.head).append(common_6.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
+        $(document.body).append(common_6.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var dockContainer = document.getElementsByClassName("dock-container")[0];
         var map = new ol.Map({
@@ -2126,13 +2306,13 @@ define("examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-p
             multi: true
         });
         0 &&
-            p1.on("dock", common_4.debounce(function () {
+            p1.on("dock", common_6.debounce(function () {
                 var h = p1.on("show", function () {
                     var p = ol3_popup_2.Popup.create({
                         map: map,
                         autoPopup: false,
                         positioning: "top-center",
-                        asContent: function (feature) { return common_4.html("<b>Hi " + feature.get("hello") + "</b>"); }
+                        asContent: function (feature) { return common_6.html("<b>Hi " + feature.get("hello") + "</b>"); }
                     });
                     p1.once(["undock", "dispose"], function () { return p.destroy(); });
                     var feature = new ol.Feature({
@@ -2158,7 +2338,7 @@ define("examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-p
     }
     exports.run = run;
 });
-define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_3, Symbolizer, common_5, FeatureCreator) {
+define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_3, Symbolizer, common_7, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -2167,8 +2347,8 @@ define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-pop
     var html = "\n<div class=\"map\">\n<label>Hold the shift key down when clicking the marker to multi-select, need to click a little left of the markers..it's looking at feature coordinates not symbols (but still a bit off)</label>\n</div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        common_5.cssin("multi", css);
-        document.body.appendChild(common_5.html("<div>" + html + "</div>"));
+        common_7.cssin("multi", css);
+        document.body.appendChild(common_7.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
             target: mapContainer,
@@ -2242,15 +2422,15 @@ define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-pop
     }
     exports.run = run;
 });
-define("examples/overlay", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_6) {
+define("examples/overlay", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_8) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.ol-control.simple-infobox {\n    top: 1em;\n    left: 25%;\n    max-width: 50%;\n  }\n\n.simple-popup {\n    border: 1px solid black;\n    border-radius: 4px;\n    padding: 10px;\n    background-color: rgba(80, 80, 80, 0.5);\n    color: rgb(250, 250, 250);\n    max-width: 120px;\n}\n\n.simple-popup-arrow {\n    color: black;\n    font-size: 36px;\n}\n\n.simple-popup-down-arrow:after {\n    content: \"\u21E9\";\n    position: relative;\n    top: -8px;\n}\n\n.simple-popup-up-arrow:after {\n    content: \"\u21E7\";\n    position: relative;\n    top: 10px;\n}\n\n.simple-popup-left-arrow:after {\n    content: \"\u21E6\";\n}\n\n.simple-popup-right-arrow:after {\n    content: \"\u21E8\";\n}\n\n";
     var html = "\n<div class=\"map\"></div>\n";
     var center = ol.proj.transform([-85, 35], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        common_6.cssin("simple", css);
-        document.body.appendChild(common_6.html("<div>" + html + "</div>"));
+        common_8.cssin("simple", css);
+        document.body.appendChild(common_8.html("<div>" + html + "</div>"));
         var vectorLayer = new ol.layer.Vector({
             source: new ol.source.Vector()
         });
@@ -2266,160 +2446,157 @@ define("examples/overlay", ["require", "exports", "openlayers", "node_modules/ol
         {
             var message = "the purpose of this example is to show the techniques and complexities of creating a popup control";
             map.addControl(new ol.control.Control({
-                element: common_6.html("<div class=\"simple-infobox ol-unselectable ol-control\"><label>" + message + "</label></div>"),
+                element: common_8.html("<div class=\"simple-infobox ol-unselectable ol-control\"><label>" + message + "</label></div>"),
             }));
         }
         var marker = new ol.Overlay({
             autoPan: true,
             position: center,
             positioning: "center-center",
-            element: common_6.html("<div class=\"ol-unselectable\" border=\"1px solid red\">\u274C</div>"),
+            element: common_8.html("<div class=\"ol-unselectable\" border=\"1px solid red\">\u274C</div>"),
         });
         map.addOverlay(marker);
         var topOverlay = new ol.Overlay({
             autoPan: true,
             position: center,
             positioning: "bottom-center",
-            element: common_6.html("<div class=\"ol-unselectable\" style=\"text-align: center\"><div class=\"simple-popup\">Overlay with positioning set to bottom-center</div><span class=\"simple-popup-arrow simple-popup-down-arrow\"></span></div>"),
+            element: common_8.html("<div class=\"ol-unselectable\" style=\"text-align: center\"><div class=\"simple-popup\">Overlay with positioning set to bottom-center</div><span class=\"simple-popup-arrow simple-popup-down-arrow\"></span></div>"),
         });
         map.addOverlay(topOverlay);
         var bottomOverlay = new ol.Overlay({
             autoPan: true,
             position: center,
             positioning: "top-center",
-            element: common_6.html("<div class=\"ol-unselectable\" style=\"text-align: center\"><span class=\"simple-popup-arrow simple-popup-up-arrow\"></span><div class=\"simple-popup\">Overlay with positioning set to top-center</div>"),
+            element: common_8.html("<div class=\"ol-unselectable\" style=\"text-align: center\"><span class=\"simple-popup-arrow simple-popup-up-arrow\"></span><div class=\"simple-popup\">Overlay with positioning set to top-center</div>"),
         });
         map.addOverlay(bottomOverlay);
     }
     exports.run = run;
 });
-define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "examples/extras/feature-creator", "node_modules/ol3-fun/ol3-fun/common", "jquery"], function (require, exports, ol, ol3_popup_4, FeatureCreator, common_7, $) {
+define("examples/extras/map-maker", ["require", "exports", "openlayers"], function (require, exports, ol) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
-    var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
-    var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
-    var sample_content = [
-        'The story of the three little pigs...',
-        'This little piggy went to market',
-        'This little piggy stayed home',
-        'This little piggy had roast beef',
-        'This little piggy had none',
-        'And this little piggy, <br/>this wee little piggy, <br/>when wee, wee, wee, wee <br/>all the way home!',
-    ];
-    var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
-    function run() {
-        document.head.appendChild(common_7.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
-        document.body.appendChild(common_7.html("<div>" + html + "</div>"));
-        var mapContainer = document.getElementsByClassName("map")[0];
-        var dockContainer = document.getElementsByClassName("dock-container")[0];
-        var map = new ol.Map({
+    function MapMaker(mapContainer) {
+        return new ol.Map({
             target: mapContainer,
-            layers: [
-                new ol.layer.Tile({
-                    source: new ol.source.OSM()
-                })
-            ],
+            layers: [],
             view: new ol.View({
-                center: center,
+                center: [0, 0],
                 zoom: 6
             })
         });
+    }
+    exports.MapMaker = MapMaker;
+});
+define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "examples/extras/feature-creator", "node_modules/ol3-fun/index", "jquery", "examples/extras/map-maker", "node_modules/ol3-fun/ol3-fun/slowloop"], function (require, exports, ol, ol3_popup_4, FeatureCreator, index_2, $, map_maker_1, slowloop_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var css = "\n";
+    function circle(radius, points) {
+        if (radius === void 0) { radius = 1; }
+        if (points === void 0) { points = 36; }
+        if (points < 3)
+            throw "a circle must contain at least three points";
+        if (radius <= 0)
+            throw "a circle must have a positive radius";
+        var a = 0;
+        var dr = (2 * Math.PI) / (points - 1);
+        var result = new Array(points);
+        for (var i = 0; i < points - 1; i++) {
+            result[i] = [radius * Math.sin(a), radius * Math.cos(a)];
+            a += dr;
+        }
+        result[result.length - 1] = result[0];
+        return result;
+    }
+    var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 300px;\n    border: 1px solid rgba(0,0,0,0.1);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
+    var html = "\n<div class=\"map\"></div>\n<div class='dock-container'></div>\n";
+    var sample_content = [
+        "The story of the three little pigs...",
+        "This little piggy went to market",
+        "This little piggy stayed home",
+        "This little piggy had roast beef",
+        "This little piggy had none",
+        "And this little piggy, <br/>this wee little piggy, <br/>when wee, wee, wee, wee <br/>all the way home!"
+    ];
+    exports.center = ol.proj.transform([-85, 15], "EPSG:4326", "EPSG:3857");
+    function run() {
+        document.head.appendChild(index_2.html("<style name=\"paging\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(index_2.html("<div>" + html + "</div>"));
+        var mapContainer = document.getElementsByClassName("map")[0];
+        var dockContainer = document.getElementsByClassName("dock-container")[0];
+        var map = map_maker_1.MapMaker(mapContainer);
+        map.getView().animate({ center: exports.center, zoom: 12 });
         var popup = ol3_popup_4.Popup.create({
             map: map,
             autoPan: true,
             autoPanMargin: 20,
             autoPanAnimation: {
                 source: null,
-                duration: 500
+                duration: 50
             },
             autoPopup: true,
             showCoordinates: true,
             css: css_popup,
-            dockContainer: dockContainer,
-            pointerPosition: 150,
+            dockContainer: dockContainer
         });
         popup.on("show", function () { return console.log("show popup"); });
         popup.on("hide", function () { return console.log("hide popup"); });
         popup.pages.on("goto", function () { return console.log("goto page: " + popup.pages.activeIndex); });
-        [1, 2, 3].map(function (i) { return popup.pages.add("Page " + i, new ol.geom.Point(center)); });
-        popup.pages.goto(0);
-        setTimeout(function () {
-            popup.show(center, "<div>Click the map to see a popup</div>");
-            var pages = 0;
-            console.log("adding 5 pages");
-            var h = setInterval(function () {
-                if (++pages === 5) {
-                    console.log("detaching from map (docking)");
-                    clearInterval(h);
-                    popup.dock();
-                    var h2_1 = popup.on("hide", function () {
-                        ol.Observable.unByKey(h2_1);
-                        popup.undock();
+        {
+            var points_1 = circle(10000, 15).map(function (n) { return new ol.geom.Point([exports.center[0] + n[0], exports.center[1] + n[1]]); });
+            var page6Promise_1 = $.Deferred();
+            var d2_1 = $.Deferred();
+            var page6div_1 = document.createElement("div");
+            page6div_1.innerHTML = "<p>Page 6: This function promise resolves to a div element</p>";
+            var div2_1 = index_2.html("<div>P</div>");
+            setInterval(function () { return (div2_1.innerHTML = new Date().toTimeString()); }, 1000);
+            slowloop_2.slowloop([
+                function () {
+                    FeatureCreator.create({
+                        map: map
                     });
-                    setTimeout(function () {
-                        console.log("re-attaching to map (un-docking)");
-                        popup.undock();
-                        console.log("adding a page with string and dom promise");
-                        {
-                            var d1_1 = $.Deferred();
-                            popup.pages.add(d1_1);
-                            setTimeout(function () { return d1_1.resolve('<p>This promise resolves to a string<p>'); }, 500);
-                            var d2_1 = $.Deferred();
-                            popup.pages.add(d2_1);
-                            var div_1 = document.createElement("div");
-                            div_1.innerHTML = '<p>This function promise resolves to a div element</p>';
-                            setTimeout(function () { return d2_1.resolve(div_1); }, 100);
-                        }
-                        console.log("adding a page with a string callback");
-                        popup.pages.add(function () { return '<p>This function returns a string</p>'; });
-                        console.log("adding a page with a dom callback");
-                        popup.pages.add(function () {
-                            var div = document.createElement("div");
-                            div.innerHTML = '<p>This function returns a div element</p>';
-                            return div;
-                        });
-                        console.log("adding a page with a string-promise");
-                        popup.pages.add(function () {
-                            var d = $.Deferred();
-                            d.resolve('<p>This function promise resolves to a string</p>');
-                            return d;
-                        });
-                        console.log("adding a page with a dom-promise");
-                        {
-                            var message_1 = "\nThis function promise resolves to a div element.\n<br/>\nThis page was resolved after 3 seconds.  \n<br/>As the content of this page grows, \n<br/>you should notice that the PanIntoView is continually keeping the popup within view.\n<br/>";
-                            popup.pages.add(function () {
-                                var index = 0;
-                                var d = $.Deferred();
-                                var div = document.createElement("div");
-                                var body = document.createElement("div");
-                                body.appendChild(div);
-                                setTimeout(function () { return d.resolve(body); }, 3000);
-                                d.then(function (body) {
-                                    var h = setInterval(function () {
-                                        div.innerHTML = "<p>" + message_1.substr(0, ++index) + "</p>";
-                                        popup.panIntoView();
-                                        if (index >= message_1.length)
-                                            clearInterval(h);
-                                    }, 100);
-                                });
-                                return d;
-                            });
-                        }
-                    }, 1000);
-                }
-                var div = document.createElement("div");
-                div.innerHTML = "PAGE " + pages + "<br/>" + sample_content[pages % sample_content.length];
-                popup.pages.add(div);
-            }, 200);
-        }, 500);
-        FeatureCreator.create({
-            map: map
-        });
+                    popup.show(exports.center, "<div>Click the map to see a popup</div>");
+                },
+                function () { return popup.dock(); },
+                function () { return popup.undock(); },
+                function () { return popup.pages.add(div2_1, points_1[popup.pages.count]); },
+                function () {
+                    var count = 0;
+                    popup.pages.add(function () { return "<p>Page 2: This string function has been called " + ++count + " times</p>"; }, points_1[popup.pages.count]);
+                },
+                function () { return popup.pages.goto(0); },
+                function () { return [3, 4, 5].map(function (i) { return popup.pages.add("Page " + i + ": Basic string pages", points_1[popup.pages.count]); }); },
+                function () { return popup.pages.next(); },
+                function () { return popup.pages.next(); },
+                function () { return popup.pages.next(); },
+                function () { return popup.pages.add(page6Promise_1, points_1[popup.pages.count]); },
+                function () { return popup.pages.next(); },
+                function () { return page6Promise_1.resolve("<p>Page 6: This promise resolves to a string<p>"); },
+                function () { return popup.pages.add(d2_1, points_1[popup.pages.count]); },
+                function () { return popup.pages.next(); },
+                function () { return d2_1.resolve(page6div_1); },
+                function () {
+                    var count = 0;
+                    popup.pages.add(function () {
+                        var div = document.createElement("div");
+                        div.innerHTML = "<p>Page 8: This dom function has been called " + ++count + " times</p>";
+                        return div;
+                    }, points_1[popup.pages.count]);
+                },
+                function () { return popup.pages.next(); },
+                function () { return sample_content.map(function (m) { return popup.pages.add(m, points_1[popup.pages.count]); }); },
+                function () { return popup.pages.goto(popup.pages.count - 1); }
+            ], 200).then(function () {
+                return slowloop_2.slowloop(index_2.range(popup.pages.count)
+                    .reverse()
+                    .map(function (n) { return function () { return popup.pages.goto(n); }; }), 200, 2);
+            });
+        }
     }
     exports.run = run;
 });
-define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_5, Symbolizer, common_8, FeatureCreator) {
+define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_5, Symbolizer, common_9, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -2433,8 +2610,8 @@ define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/
     var html = "\n<div class=\"map\">\n<label>\nI think the idea here was to place popup data directly on the geometry so, for example, the triangle will have center-center popup, the circle bottom-center and the star top-center\nbut it is not complete.  I'm not sure what the geom is returned from paging...defer until after paging tests are complete.\n</label>\n</div>\n";
     var center = ol.proj.transform([-0.92, 52.96], 'EPSG:4326', 'EPSG:3857');
     function run() {
-        document.head.appendChild(common_8.html("<style name=\"style-offset\" type='text/css'>" + css + "</style>"));
-        document.body.appendChild(common_8.html("<div>" + html + "</div>"));
+        document.head.appendChild(common_9.html("<style name=\"style-offset\" type='text/css'>" + css + "</style>"));
+        document.body.appendChild(common_9.html("<div>" + html + "</div>"));
         var mapContainer = document.getElementsByClassName("map")[0];
         var map = new ol.Map({
             target: mapContainer,
@@ -2496,7 +2673,7 @@ define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/
     }
     exports.run = run;
 });
-define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/ol3-popup", "examples/extras/feature-creator"], function (require, exports, ol, common_9, ol3_popup_6, FeatureCreator) {
+define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/ol3-popup", "examples/extras/feature-creator"], function (require, exports, ol, common_10, ol3_popup_6, FeatureCreator) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body, .map {\n    padding: 0;\n    margin: 0;\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n";
@@ -2504,8 +2681,8 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
     var center = ol.proj.transform([-85, 35], 'EPSG:4326', 'EPSG:3857');
     function run() {
         console.log("the purpose of this example is to show the techniques and complexities of creating a popup control");
-        common_9.cssin("simple", css);
-        document.body.appendChild(common_9.html("<div>" + html + "</div>"));
+        common_10.cssin("simple", css);
+        document.body.appendChild(common_10.html("<div>" + html + "</div>"));
         var vectorLayer = new ol.layer.Vector({
             source: new ol.source.Vector()
         });
@@ -2524,7 +2701,7 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
         map.addOverlay(new ol.Overlay({
             position: center,
             positioning: "center-center",
-            element: common_9.html("<div border=\"1px solid red\">\u274C</div>"),
+            element: common_10.html("<div border=\"1px solid red\">\u274C</div>"),
         }));
         var popup = ol3_popup_6.Popup.create({
             map: map,
@@ -2542,7 +2719,7 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
             var d = new Promise(function (resolve) {
                 popup.options.autoPositioning = false;
                 var original = popup.getPositioning();
-                var items = common_9.pair("top,center,bottom".split(","), "left,center,right".split(","));
+                var items = common_10.pair("top,center,bottom".split(","), "left,center,right".split(","));
                 var h = setInterval(function () {
                     var positioning;
                     if (!items.length) {
@@ -2562,8 +2739,8 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
                 map.getView().setZoom(map.getView().getZoom() + 1);
                 var size = map.getSize();
                 var count = 5;
-                var _a = size.map(function (sz) { return common_9.range(count).map(function (n) { return sz * n / (count - 1); }); }), dx = _a[0], dy = _a[1];
-                var coords = common_9.pair(dx, dy).map(function (p) { return map.getCoordinateFromPixel(p); });
+                var _a = size.map(function (sz) { return common_10.range(count).map(function (n) { return sz * n / (count - 1); }); }), dx = _a[0], dy = _a[1];
+                var coords = common_10.pair(dx, dy).map(function (p) { return map.getCoordinateFromPixel(p); });
                 var h = setInterval(function () {
                     if (!coords.length) {
                         clearInterval(h);
@@ -2577,23 +2754,22 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
     }
     exports.run = run;
 });
-define("examples/index", ["require", "exports", "examples/activate", "examples/docking", "examples/multi", "examples/overlay", "examples/paging", "examples/style-offset", "examples/simple"], function (require, exports) {
+define("examples/index", ["require", "exports", "node_modules/ol3-fun/index", "examples/activate", "examples/docking", "examples/multi", "examples/overlay", "examples/paging", "examples/style-offset", "examples/simple"], function (require, exports, index_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function run() {
         var l = window.location;
         var path = "" + l.origin + l.pathname + "?run=examples/";
-        var labs = "\n    overlay\n    simple\n    activate\n    multi    \n    docking\n    index\n    ";
-        document.writeln("\n    <p>\n    Watch the console output for failed assertions (blank is good).\n    </p>\n    ");
-        document.writeln(labs
+        var labs = "\n    activate\n    docking\n    multi    \n    overlay\n    paging\n    simple\n    index\n    ";
+        var markup = labs
             .split(/ /)
             .map(function (v) { return v.trim(); })
             .filter(function (v) { return !!v; })
             .sort()
             .map(function (lab) { return "<a href=\"" + path + lab + "&debug=1\">" + lab + "</a>"; })
-            .join("<br/>"));
+            .join("<br/>");
+        document.body.appendChild(index_3.html("<div>" + markup + "</div>"));
     }
     exports.run = run;
-    ;
 });
 //# sourceMappingURL=examples.max.js.map

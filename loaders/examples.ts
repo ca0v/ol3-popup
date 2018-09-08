@@ -16,12 +16,18 @@
 		return decodeURIComponent(results[2].replace(/\+/g, " "));
 	}
 
+	let debug = getParameterByName("debug") === "1";
 	let localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+	document.body.classList.toggle("dark", localhost && !debug);
+	document.body.classList.toggle("verbose", debug);
+	document.body.classList.toggle("light", !localhost || debug);
+	document.body.classList.toggle("terse", !debug);
 
 	loadCss(
 		localhost
 			? "../node_modules/ol3-fun/static/ol/v5.1.3/ol.css"
-			: "https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.1.3/css/ol.css",
+			: "https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.1.3/css/ol.css"
 	);
 
 	requirejs.config({
@@ -30,14 +36,14 @@
 			// build this using the "npm run build-legacy" (see ol package.json)
 			openlayers: {
 				deps: [], // no dependencies, needs path to indicate where to find "openlayers"
-				exports: "ol", // tell requirejs which global this library defines
-			},
+				exports: "ol" // tell requirejs which global this library defines
+			}
 		},
 
 		paths: {
 			openlayers: localhost
 				? "../../node_modules/ol3-fun/static/ol/v5.1.3/ol"
-				: "https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.1.3/build/ol",
+				: "https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.1.3/build/ol"
 		},
 
 		packages: [
@@ -46,12 +52,12 @@
 				location: localhost
 					? "../../node_modules/jquery/dist"
 					: "https://cdn.rawgit.com/jquery/jquery-dist/3.1.1/dist",
-				main: "jquery.min",
-			},
+				main: "jquery.min"
+			}
 		],
 
 		deps: ["../examples.max"],
 
-		callback: () => requirejs([getParameterByName("run") || "examples/index"], test => test.run()),
+		callback: () => requirejs([getParameterByName("run") || "examples/index"], test => test.run())
 	});
 })();

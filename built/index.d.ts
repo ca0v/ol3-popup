@@ -47,7 +47,7 @@ declare module "ol3-popup/paging/paging" {
         addFeature(feature: ol.Feature, options: {
             searchCoordinate: ol.Coordinate;
         }): IPage;
-        add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry): IPage;
+        add(source: SourceType | SourceCallback, geom: ol.geom.Geometry): IPage;
         clear(): void;
         goto(index: number | string): void;
         next(): void;

@@ -153,7 +153,7 @@ export class Paging extends ol.Observable implements IPaging {
 		return page;
 	}
 
-	add(source: SourceType | SourceCallback, geom?: ol.geom.Geometry) {
+	add(source: SourceType | SourceCallback, geom: ol.geom.Geometry) {
 		let page: IPage;
 
 		let pageDiv = document.createElement("div");

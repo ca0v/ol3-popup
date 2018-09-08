@@ -16,7 +16,7 @@
 		"dev-for-tests": "npm run build-for-tests & start npm run live-for-tests & npm run build-for-tests -- -w",
 		"tests": "npm run dev-for-tests",
 		"install": "npm run build-for-amd",
-		"before-push": "npm run clean && npm run build-for-loaders && npm run build-for-amd && npm run build-for-tests && npm run build-for-examples && mv built/index.max.d.ts built/index.d.ts",
+		"before-push": "npm run clean && npm run build-for-loaders && npm run build-for-amd && npm run build-for-tests && npm run build-for-examples && mv built/index.max.d.ts built/index.d.ts && npm run live-for-tests",
 		"test": "npm run before-push && npm run live-for-tests"
 	},
 	"repository": {

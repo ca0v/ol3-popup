@@ -19,7 +19,11 @@
 
 	let debug = getParameterByName("debug") === "1";
 	let localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-	document.body.classList.toggle("dark", localhost);
+
+	document.body.classList.toggle("dark", localhost && !debug);
+	document.body.classList.toggle("verbose", debug);
+	document.body.classList.toggle("light", !localhost || debug);
+	document.body.classList.toggle("terse", !debug);
 
 	loadCss(
 		localhost ? "../node_modules/mocha/mocha.css" : "https://cdnjs.cloudflare.com/ajax/libs/mocha/5.2.0/mocha.css"
