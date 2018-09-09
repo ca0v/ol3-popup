@@ -793,6 +793,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         insertFirst: true,
         pointerPosition: 20,
         offset: [0, -10],
+        topOffset: [7, 8],
+        bottomOffset: [7, 10],
         positioning: "bottom-center",
         stopEvent: true,
         showCoordinates: false
@@ -922,7 +924,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                         indicator.setElement(common_2.html("<span class=\"simple-popup-up-arrow\"></span>"));
                         indicator.setOffset([0, 0 + offset]);
                         indicator.setPositioning("top-center");
-                        var _b = [7, 8 + offset], dx = _b[0], dy = _b[1];
+                        var _b = [this.options.topOffset[0], this.options.topOffset[1] + offset], dx = _b[0], dy = _b[1];
                         switch (horizontalPosition) {
                             case "center":
                                 this.setOffset([0, dy]);
@@ -943,7 +945,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                         indicator.setElement(common_2.html("<span class=\"simple-popup-down-arrow\"></span>"));
                         indicator.setOffset([0, 0 - offset]);
                         indicator.setPositioning("bottom-center");
-                        var _c = [7, -(10 + offset)], dx = _c[0], dy = _c[1];
+                        var _c = [this.options.bottomOffset[0], -(this.options.bottomOffset[1] + offset)], dx = _c[0], dy = _c[1];
                         switch (horizontalPosition) {
                             case "center":
                                 this.setOffset([0, dy]);
@@ -961,7 +963,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     break;
                 case "center":
                     {
-                        var _d = [5 + offset, 0], dx = _d[0], dy = _d[1];
                         switch (horizontalPosition) {
                             case "center":
                                 indicator.setPosition(null);
@@ -970,13 +971,13 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                                 indicator.setElement(common_2.html("<span class=\"simple-popup-left-arrow\"></span>"));
                                 indicator.setOffset([offset, 0]);
                                 indicator.setPositioning("center-left");
-                                this.setOffset([dx, dy]);
+                                this.setOffset([offset + this.options.leftOffset[0], this.options.leftOffset[1]]);
                                 break;
                             case "right":
                                 indicator.setElement(common_2.html("<span class=\"simple-popup-right-arrow\"></span>"));
                                 indicator.setOffset([-offset, 0]);
                                 indicator.setPositioning("center-right");
-                                this.setOffset([-dx, dy]);
+                                this.setOffset([-(offset + this.options.rightOffset[0]), this.options.rightOffset[1]]);
                                 break;
                             default:
                                 throw "unknown value: " + horizontalPosition;
