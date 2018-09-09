@@ -25,6 +25,8 @@ describe("Popup Constructor", () => {
 		}
 		Popup.create({ autoPopup: false }).destroy();
 		Popup.create({ map: map }).destroy();
+
+		map.setTarget(null);
 	});
 });
 
@@ -34,11 +36,7 @@ describe("Popup Paging", () => {
 
 	let map = new ol.Map({
 		target: target,
-		layers: [
-			new ol.layer.Tile({
-				source: new ol.source.OSM()
-			})
-		],
+		layers: [],
 		view: new ol.View({
 			center: [0, 0],
 			projection: "EPSG:3857",

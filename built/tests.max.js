@@ -2139,6 +2139,7 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
             }
             index_2.Popup.create({ autoPopup: false }).destroy();
             index_2.Popup.create({ map: map }).destroy();
+            map.setTarget(null);
         });
     });
     base_1.describe("Popup Paging", function () {
@@ -2146,11 +2147,7 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
         document.body.appendChild(target);
         var map = new ol.Map({
             target: target,
-            layers: [
-                new ol.layer.Tile({
-                    source: new ol.source.OSM()
-                })
-            ],
+            layers: [],
             view: new ol.View({
                 center: [0, 0],
                 projection: "EPSG:3857",
@@ -2200,7 +2197,158 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
         base_1.shouldEqual(options.stopEvent, true, "stopEvent");
     }
 });
-define("tests/index", ["require", "exports", "tests/spec/popup"], function (require, exports) {
+define("tests/spec/popup-css", ["require", "exports", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, base_2, common_5) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function rect(extent) {
+        var x1 = extent[0], y1 = extent[1], x2 = extent[2], y2 = extent[3];
+        return [[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]];
+    }
+    function callout(points, options) {
+        var index = options.index, size = options.size, width = options.width, offset = options.offset, skew = options.skew;
+        var a = points[index];
+        var c = points[index + 1];
+        var isVertical = a[0] === c[0];
+        var isHorizontal = a[1] === c[1];
+        var isLeft = isVertical && a[1] > c[1];
+        var isRight = isVertical && a[1] < c[1];
+        var isTop = isHorizontal && a[0] < c[0];
+        var isBottom = isHorizontal && a[0] > c[0];
+        var b = [(a[0] + c[0]) / 2, (a[1] + c[1]) / 2];
+        if (isHorizontal) {
+            b[0] += offset;
+        }
+        if (isVertical) {
+            b[1] += offset;
+        }
+        var b0 = [b[0], b[1]];
+        var b1 = [b[0], b[1]];
+        if (isHorizontal) {
+            if (isTop) {
+                b[0] += skew;
+                b[1] -= size;
+                b0[0] -= width / 2;
+                b1[0] += width / 2;
+            }
+            if (isBottom) {
+                b[0] += skew;
+                b[1] += size;
+                b0[0] += width / 2;
+                b1[0] -= width / 2;
+            }
+        }
+        if (isVertical) {
+            if (isLeft) {
+                b[1] += skew;
+                b[0] -= size;
+                b0[1] += width / 2;
+                b1[1] -= width / 2;
+            }
+            if (isRight) {
+                b[1] += skew;
+                b[0] += size;
+                b0[1] -= width / 2;
+                b1[1] += width / 2;
+            }
+        }
+        points.splice(index + 1, 0, b0, b, b1);
+        return points;
+    }
+    base_2.describe("ol3-popup/popup-css", function () {
+        base_2.it("▲▼◀▶△▽◁▷", function () {
+        });
+        base_2.it("renders a tooltip on a canvas", function () {
+            var div = document.createElement("div");
+            div.className = "canvas-container";
+            common_5.cssin("canvas-test", ".canvas-container {\n            display: inline-block;\n            position: absolute;\n            top: 20px;\n            width: 200px;\n            height: 200px;\n            border: 1px solid white;\n        }");
+            div.innerHTML = "DIV CONTENT";
+            var canvas = document.createElement("canvas");
+            canvas.width = canvas.height = 200;
+            canvas.style.position = "absolute";
+            canvas.style.top = canvas.style.left = canvas.style.right = canvas.style.bottom = "0";
+            div.appendChild(canvas);
+            document.body.insertBefore(div, document.body.firstChild);
+            var ctx = canvas.getContext("2d");
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 3;
+            var clear = function () { return ctx.clearRect(0, 0, canvas.width, canvas.height); };
+            base_2.slowloop(common_5.range(30).map(function (n) { return function () {
+                div.style.left = div.style.top = 10 * n + "px";
+            }; }), 100);
+            var loop = [
+                function () {
+                    var points = rect([10, 10, 190, 190]);
+                    clear();
+                    ctx.beginPath();
+                    ctx.moveTo(points[0][0], points[0][1]);
+                    points.forEach(function (p) { return ctx.lineTo(p[0], p[1]); });
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+            ];
+            {
+                var points = common_5.range(4).map(function (index) {
+                    return callout(rect([25, 25, 175, 175]), { index: index, size: 25, width: 25, skew: 10, offset: 20 });
+                });
+                loop = loop.concat(points.map(function (points) { return function () {
+                    clear();
+                    ctx.beginPath();
+                    ctx.moveTo(points[0][0], points[0][1]);
+                    points.forEach(function (p) { return ctx.lineTo(p[0], p[1]); });
+                    ctx.closePath();
+                    ctx.stroke();
+                }; }));
+            }
+            base_2.slowloop(loop, 200).then(function () {
+                loop = [];
+                var points = common_5.range(140).map(function (index) {
+                    return callout(rect([20, 20, 180, 180]), { index: 0, size: 10, width: 20, skew: 0, offset: index - 70 });
+                });
+                points = points.concat(common_5.range(140).map(function (index) {
+                    return callout(rect([20, 20, 180, 180]), {
+                        index: 1,
+                        size: 10,
+                        width: 20,
+                        skew: 0,
+                        offset: index - 70
+                    });
+                }));
+                points = points.concat(common_5.range(140)
+                    .reverse()
+                    .map(function (index) {
+                    return callout(rect([20, 20, 180, 180]), {
+                        index: 2,
+                        size: 10,
+                        width: 20,
+                        skew: 0,
+                        offset: index - 70
+                    });
+                }));
+                points = points.concat(common_5.range(140)
+                    .reverse()
+                    .map(function (index) {
+                    return callout(rect([20, 20, 180, 180]), {
+                        index: 3,
+                        size: 10,
+                        width: 20,
+                        skew: 0,
+                        offset: index - 70
+                    });
+                }));
+                loop = loop.concat(points.map(function (points) { return function () {
+                    clear();
+                    ctx.beginPath();
+                    ctx.moveTo(points[0][0], points[0][1]);
+                    points.forEach(function (p) { return ctx.lineTo(p[0], p[1]); });
+                    ctx.closePath();
+                    ctx.stroke();
+                }; }));
+                base_2.slowloop(loop, 0, 1).then(function () { return base_2.slowloop(loop.reverse(), 0, 1); });
+            });
+        });
+    });
+});
+define("tests/index", ["require", "exports", "tests/spec/popup", "tests/spec/popup-css"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
