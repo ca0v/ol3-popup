@@ -267,6 +267,8 @@ export const DEFAULT_OPTIONS: PopupOptions = {
 	insertFirst: true,
 	pointerPosition: 20,
 	offset: [0, -10],
+	topOffset: [7, 8],
+	bottomOffset: [7, 10],
 	positioning: "bottom-center",
 	stopEvent: true,
 	showCoordinates: false
@@ -431,7 +433,7 @@ export class Popup extends ol.Overlay implements IPopup {
 					indicator.setElement(html(`<span class="simple-popup-up-arrow"></span>`));
 					indicator.setOffset([0, 0 + offset]);
 					indicator.setPositioning("top-center");
-					let [dx, dy] = [7, 8 + offset];
+					let [dx, dy] = [this.options.topOffset[0], this.options.topOffset[1] + offset];
 					switch (horizontalPosition) {
 						case "center":
 							this.setOffset([0, dy]);
@@ -452,7 +454,7 @@ export class Popup extends ol.Overlay implements IPopup {
 					indicator.setElement(html(`<span class="simple-popup-down-arrow"></span>`));
 					indicator.setOffset([0, 0 - offset]);
 					indicator.setPositioning("bottom-center");
-					let [dx, dy] = [7, -(10 + offset)];
+					let [dx, dy] = [this.options.bottomOffset[0], -(this.options.bottomOffset[1] + offset)];
 					switch (horizontalPosition) {
 						case "center":
 							this.setOffset([0, dy]);
@@ -471,7 +473,6 @@ export class Popup extends ol.Overlay implements IPopup {
 
 			case "center":
 				{
-					let [dx, dy] = [5 + offset, 0];
 					switch (horizontalPosition) {
 						case "center":
 							indicator.setPosition(null);
@@ -480,13 +481,13 @@ export class Popup extends ol.Overlay implements IPopup {
 							indicator.setElement(html(`<span class="simple-popup-left-arrow"></span>`));
 							indicator.setOffset([offset, 0]);
 							indicator.setPositioning("center-left");
-							this.setOffset([dx, dy]);
+							this.setOffset([offset + this.options.leftOffset[0], this.options.leftOffset[1]]);
 							break;
 						case "right":
 							indicator.setElement(html(`<span class="simple-popup-right-arrow"></span>`));
 							indicator.setOffset([-offset, 0]);
 							indicator.setPositioning("center-right");
-							this.setOffset([-dx, dy]);
+							this.setOffset([-(offset + this.options.rightOffset[0]), this.options.rightOffset[1]]);
 							break;
 						default:
 							throw `unknown value: ${horizontalPosition}`;

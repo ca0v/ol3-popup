@@ -1805,6 +1805,8 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         insertFirst: true,
         pointerPosition: 20,
         offset: [0, -10],
+        topOffset: [7, 8],
+        bottomOffset: [7, 10],
         positioning: "bottom-center",
         stopEvent: true,
         showCoordinates: false
@@ -1934,7 +1936,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                         indicator.setElement(common_4.html("<span class=\"simple-popup-up-arrow\"></span>"));
                         indicator.setOffset([0, 0 + offset]);
                         indicator.setPositioning("top-center");
-                        var _b = [7, 8 + offset], dx = _b[0], dy = _b[1];
+                        var _b = [this.options.topOffset[0], this.options.topOffset[1] + offset], dx = _b[0], dy = _b[1];
                         switch (horizontalPosition) {
                             case "center":
                                 this.setOffset([0, dy]);
@@ -1955,7 +1957,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                         indicator.setElement(common_4.html("<span class=\"simple-popup-down-arrow\"></span>"));
                         indicator.setOffset([0, 0 - offset]);
                         indicator.setPositioning("bottom-center");
-                        var _c = [7, -(10 + offset)], dx = _c[0], dy = _c[1];
+                        var _c = [this.options.bottomOffset[0], -(this.options.bottomOffset[1] + offset)], dx = _c[0], dy = _c[1];
                         switch (horizontalPosition) {
                             case "center":
                                 this.setOffset([0, dy]);
@@ -1973,7 +1975,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                     break;
                 case "center":
                     {
-                        var _d = [5 + offset, 0], dx = _d[0], dy = _d[1];
                         switch (horizontalPosition) {
                             case "center":
                                 indicator.setPosition(null);
@@ -1982,13 +1983,13 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                                 indicator.setElement(common_4.html("<span class=\"simple-popup-left-arrow\"></span>"));
                                 indicator.setOffset([offset, 0]);
                                 indicator.setPositioning("center-left");
-                                this.setOffset([dx, dy]);
+                                this.setOffset([offset + this.options.leftOffset[0], this.options.leftOffset[1]]);
                                 break;
                             case "right":
                                 indicator.setElement(common_4.html("<span class=\"simple-popup-right-arrow\"></span>"));
                                 indicator.setOffset([-offset, 0]);
                                 indicator.setPositioning("center-right");
-                                this.setOffset([-dx, dy]);
+                                this.setOffset([-(offset + this.options.rightOffset[0]), this.options.rightOffset[1]]);
                                 break;
                             default:
                                 throw "unknown value: " + horizontalPosition;
@@ -2129,8 +2130,8 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
         });
     });
     base_1.describe("Popup Constructor", function () {
-        var map = new ol.Map({});
         base_1.it("Constructors", function () {
+            var map = new ol.Map({});
             try {
                 index_2.Popup.create().destroy();
             }
@@ -2143,18 +2144,18 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
         });
     });
     base_1.describe("Popup Paging", function () {
-        var target = document.createElement("div");
-        document.body.appendChild(target);
-        var map = new ol.Map({
-            target: target,
-            layers: [],
-            view: new ol.View({
-                center: [0, 0],
-                projection: "EPSG:3857",
-                zoom: 24
-            })
-        });
         base_1.it("Paging", function (done) {
+            var target = document.createElement("div");
+            document.body.appendChild(target);
+            var map = new ol.Map({
+                target: target,
+                layers: [],
+                view: new ol.View({
+                    center: [0, 0],
+                    projection: "EPSG:3857",
+                    zoom: 24
+                })
+            });
             map.once("postrender", function () {
                 var popup = index_2.Popup.create({ map: map });
                 var c = map.getView().getCenter();
@@ -2197,7 +2198,22 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
         base_1.shouldEqual(options.stopEvent, true, "stopEvent");
     }
 });
-define("tests/spec/popup-css", ["require", "exports", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, base_2, common_5) {
+define("examples/extras/map-maker", ["require", "exports", "openlayers"], function (require, exports, ol) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function MapMaker(mapContainer) {
+        return new ol.Map({
+            target: mapContainer,
+            layers: [],
+            view: new ol.View({
+                center: [0, 0],
+                zoom: 6
+            })
+        });
+    }
+    exports.MapMaker = MapMaker;
+});
+define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common", "index", "examples/extras/map-maker"], function (require, exports, ol, base_2, common_5, index_3, map_maker_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function rect(extent) {
@@ -2255,9 +2271,54 @@ define("tests/spec/popup-css", ["require", "exports", "node_modules/ol3-fun/test
         return points;
     }
     base_2.describe("ol3-popup/popup-css", function () {
-        base_2.it("▲▼◀▶△▽◁▷", function () {
+        base_2.it("▲▼◀▶△▽◁▷", function (done) {
+            var div = document.createElement("div");
+            div.className = "map";
+            document.body.appendChild(div);
+            var map = map_maker_1.MapMaker(div);
+            var popup = index_3.Popup.create({
+                map: map,
+                pointerPosition: 0,
+                bottomOffset: [0, 18],
+                topOffset: [0, 10],
+                leftOffset: [10, 0],
+                rightOffset: [10, -3],
+                positioning: "bottom-center",
+                autoPositioning: false,
+                css: index_3.DEFAULT_OPTIONS.css +
+                    "\n\t\t\t.ol-popup {\n\t\t\t\tbackground: silver;\n\t\t\t\tcolor: black;\n\t\t\t\tborder-width: 2pt;\n\t\t\t\tborder-color: white;\n\t\t\t}\n\t\t\t.simple-popup-up-arrow::after {\n\t\t\t\tcontent: \"\u25B2\";\n\t\t\t}\n\t\t\t.simple-popup-down-arrow::after {\n\t\t\t\tcontent: \"\u25BD\";\n\t\t\t}\n\t\t\t.simple-popup-left-arrow::after {\n\t\t\t\tcontent: \"\u25C0\";\n\t\t\t}\n\t\t\t.simple-popup-right-arrow::after {\n\t\t\t\tcontent: \"\u25B6\";\n\t\t\t}\n\t\t\t.simple-popup-up-arrow { \n\t\t\t\tcolor: white;\n\t\t\t\tfont-size: 1em;\n\t\t\t}\n\t\t\t.simple-popup-down-arrow { \n\t\t\t\tcolor: white;\n\t\t\t}\n\t\t\t.simple-popup-left-arrow { \n\t\t\t\tcolor: white;\n\t\t\t}\n\t\t\t.simple-popup-right-arrow { \n\t\t\t\tcolor: white;\n\t\t\t}\n"
+            });
+            map.once("postrender", function () {
+                map.addOverlay(new ol.Overlay({
+                    position: map.getView().getCenter(),
+                    element: common_5.html("<div style=\"border:1px solid white;padding:4px\">X</div>")
+                }));
+                base_2.slowloop([
+                    function () {
+                        popup.setPositioning("top-center");
+                        popup.show(map.getView().getCenter(), "Popup with ▲");
+                    },
+                    function () {
+                        popup.setPositioning("center-left");
+                        popup.show(map.getView().getCenter(), "Popup with ▲");
+                    },
+                    function () {
+                        popup.setPositioning("bottom-center");
+                        popup.show(map.getView().getCenter(), "Popup with ▲");
+                    },
+                    function () {
+                        popup.setPositioning("center-right");
+                        popup.show(map.getView().getCenter(), "Popup with ▲");
+                    },
+                    function () {
+                        popup.setPositioning("top-center");
+                        popup.show(map.getView().getCenter(), "Popup with ▲");
+                    },
+                    function () { return map.setTarget(null); }
+                ], 500).then(done);
+            });
         });
-        base_2.it("renders a tooltip on a canvas", function () {
+        base_2.it("renders a tooltip on a canvas", function (done) {
             var div = document.createElement("div");
             div.className = "canvas-container";
             common_5.cssin("canvas-test", ".canvas-container {\n            display: inline-block;\n            position: absolute;\n            top: 20px;\n            width: 200px;\n            height: 200px;\n            border: 1px solid white;\n        }");
@@ -2272,9 +2333,9 @@ define("tests/spec/popup-css", ["require", "exports", "node_modules/ol3-fun/test
             ctx.strokeStyle = "white";
             ctx.lineWidth = 3;
             var clear = function () { return ctx.clearRect(0, 0, canvas.width, canvas.height); };
-            base_2.slowloop(common_5.range(30).map(function (n) { return function () {
-                div.style.left = div.style.top = 10 * n + "px";
-            }; }), 100);
+            base_2.slowloop(common_5.range(100).map(function (n) { return function () {
+                div.style.left = div.style.top = 10 * Math.sin((n * Math.PI) / 100) * n + "px";
+            }; }), 50);
             var loop = [
                 function () {
                     var points = rect([10, 10, 190, 190]);
@@ -2343,7 +2404,12 @@ define("tests/spec/popup-css", ["require", "exports", "node_modules/ol3-fun/test
                     ctx.closePath();
                     ctx.stroke();
                 }; }));
-                base_2.slowloop(loop, 0, 1).then(function () { return base_2.slowloop(loop.reverse(), 0, 1); });
+                base_2.slowloop(loop, 0, 1).then(function () {
+                    return base_2.slowloop(loop.reverse(), 0, 1).then(function () {
+                        div.remove();
+                        done();
+                    });
+                });
             });
         });
     });

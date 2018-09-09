@@ -14,9 +14,8 @@ describe("Popup Options", () => {
 });
 
 describe("Popup Constructor", () => {
-	let map = new ol.Map({});
-
 	it("Constructors", () => {
+		let map = new ol.Map({});
 		try {
 			// todo: ideally this would be possibles
 			Popup.create().destroy();
@@ -31,20 +30,19 @@ describe("Popup Constructor", () => {
 });
 
 describe("Popup Paging", () => {
-	let target = document.createElement("div");
-	document.body.appendChild(target);
-
-	let map = new ol.Map({
-		target: target,
-		layers: [],
-		view: new ol.View({
-			center: [0, 0],
-			projection: "EPSG:3857",
-			zoom: 24
-		})
-	});
-
 	it("Paging", done => {
+		let target = document.createElement("div");
+		document.body.appendChild(target);
+
+		let map = new ol.Map({
+			target: target,
+			layers: [],
+			view: new ol.View({
+				center: [0, 0],
+				projection: "EPSG:3857",
+				zoom: 24
+			})
+		});
 		map.once("postrender", () => {
 			let popup = Popup.create({ map: map });
 			let c = map.getView().getCenter();

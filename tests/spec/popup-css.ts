@@ -1,5 +1,8 @@
+import ol = require("openlayers");
 import { describe, it, should, slowloop, stringify } from "ol3-fun/tests/base";
-import { range, cssin } from "ol3-fun/ol3-fun/common";
+import { range, cssin, html } from "ol3-fun/ol3-fun/common";
+import { Popup, DEFAULT_OPTIONS } from "../../index";
+import { MapMaker } from "../../examples/extras/map-maker";
 
 function rect(extent: ol.Extent) {
 	let [x1, y1, x2, y2] = extent;
@@ -67,11 +70,96 @@ function callout(
 }
 
 describe("ol3-popup/popup-css", () => {
-	it("▲▼◀▶△▽◁▷", () => {
+	it("▲▼◀▶△▽◁▷", done => {
 		// TODO - uses different symbols for tooltip
+		let div = document.createElement("div");
+		div.className = "map";
+		document.body.appendChild(div);
+		let map = MapMaker(div);
+
+		let popup = Popup.create({
+			map: map,
+			pointerPosition: 0,
+			bottomOffset: [0, 18],
+			topOffset: [0, 10],
+			leftOffset: [10, 0],
+			rightOffset: [10, -3],
+			positioning: "bottom-center",
+			autoPositioning: false,
+			css:
+				DEFAULT_OPTIONS.css +
+				`
+			.ol-popup {
+				background: silver;
+				color: black;
+				border-width: 2pt;
+				border-color: white;
+			}
+			.simple-popup-up-arrow::after {
+				content: "▲";
+			}
+			.simple-popup-down-arrow::after {
+				content: "▽";
+			}
+			.simple-popup-left-arrow::after {
+				content: "◀";
+			}
+			.simple-popup-right-arrow::after {
+				content: "▶";
+			}
+			.simple-popup-up-arrow { 
+				color: white;
+				font-size: 1em;
+			}
+			.simple-popup-down-arrow { 
+				color: white;
+			}
+			.simple-popup-left-arrow { 
+				color: white;
+			}
+			.simple-popup-right-arrow { 
+				color: white;
+			}
+`
+		});
+
+		map.once("postrender", () => {
+			map.addOverlay(
+				new ol.Overlay({
+					position: map.getView().getCenter(),
+					element: html(`<div style="border:1px solid white;padding:4px">X</div>`)
+				})
+			);
+			slowloop(
+				[
+					() => {
+						popup.setPositioning("top-center");
+						popup.show(map.getView().getCenter(), "Popup with ▲");
+					},
+					() => {
+						popup.setPositioning("center-left");
+						popup.show(map.getView().getCenter(), "Popup with ▲");
+					},
+					() => {
+						popup.setPositioning("bottom-center");
+						popup.show(map.getView().getCenter(), "Popup with ▲");
+					},
+					() => {
+						popup.setPositioning("center-right");
+						popup.show(map.getView().getCenter(), "Popup with ▲");
+					},
+					() => {
+						popup.setPositioning("top-center");
+						popup.show(map.getView().getCenter(), "Popup with ▲");
+					},
+					() => map.setTarget(null)
+				],
+				500
+			).then(done);
+		});
 	});
 
-	it("renders a tooltip on a canvas", () => {
+	it("renders a tooltip on a canvas", done => {
 		let div = document.createElement("div");
 		div.className = "canvas-container";
 		cssin(
@@ -101,10 +189,10 @@ describe("ol3-popup/popup-css", () => {
 		let clear = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		slowloop(
-			range(30).map(n => () => {
-				div.style.left = div.style.top = 10 * n + "px";
+			range(100).map(n => () => {
+				div.style.left = div.style.top = 10 * Math.sin((n * Math.PI) / 100) * n + "px";
 			}),
-			100
+			50
 		);
 
 		let loop = [
@@ -185,7 +273,12 @@ describe("ol3-popup/popup-css", () => {
 					ctx.stroke();
 				})
 			);
-			slowloop(loop, 0, 1).then(() => slowloop(loop.reverse(), 0, 1));
+			slowloop(loop, 0, 1).then(() =>
+				slowloop(loop.reverse(), 0, 1).then(() => {
+					div.remove();
+					done();
+				})
+			);
 		});
 	});
 });

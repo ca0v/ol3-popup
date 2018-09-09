@@ -5,6 +5,10 @@ import { olx } from "openlayers";
  */
 export interface PopupOptions extends olx.OverlayOptions {
 	offset?: ol.Pixel;
+	topOffset?: ol.Pixel;
+	bottomOffset?: ol.Pixel;
+	leftOffset?: ol.Pixel;
+	rightOffset?: ol.Pixel;
 	map?: ol.Map;
 	// allow multiple popups or automatically close before re-opening?
 	multi?: boolean;
