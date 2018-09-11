@@ -23,6 +23,7 @@ export interface IPopup_4_0_1<T> extends ol.Overlay {
 }
 
 export interface IPopup_5_1_3<T> extends IPopup_4_0_1<T> {
+	indicator: ol.Overlay;
 	options: PopupOptions;
 	content: HTMLElement;
 	pages: Paging;

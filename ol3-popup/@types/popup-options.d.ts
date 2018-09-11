@@ -1,14 +1,28 @@
 import ol = require("openlayers");
 import { olx } from "openlayers";
+
+export enum Positions {
+	bl = "bottom-left",
+	bc = "bottom-center",
+	br = "bottom-right",
+	cl = "center-left",
+	cc = "center-center",
+	cr = "center-right",
+	tl = "top-left",
+	tc = "top-center",
+	tr = "top-right"
+}
+
+export type Indicators = { [TKey in Positions]: string | HTMLElement };
+export type IndicatorOffsets = { [TKey in Positions]: ol.Pixel };
+
 /**
  * The constructor options 'must' conform, most interesting is autoPan
  */
 export interface PopupOptions extends olx.OverlayOptions {
 	offset?: ol.Pixel;
-	topOffset?: ol.Pixel;
-	bottomOffset?: ol.Pixel;
-	leftOffset?: ol.Pixel;
-	rightOffset?: ol.Pixel;
+	indicators?: Indicators;
+	indicatorOffsets?: IndicatorOffsets;
 	map?: ol.Map;
 	// allow multiple popups or automatically close before re-opening?
 	multi?: boolean;

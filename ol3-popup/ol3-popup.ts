@@ -101,49 +101,10 @@ const css = `
     content:'□';
 }
 
-.simple-popup {
-    border: 1px solid black;
-    border-radius: 4px;
-    padding: 10px;
-    background-color: rgba(80, 80, 80, 0.5);
-    color: rgb(250, 250, 250);
-    max-width: 120px;
-}
-
-.simple-popup-down-arrow {
-    color: black;
-    font-size: 20px;
-}
-
-.simple-popup-down-arrow:after {
-    content: "⇩";
-}
-
-.simple-popup-up-arrow {
-    color: black;
-    font-size: 20px;
-}
-
-.simple-popup-up-arrow:after {
-    content: "⇧";
-}
-
-.simple-popup-left-arrow {
-    color: black;
-    font-size: 20px;
-}
-
-.simple-popup-left-arrow:after {
-    content: "⇦";
-}
-
-.simple-popup-right-arrow {
-    color: black;
-    font-size: 20px;
-}
-
-.simple-popup-right-arrow:after {
-    content: "⇨";
+.popup-indicator {
+	color: inherit;
+	font-size: 2em;
+	font-family: monospace;
 }
 `;
 
@@ -229,6 +190,30 @@ function pagingStyleFactory(popup: Popup) {
 	};
 }
 
+export const TRIANGLES = {
+	"bottom-left": "▽",
+	"bottom-center": "▽",
+	"bottom-right": "▽",
+	"center-left": "◁",
+	"center-center": "",
+	"center-right": "▷",
+	"top-left": "△",
+	"top-center": "△",
+	"top-right": "△"
+};
+
+export const DIAMONDS = {
+	"bottom-left": "♢",
+	"bottom-center": "♢",
+	"bottom-right": "♢",
+	"center-left": "♢",
+	"center-center": "",
+	"center-right": "♢",
+	"top-left": "♢",
+	"top-center": "♢",
+	"top-right": "♢"
+};
+
 /**
  * Default options for the popup control so it can be created without any contructor arguments
  */
@@ -241,6 +226,18 @@ export const DEFAULT_OPTIONS: PopupOptions = {
 	autoPanMargin: 20,
 	autoPositioning: true,
 	className: classNames.olPopup,
+	indicators: TRIANGLES,
+	indicatorOffsets: {
+		"bottom-left": [15, 23],
+		"bottom-center": [0, 23],
+		"bottom-right": [15, 23],
+		"center-left": [15, 0],
+		"center-center": [0, 0],
+		"center-right": [15, 0],
+		"top-left": [15, 23],
+		"top-center": [0, 23],
+		"top-right": [15, 23]
+	},
 	css: `
 .ol-popup {
     background-color: white;
@@ -267,8 +264,6 @@ export const DEFAULT_OPTIONS: PopupOptions = {
 	insertFirst: true,
 	pointerPosition: 20,
 	offset: [0, -10],
-	topOffset: [7, 8],
-	bottomOffset: [7, 10],
 	positioning: "bottom-center",
 	stopEvent: true,
 	showCoordinates: false
@@ -281,6 +276,7 @@ export class Popup extends ol.Overlay implements IPopup {
 	options: PopupOptions & { parentNode?: HTMLElement };
 	content: HTMLDivElement;
 	domNode: HTMLDivElement;
+	private element: HTMLElement; // the actual ol-popup element, not the one returned via getElement
 	private closer: HTMLLabelElement;
 	private docker: HTMLLabelElement;
 	pages: Paging;
@@ -396,7 +392,7 @@ export class Popup extends ol.Overlay implements IPopup {
 		this.handlers.push(() => style.remove());
 	}
 
-	private indicator: ol.Overlay;
+	public indicator: ol.Overlay;
 	private hideIndicator() {
 		this.indicator && this.indicator.setPosition(undefined);
 	}
@@ -407,12 +403,19 @@ export class Popup extends ol.Overlay implements IPopup {
 			indicator = this.indicator = new ol.Overlay({
 				autoPan: this.options.autoPan,
 				autoPanMargin: this.options.autoPanMargin,
-				autoPanAnimation: this.options.autoPanAnimation,
-				element: html(`<span class="simple-popup-down-arrow"></span>`)
+				autoPanAnimation: this.options.autoPanAnimation
 			});
 			this.options.map.addOverlay(indicator);
 		}
 
+		let indicatorElement = this.options.indicators[this.getPositioning()];
+		if (typeof indicatorElement === "string")
+			indicatorElement = html(
+				`<div class="popup-indicator ${this.getPositioning()
+					.split("-")
+					.join(" ")}">${indicatorElement}</div>`
+			);
+		indicator.setElement(indicatorElement);
 		indicator.setPositioning(this.getPositioning());
 		indicator.setPosition(this.getPosition());
 		return indicator;
@@ -424,25 +427,34 @@ export class Popup extends ol.Overlay implements IPopup {
 			return;
 		}
 
-		let [verticalPosition, horizontalPosition] = this.getPositioning().split("-", 2);
+		let pos = this.getPositioning();
+		let [verticalPosition, horizontalPosition] = pos.split("-", 2);
+		{
+			let el = this.element;
+			el.classList.toggle("center", verticalPosition === "center" || horizontalPosition === "center");
+			el.classList.toggle("top", verticalPosition === "top");
+			el.classList.toggle("bottom", verticalPosition === "bottom");
+			el.classList.toggle("left", horizontalPosition === "left");
+			el.classList.toggle("right", horizontalPosition === "right");
+		}
 		let indicator = this.showIndicator();
+
+		let [dx, dy] = [this.options.indicatorOffsets[pos][0], this.options.indicatorOffsets[pos][1]];
 
 		switch (verticalPosition) {
 			case "top":
 				{
-					indicator.setElement(html(`<span class="simple-popup-up-arrow"></span>`));
-					indicator.setOffset([0, 0 + offset]);
 					indicator.setPositioning("top-center");
-					let [dx, dy] = [this.options.topOffset[0], this.options.topOffset[1] + offset];
+					indicator.setOffset([0, 0 + offset]);
 					switch (horizontalPosition) {
 						case "center":
-							this.setOffset([0, dy]);
+							this.setOffset([dx, dy + offset]);
 							break;
 						case "left":
-							this.setOffset([-dx, dy]);
+							this.setOffset([-dx, dy + offset]);
 							break;
 						case "right":
-							this.setOffset([dx, dy]);
+							this.setOffset([dx, dy + offset]);
 							break;
 						default:
 							throw `unknown value: ${horizontalPosition}`;
@@ -451,19 +463,17 @@ export class Popup extends ol.Overlay implements IPopup {
 				break;
 			case "bottom":
 				{
-					indicator.setElement(html(`<span class="simple-popup-down-arrow"></span>`));
 					indicator.setOffset([0, 0 - offset]);
 					indicator.setPositioning("bottom-center");
-					let [dx, dy] = [this.options.bottomOffset[0], -(this.options.bottomOffset[1] + offset)];
 					switch (horizontalPosition) {
 						case "center":
-							this.setOffset([0, dy]);
+							this.setOffset([dx, -(dy + offset)]);
 							break;
 						case "left":
-							this.setOffset([-dx, dy]);
+							this.setOffset([-dx, -(dy + offset)]);
 							break;
 						case "right":
-							this.setOffset([dx, dy]);
+							this.setOffset([dx, -(dy + offset)]);
 							break;
 						default:
 							throw `unknown value: ${horizontalPosition}`;
@@ -477,18 +487,18 @@ export class Popup extends ol.Overlay implements IPopup {
 						case "center":
 							indicator.setPosition(null);
 							break;
-						case "left":
-							indicator.setElement(html(`<span class="simple-popup-left-arrow"></span>`));
+						case "left": {
 							indicator.setOffset([offset, 0]);
 							indicator.setPositioning("center-left");
-							this.setOffset([offset + this.options.leftOffset[0], this.options.leftOffset[1]]);
+							this.setOffset([dx + offset, dy]);
 							break;
-						case "right":
-							indicator.setElement(html(`<span class="simple-popup-right-arrow"></span>`));
+						}
+						case "right": {
 							indicator.setOffset([-offset, 0]);
 							indicator.setPositioning("center-right");
-							this.setOffset([-(offset + this.options.rightOffset[0]), this.options.rightOffset[1]]);
+							this.setOffset([-(dx + offset), dy]);
 							break;
+						}
 						default:
 							throw `unknown value: ${horizontalPosition}`;
 					}

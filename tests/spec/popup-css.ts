@@ -1,8 +1,9 @@
 import ol = require("openlayers");
-import { describe, it, should, slowloop, stringify } from "ol3-fun/tests/base";
+import { describe, it, should, shouldEqual, slowloop, stringify } from "ol3-fun/tests/base";
 import { range, cssin, html } from "ol3-fun/ol3-fun/common";
-import { Popup, DEFAULT_OPTIONS } from "../../index";
+import { Popup, DEFAULT_OPTIONS, DIAMONDS, TRIANGLES } from "../../index";
 import { MapMaker } from "../../examples/extras/map-maker";
+import { Positions } from "../../ol3-popup/@types/popup-options";
 
 function rect(extent: ol.Extent) {
 	let [x1, y1, x2, y2] = extent;
@@ -70,7 +71,7 @@ function callout(
 }
 
 describe("ol3-popup/popup-css", () => {
-	it("▲▼◀▶△▽◁▷", done => {
+	it("△▽◁▷", done => {
 		// TODO - uses different symbols for tooltip
 		let div = document.createElement("div");
 		div.className = "map";
@@ -79,83 +80,79 @@ describe("ol3-popup/popup-css", () => {
 
 		let popup = Popup.create({
 			map: map,
-			pointerPosition: 0,
-			bottomOffset: [0, 18],
-			topOffset: [0, 10],
-			leftOffset: [10, 0],
-			rightOffset: [10, -3],
+			indicators: DIAMONDS,
+			indicatorOffsets: {
+				"bottom-left": [15, 16],
+				"bottom-center": [0, 16],
+				"bottom-right": [15, 16],
+				"center-left": [10, 0],
+				"center-center": [0, 0],
+				"center-right": [9, 0],
+				"top-left": [15, 19],
+				"top-center": [0, 19],
+				"top-right": [15, 19]
+			},
+			pointerPosition: 1,
 			positioning: "bottom-center",
 			autoPositioning: false,
 			css:
 				DEFAULT_OPTIONS.css +
 				`
-			.ol-popup {
-				background: silver;
-				color: black;
-				border-width: 2pt;
-				border-color: white;
-			}
-			.simple-popup-up-arrow::after {
-				content: "▲";
-			}
-			.simple-popup-down-arrow::after {
-				content: "▽";
-			}
-			.simple-popup-left-arrow::after {
-				content: "◀";
-			}
-			.simple-popup-right-arrow::after {
-				content: "▶";
-			}
-			.simple-popup-up-arrow { 
-				color: white;
-				font-size: 1em;
-			}
-			.simple-popup-down-arrow { 
-				color: white;
-			}
-			.simple-popup-left-arrow { 
-				color: white;
-			}
-			.simple-popup-right-arrow { 
-				color: white;
+				.ol-popup {
+					background: silver;
+					color: black;
+					border-radius: 1em;
+					padding: 1em;
+					border-color: silver;
+				}
+				.ol-popup.top.right {
+					border-top-right-radius: 0em;
+				}	
+				.ol-popup.top.left {
+					border-top-left-radius: 0em;
+				}	
+				.ol-popup.bottom.right {
+					border-bottom-right-radius: 0em;
+				}	
+				.ol-popup.bottom.left {
+					border-bottom-left-radius: 0em;
+				}	
+				.ol-popup.center.left {
+					border-top-left-radius: 0em;
+					border-bottom-left-radius: 0em;
+				}	
+				.ol-popup.center.right {
+					border-top-right-radius: 0em;
+					border-bottom-right-radius: 0em;
+				}	
+				.popup-indicator { 
+				color: silver;
+				font-weight: 900;
 			}
 `
 		});
 
+		let vectorLayer = new ol.layer.Vector({
+			source: new ol.source.Vector({ features: [new ol.Feature(new ol.geom.Point(map.getView().getCenter()))] })
+		});
+		map.addLayer(vectorLayer);
+
 		map.once("postrender", () => {
-			map.addOverlay(
-				new ol.Overlay({
-					position: map.getView().getCenter(),
-					element: html(`<div style="border:1px solid white;padding:4px">X</div>`)
-				})
-			);
 			slowloop(
-				[
-					() => {
-						popup.setPositioning("top-center");
-						popup.show(map.getView().getCenter(), "Popup with ▲");
-					},
-					() => {
-						popup.setPositioning("center-left");
-						popup.show(map.getView().getCenter(), "Popup with ▲");
-					},
-					() => {
-						popup.setPositioning("bottom-center");
-						popup.show(map.getView().getCenter(), "Popup with ▲");
-					},
-					() => {
-						popup.setPositioning("center-right");
-						popup.show(map.getView().getCenter(), "Popup with ▲");
-					},
-					() => {
-						popup.setPositioning("top-center");
-						popup.show(map.getView().getCenter(), "Popup with ▲");
-					},
-					() => map.setTarget(null)
-				],
+				Object.keys(popup.options.indicators).map((k: Positions) => () => {
+					popup.setPositioning(k);
+					popup.show(map.getView().getCenter(), `Popup with ${k}`);
+					shouldEqual(popup.indicator.getElement().textContent, popup.options.indicators[k], k);
+				}),
 				500
-			).then(done);
+			)
+				.fail(ex => {
+					should(!ex, ex);
+				})
+				.then(() => {
+					popup.options.autoPositioning = true;
+					done();
+				});
 		});
 	});
 

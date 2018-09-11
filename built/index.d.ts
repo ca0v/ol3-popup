@@ -127,6 +127,28 @@ declare module "ol3-popup/ol3-popup" {
     import { Paging } from "ol3-popup/paging/paging";
     import { IPopup } from "./@types/popup";
     import { PopupOptions } from "./@types/popup-options";
+    export const TRIANGLES: {
+        "bottom-left": string;
+        "bottom-center": string;
+        "bottom-right": string;
+        "center-left": string;
+        "center-center": string;
+        "center-right": string;
+        "top-left": string;
+        "top-center": string;
+        "top-right": string;
+    };
+    export const DIAMONDS: {
+        "bottom-left": string;
+        "bottom-center": string;
+        "bottom-right": string;
+        "center-left": string;
+        "center-center": string;
+        "center-right": string;
+        "top-left": string;
+        "top-center": string;
+        "top-right": string;
+    };
     export const DEFAULT_OPTIONS: PopupOptions;
     export class Popup extends ol.Overlay implements IPopup {
         options: PopupOptions & {
@@ -134,6 +156,7 @@ declare module "ol3-popup/ol3-popup" {
         };
         content: HTMLDivElement;
         domNode: HTMLDivElement;
+        element: HTMLElement;
         private closer;
         private docker;
         pages: Paging;
@@ -147,7 +170,7 @@ declare module "ol3-popup/ol3-popup" {
         private configurePaging;
         private configureAutoPopup;
         private injectCss;
-        private indicator;
+        indicator: ol.Overlay;
         private hideIndicator;
         private showIndicator;
         private positionIndicator;
@@ -170,8 +193,8 @@ declare module "ol3-popup/ol3-popup" {
     }
 }
 declare module "index" {
-    import { Popup, DEFAULT_OPTIONS } from "ol3-popup/ol3-popup";
+    import { Popup, DEFAULT_OPTIONS, DIAMONDS, TRIANGLES } from "ol3-popup/ol3-popup";
     import { IPopup } from "./ol3-popup/@types/popup";
     import { PopupOptions } from "./ol3-popup/@types/popup-options";
-    export { Popup, DEFAULT_OPTIONS, IPopup, PopupOptions };
+    export { Popup, DEFAULT_OPTIONS, IPopup, PopupOptions, DIAMONDS, TRIANGLES };
 }

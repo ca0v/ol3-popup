@@ -47,16 +47,25 @@ describe("Popup Paging", () => {
 			let popup = Popup.create({ map: map });
 			let c = map.getView().getCenter();
 			let points = pair(range(3), range(3)).map(n => new ol.geom.Point([c[0] + n[0], c[1] + n[1]]));
+			let count = 0;
 			points.forEach((p, i) => {
-				popup.pages.add(`Page ${i}`, p);
+				popup.pages.add(() => `Page ${i + 1}: visit counter: ${++count}`, p);
+				shouldEqual(popup.pages.count, i + 1, `${i + 1} pages`);
 			});
 
 			let i = 0;
-			slowloop([() => popup.pages.goto(i++)], 300, points.length).then(() => {
-				map.setTarget(null);
-				target.remove();
-				done();
-			});
+			slowloop([() => popup.pages.goto(i++)], 30, popup.pages.count)
+				.then(() => {
+					shouldEqual(
+						popup.getElement().getElementsByClassName("ol-popup-content")[0].textContent,
+						"Page 9: visit counter: 9",
+						"last page contains correct text"
+					);
+					map.setTarget(null);
+					target.remove();
+					done();
+				})
+				.fail(ex => should(!ex, ex));
 		});
 	});
 });
