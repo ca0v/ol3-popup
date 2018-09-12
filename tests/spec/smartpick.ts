@@ -4,6 +4,7 @@ import { smartpick } from "../../ol3-popup/commands/smartpick";
 import { MapMaker } from "../../examples/extras/map-maker";
 import { Popup, IPopup } from "../../index";
 import { once } from "../../examples/extras/once";
+import { kill } from "./kill";
 
 function PopupMaker(map: ol.Map) {
 	let popup = Popup.create({
@@ -92,55 +93,45 @@ function VectorMaker() {
 
 describe("smartpick", () => {
 	it("places 9 popups on the map", () => {
-		let popups: Array<IPopup> = [];
 		let { map, points, div } = GridMapMaker();
 		div.style.width = div.style.height = "480px";
 		div.style.border = "1px solid white";
 		map.setTarget(null);
 		map.setTarget(div);
 		// //map.getView().setZoom(map.getView().getZoom() + 1);
+		let popups = points.map(() => {
+			let popup = PopupMaker(map);
+			popup.options.indicatorOffsets["top-right"][1] -= 2;
+			popup.options.indicatorOffsets["center-right"][0] -= 0.5;
+			popup.options.indicatorOffsets["bottom-right"][1] -= 0.5;
+			// what is happening here, why 6 and why such minimal effect?
+			popup.options.indicatorOffsets["top-left"][1] -= 6;
+			popup.options.indicatorOffsets["center-left"][0] -= 0.5;
+			popup.options.indicatorOffsets["bottom-left"][1] -= 0.5;
+			popup.options.indicatorOffsets["bottom-center"][1] -= 0.5;
+			popup.options.indicatorOffsets["top-center"][1] -= 2;
+			return popup;
+		});
+
 		return once(map, "postrender", () => {
 			return slowloop(
-				points.map(p => () => {
-					let popup = PopupMaker(map);
-					popup.options.indicatorOffsets["top-right"][1] -= 2;
-					popup.options.indicatorOffsets["center-right"][0] -= 0.5;
-					popup.options.indicatorOffsets["bottom-right"][1] -= 0.5;
-					// what is happening here, why 6 and why such minimal effect?
-					popup.options.indicatorOffsets["top-left"][1] -= 6;
-					popup.options.indicatorOffsets["center-left"][0] -= 0.5;
-					popup.options.indicatorOffsets["bottom-left"][1] -= 0.5;
-					popup.options.indicatorOffsets["bottom-center"][1] -= 0.5;
-					popup.options.indicatorOffsets["top-center"][1] -= 2;
-					popups.push(popup);
-					// can't compute width/height without content
+				points.map((p, i) => () => {
+					let popup = popups[i];
 					popup.show(p, smartpick(popup, p));
 				}),
 				0
 			);
-		}).then(() => {
-			// allow 1 second to observe since no assertions are being made
-			return slowloop(
-				[
-					() => {
-						popups.map(p => p.destroy());
-						map.setTarget(null);
-						div.remove();
-					}
-				],
-				1000
-			);
-		});
+		})
+			.then(kill(popups[0]))
+			.then(() => popups.map(p => p.destroy()));
 	});
 
 	it("configures a map with popup and points in strategic locations to ensure the positioning is correct", () => {
 		// map should have an width and height of 1000 units
 		// points should be in the four corners and four sides
-		let { map, points, div } = GridMapMaker();
-		let popups: Array<IPopup> = [];
+		let { map, points } = GridMapMaker();
 		return once(map, "postrender", () => {
 			let popup = PopupMaker(map);
-			popups.push(popup);
 			return slowloop(
 				points.map(p => () => {
 					let expected = smartpick(popup, p);
@@ -150,11 +141,7 @@ describe("smartpick", () => {
 				}),
 				400,
 				1
-			).then(() => {
-				popups.map(p => p.destroy());
-				map.setTarget(null);
-				div.remove();
-			});
+			).then(kill(popup, 0));
 		});
 	});
 });

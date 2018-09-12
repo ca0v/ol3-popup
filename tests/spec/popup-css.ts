@@ -5,6 +5,7 @@ import { Popup, DEFAULT_OPTIONS, DIAMONDS, TRIANGLES } from "../../index";
 import { MapMaker } from "../../examples/extras/map-maker";
 import { Positions } from "../../ol3-popup/@types/popup-options";
 import { once } from "../../examples/extras/once";
+import { kill } from "./kill";
 
 function rect(extent: ol.Extent) {
 	let [x1, y1, x2, y2] = extent;
@@ -158,11 +159,7 @@ describe("ol3-popup/popup-css", () => {
 				}),
 				200
 			)
-				.then(() => {
-					popup.destroy();
-					map.setTarget(null);
-					div.remove();
-				})
+				.then(kill(popup))
 				.catch(ex => {
 					should(!ex, ex);
 				});

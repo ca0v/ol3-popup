@@ -1,8 +1,9 @@
 import ol = require("openlayers");
 import { describe, it, should, shouldEqual, stringify, slowloop } from "ol3-fun/tests/base";
 import { range, pair } from "ol3-fun/index";
-import { Popup, DEFAULT_OPTIONS, PopupOptions, IPopup } from "../../index";
+import { Popup, DEFAULT_OPTIONS, PopupOptions } from "../../index";
 import { once } from "../../examples/extras/once";
+import { kill } from "./kill";
 
 describe("spec/popup", () => {
 	it("Popup", () => {
@@ -72,27 +73,14 @@ describe("spec/popup", () => {
 			});
 
 			let i = 0;
-			return slowloop([() => popup.pages.goto(i++)], 100, popup.pages.count)
-				.then(() => {
-					shouldEqual(
-						popup.getElement().getElementsByClassName("ol-popup-content")[0].textContent,
-						"Page 9: visit counter: 9",
-						"last page contains correct text"
-					);
-				})
-				.fail(ex => should(!ex, ex));
-		}).then(() => {
-			return slowloop(
-				[
-					() => {
-						popup.destroy();
-						map.setTarget(null);
-						target.remove();
-					}
-				],
-				1000
-			);
-		});
+			return slowloop([() => popup.pages.goto(i++)], 100, popup.pages.count).then(() => {
+				shouldEqual(
+					popup.getElement().getElementsByClassName("ol-popup-content")[0].textContent,
+					"Page 9: visit counter: 9",
+					"last page contains correct text"
+				);
+			});
+		}).then(kill(popup));
 	});
 });
 
