@@ -319,6 +319,7 @@ define("node_modules/ol3-fun/ol3-fun/slowloop", ["require", "exports"], function
                 cycles--;
                 if (cycles <= 0) {
                     d.resolve();
+                    clearInterval(h);
                     return;
                 }
             }
@@ -327,10 +328,9 @@ define("node_modules/ol3-fun/ol3-fun/slowloop", ["require", "exports"], function
             }
             catch (ex) {
                 clearInterval(h);
-                d.fail(ex);
+                d.reject(ex);
             }
         }, interval);
-        d.done(function () { return clearInterval(h); });
         return d;
     }
     exports.slowloop = slowloop;
@@ -665,7 +665,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dispose = function (handlers) {
-        return handlers.forEach(function (h) { return (h instanceof Function) ? h() : ol.Observable.unByKey(h); });
+        return handlers.forEach(function (h) { return (h instanceof Function ? h() : ol.Observable.unByKey(h)); });
     };
     var SelectInteraction = (function (_super) {
         __extends(SelectInteraction, _super);
@@ -678,6 +678,8 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
             _this.handlers = [];
             _this.handlers.push(map.on("click", function (args) {
                 var _a, _b, _c;
+                if (!popup.options.autoPopup)
+                    return;
                 if (!_this.get("active"))
                     return;
                 var wasDocked = popup.isDocked();
@@ -696,7 +698,10 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                     ], _b = _a[0], extent_1[0] = _b[0], extent_1[3] = _b[1], _c = _a[1], extent_1[2] = _c[0], extent_1[1] = _c[1];
                     var layers_1 = popup.options.layers;
                     if (!layers_1) {
-                        layers_1 = map.getLayers().getArray().filter(function (l) { return l instanceof ol.layer.Vector; });
+                        layers_1 = map
+                            .getLayers()
+                            .getArray()
+                            .filter(function (l) { return l instanceof ol.layer.Vector; });
                     }
                     var page_1;
                     layers_1.forEach(function (layer) {
@@ -723,8 +728,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                         });
                     }
                     if (!found_1 && popup.options.showCoordinates) {
-                        page_1 = popup.pages.add(("\n<table>\n<tr><td>lon</td><td>" + args.coordinate[0].toPrecision(6) + "</td></tr>\n<tr><td>lat</td><td>" + args.coordinate[1].toPrecision(6) + "</td></tr>\n</table>")
-                            .trim(), new ol.geom.Point(args.coordinate));
+                        page_1 = popup.pages.add(("\n<table>\n<tr><td>lon</td><td>" + args.coordinate[0].toPrecision(6) + "</td></tr>\n<tr><td>lat</td><td>" + args.coordinate[1].toPrecision(6) + "</td></tr>\n</table>").trim(), new ol.geom.Point(args.coordinate));
                         found_1 = true;
                     }
                     if (found_1) {
@@ -819,7 +823,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
         };
         SelectInteraction.DEFAULT_OPTIONS = {
             multi: true,
-            buffer: 8,
+            buffer: 8
         };
         return SelectInteraction;
     }(ol.interaction.Select));
@@ -1720,6 +1724,9 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         show: "show",
         undock: "undock"
     };
+    function clone(o) {
+        return JSON.parse(JSON.stringify(o));
+    }
     function arrayEqual(a, b) {
         if (!a || !b)
             return false;
@@ -1827,22 +1834,28 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             }
             _this.options = options;
             _this.handlers = [];
-            _this.configureDom(options);
-            _this.configureDockerButton(_this.domNode);
-            _this.configureCloserButton(_this.domNode);
-            _this.configureContentContainer();
-            _this.configurePaging();
-            _this.configureAutoPopup();
+            try {
+                _this.configureDom(options);
+                _this.configureDockerButton(_this.domNode);
+                _this.configureCloserButton(_this.domNode);
+                _this.configureContentContainer();
+                _this.configurePaging();
+                _this.configureAutoPopup();
+            }
+            catch (ex) {
+                _this.destroy();
+                throw ex;
+            }
             return _this;
         }
         Popup.create = function (options) {
-            options = common_4.defaults({}, options || {}, exports.DEFAULT_OPTIONS);
+            options = common_4.defaults({}, options || {}, clone(exports.DEFAULT_OPTIONS));
             var popup = new Popup(options);
             options.map && options.map.addOverlay(popup);
             return popup;
         };
         Popup.prototype.configureDom = function (options) {
-            common_4.cssin("ol3-popup", css);
+            this.handlers.push(common_4.cssin("ol3-popup", css));
             options.css && this.injectCss("options", options.css);
             var domNode = (this.domNode = document.createElement("div"));
             domNode.className = classNames.olPopupElement;

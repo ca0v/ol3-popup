@@ -29,6 +29,7 @@ define("node_modules/ol3-fun/ol3-fun/slowloop", ["require", "exports"], function
                 cycles--;
                 if (cycles <= 0) {
                     d.resolve();
+                    clearInterval(h);
                     return;
                 }
             }
@@ -37,10 +38,9 @@ define("node_modules/ol3-fun/ol3-fun/slowloop", ["require", "exports"], function
             }
             catch (ex) {
                 clearInterval(h);
-                d.fail(ex);
+                d.reject(ex);
             }
         }, interval);
-        d.done(function () { return clearInterval(h); });
         return d;
     }
     exports.slowloop = slowloop;
@@ -696,7 +696,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dispose = function (handlers) {
-        return handlers.forEach(function (h) { return (h instanceof Function) ? h() : ol.Observable.unByKey(h); });
+        return handlers.forEach(function (h) { return (h instanceof Function ? h() : ol.Observable.unByKey(h)); });
     };
     var SelectInteraction = (function (_super) {
         __extends(SelectInteraction, _super);
@@ -709,6 +709,8 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
             _this.handlers = [];
             _this.handlers.push(map.on("click", function (args) {
                 var _a, _b, _c;
+                if (!popup.options.autoPopup)
+                    return;
                 if (!_this.get("active"))
                     return;
                 var wasDocked = popup.isDocked();
@@ -727,7 +729,10 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                     ], _b = _a[0], extent_1[0] = _b[0], extent_1[3] = _b[1], _c = _a[1], extent_1[2] = _c[0], extent_1[1] = _c[1];
                     var layers_1 = popup.options.layers;
                     if (!layers_1) {
-                        layers_1 = map.getLayers().getArray().filter(function (l) { return l instanceof ol.layer.Vector; });
+                        layers_1 = map
+                            .getLayers()
+                            .getArray()
+                            .filter(function (l) { return l instanceof ol.layer.Vector; });
                     }
                     var page_1;
                     layers_1.forEach(function (layer) {
@@ -754,8 +759,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
                         });
                     }
                     if (!found_1 && popup.options.showCoordinates) {
-                        page_1 = popup.pages.add(("\n<table>\n<tr><td>lon</td><td>" + args.coordinate[0].toPrecision(6) + "</td></tr>\n<tr><td>lat</td><td>" + args.coordinate[1].toPrecision(6) + "</td></tr>\n</table>")
-                            .trim(), new ol.geom.Point(args.coordinate));
+                        page_1 = popup.pages.add(("\n<table>\n<tr><td>lon</td><td>" + args.coordinate[0].toPrecision(6) + "</td></tr>\n<tr><td>lat</td><td>" + args.coordinate[1].toPrecision(6) + "</td></tr>\n</table>").trim(), new ol.geom.Point(args.coordinate));
                         found_1 = true;
                     }
                     if (found_1) {
@@ -850,7 +854,7 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
         };
         SelectInteraction.DEFAULT_OPTIONS = {
             multi: true,
-            buffer: 8,
+            buffer: 8
         };
         return SelectInteraction;
     }(ol.interaction.Select));
@@ -1751,6 +1755,9 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         show: "show",
         undock: "undock"
     };
+    function clone(o) {
+        return JSON.parse(JSON.stringify(o));
+    }
     function arrayEqual(a, b) {
         if (!a || !b)
             return false;
@@ -1873,7 +1880,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             return _this;
         }
         Popup.create = function (options) {
-            options = common_4.defaults({}, options || {}, exports.DEFAULT_OPTIONS);
+            options = common_4.defaults({}, options || {}, clone(exports.DEFAULT_OPTIONS));
             var popup = new Popup(options);
             options.map && options.map.addOverlay(popup);
             return popup;
@@ -2173,7 +2180,7 @@ define("index", ["require", "exports", "ol3-popup/ol3-popup"], function (require
     exports.DIAMONDS = ol3_popup_1.DIAMONDS;
     exports.TRIANGLES = ol3_popup_1.TRIANGLES;
 });
-define("tests/spec/once", ["require", "exports"], function (require, exports) {
+define("examples/extras/once", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function once(map, event, cb) {
@@ -2192,31 +2199,82 @@ define("tests/spec/once", ["require", "exports"], function (require, exports) {
     }
     exports.once = once;
 });
-define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/index", "index", "tests/spec/once"], function (require, exports, ol, base_1, index_1, index_2, once_1) {
+define("tests/spec/kill", ["require", "exports", "node_modules/ol3-fun/tests/base"], function (require, exports, base_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    base_1.describe("spec/popup", function () {
-        base_1.it("Popup", function () {
-            base_1.should(!!index_2.Popup, "Popup");
+    function kill(popup, delay) {
+        if (delay === void 0) { delay = 1000; }
+        var cancel = false;
+        popup.getMap().once("pointermove", function () {
+            cancel = true;
         });
-        base_1.it("DEFAULT_OPTIONS", function () {
+        return function () {
+            return base_1.slowloop([
+                function () {
+                    if (cancel)
+                        throw "cancelled by user via pointermove";
+                    popup.getMap().getTarget().remove();
+                    popup.getMap().setTarget(null);
+                    popup.destroy();
+                }
+            ], delay);
+        };
+    }
+    exports.kill = kill;
+});
+define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/index", "index", "examples/extras/once", "tests/spec/kill"], function (require, exports, ol, base_2, index_1, index_2, once_1, kill_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function createMapDiv() {
+        var div = document.createElement("div");
+        div.className = "map";
+        document.body.appendChild(div);
+        return div;
+    }
+    base_2.describe("spec/popup", function () {
+        base_2.it("Popup", function () {
+            base_2.should(!!index_2.Popup, "Popup");
+        });
+        base_2.it("DEFAULT_OPTIONS", function () {
             checkDefaultInputOptions(index_2.DEFAULT_OPTIONS);
         });
-        base_1.it("Constructors", function () {
+        base_2.it("Ensures options do not leak into other instances", function () {
+            var p1 = index_2.Popup.create({ autoPopup: false });
+            var p2 = index_2.Popup.create({ autoPopup: false });
+            var expected = p1.options.indicatorOffsets["top-center"][0];
+            p1.options.indicatorOffsets["top-center"][0] += 200;
+            var actual = p2.options.indicatorOffsets["top-center"][0];
+            base_2.shouldEqual(actual, expected, "default did not change");
+            p1.destroy();
+            p2.destroy();
+        });
+        base_2.it("Ensures global options can be tweaked", function () {
+            var originalDefaultValue = index_2.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0];
+            var expected = (index_2.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] += 200);
+            try {
+                var p1 = index_2.Popup.create({ autoPopup: false });
+                var actual = p1.options.indicatorOffsets["top-center"][0];
+                base_2.shouldEqual(actual, expected, "default did change");
+                p1.destroy();
+            }
+            finally {
+                index_2.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] = originalDefaultValue;
+            }
+        });
+        base_2.it("Constructors", function () {
             var map = new ol.Map({});
             try {
                 index_2.Popup.create({ id: "constructor-test" }).destroy();
             }
             catch (_a) {
-                base_1.should(true, "empty constructor throws, either map or autoPopup=false necessary");
+                base_2.should(true, "empty constructor throws, either map or autoPopup=false necessary");
             }
             index_2.Popup.create({ autoPopup: false }).destroy();
             index_2.Popup.create({ map: map }).destroy();
             map.setTarget(null);
         });
-        base_1.it("Paging", function () {
-            var target = document.createElement("div");
-            document.body.appendChild(target);
+        base_2.it("Paging", function () {
+            var target = createMapDiv();
             var map = new ol.Map({
                 target: target,
                 layers: [],
@@ -2233,49 +2291,39 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
                 var count = 0;
                 points.forEach(function (p, i) {
                     popup.pages.add(function () { return "Page " + (i + 1) + ": visit counter: " + ++count; }, p);
-                    base_1.shouldEqual(popup.pages.count, i + 1, i + 1 + " pages");
+                    base_2.shouldEqual(popup.pages.count, i + 1, i + 1 + " pages");
                 });
                 var i = 0;
-                return base_1.slowloop([function () { return popup.pages.goto(i++); }], 100, popup.pages.count)
-                    .then(function () {
-                    base_1.shouldEqual(popup.getElement().getElementsByClassName("ol-popup-content")[0].textContent, "Page 9: visit counter: 9", "last page contains correct text");
-                })
-                    .fail(function (ex) { return base_1.should(!ex, ex); });
-            }).then(function () {
-                return base_1.slowloop([
-                    function () {
-                        popup.destroy();
-                        map.setTarget(null);
-                        target.remove();
-                    }
-                ], 1000);
-            });
+                return base_2.slowloop([function () { return popup.pages.goto(i++); }], 100, popup.pages.count).then(function () {
+                    base_2.shouldEqual(popup.getElement().getElementsByClassName("ol-popup-content")[0].textContent, "Page 9: visit counter: 9", "last page contains correct text");
+                });
+            }).then(kill_1.kill(popup));
         });
     });
     function checkDefaultInputOptions(options) {
-        base_1.should(!!options, "options");
-        base_1.shouldEqual(typeof options.asContent, "function", "asContent");
-        base_1.shouldEqual(options.autoPan, true, "autoPan");
-        base_1.shouldEqual(!options.autoPanAnimation, true, "autoPanAnimation");
-        base_1.shouldEqual(options.autoPanMargin, 20, "autoPanMargin");
-        base_1.shouldEqual(options.autoPopup, true, "autoPopup");
-        base_1.shouldEqual(options.autoPositioning, true, "autoPositioning");
-        base_1.shouldEqual(options.className, "ol-popup", "className");
-        base_1.shouldEqual(typeof options.css, "string", "css");
-        base_1.shouldEqual(!options.dockContainer, true, "dockContainer");
-        base_1.shouldEqual(!options.element, true, "element");
-        base_1.shouldEqual(!!options.id, true, "id");
-        base_1.shouldEqual(options.insertFirst, true, "insertFirst");
-        base_1.shouldEqual(!options.layers, true, "layers");
-        base_1.shouldEqual(!options.map, true, "map");
-        base_1.shouldEqual(!options.multi, true, "multi");
-        base_1.shouldEqual(base_1.stringify(options.offset), base_1.stringify([0, -10]), "offset");
-        base_1.shouldEqual(!options.pagingStyle, true, "pagingStyle");
-        base_1.shouldEqual(options.pointerPosition, 20, "pointerPosition");
-        base_1.shouldEqual(!options.position, true, "position");
-        base_1.shouldEqual(options.positioning, "bottom-center", "positioning");
-        base_1.shouldEqual(!options.showCoordinates, true, "showCoordinates");
-        base_1.shouldEqual(options.stopEvent, true, "stopEvent");
+        base_2.should(!!options, "options");
+        base_2.shouldEqual(typeof options.asContent, "function", "asContent");
+        base_2.shouldEqual(options.autoPan, true, "autoPan");
+        base_2.shouldEqual(!options.autoPanAnimation, true, "autoPanAnimation");
+        base_2.shouldEqual(options.autoPanMargin, 20, "autoPanMargin");
+        base_2.shouldEqual(options.autoPopup, true, "autoPopup");
+        base_2.shouldEqual(options.autoPositioning, true, "autoPositioning");
+        base_2.shouldEqual(options.className, "ol-popup", "className");
+        base_2.shouldEqual(typeof options.css, "string", "css");
+        base_2.shouldEqual(!options.dockContainer, true, "dockContainer");
+        base_2.shouldEqual(!options.element, true, "element");
+        base_2.shouldEqual(!!options.id, true, "id");
+        base_2.shouldEqual(options.insertFirst, true, "insertFirst");
+        base_2.shouldEqual(!options.layers, true, "layers");
+        base_2.shouldEqual(!options.map, true, "map");
+        base_2.shouldEqual(!options.multi, true, "multi");
+        base_2.shouldEqual(base_2.stringify(options.offset), base_2.stringify([0, -10]), "offset");
+        base_2.shouldEqual(!options.pagingStyle, true, "pagingStyle");
+        base_2.shouldEqual(options.pointerPosition, 20, "pointerPosition");
+        base_2.shouldEqual(!options.position, true, "position");
+        base_2.shouldEqual(options.positioning, "bottom-center", "positioning");
+        base_2.shouldEqual(!options.showCoordinates, true, "showCoordinates");
+        base_2.shouldEqual(options.stopEvent, true, "stopEvent");
     }
 });
 define("examples/extras/map-maker", ["require", "exports", "openlayers"], function (require, exports, ol) {
@@ -2293,9 +2341,15 @@ define("examples/extras/map-maker", ["require", "exports", "openlayers"], functi
     }
     exports.MapMaker = MapMaker;
 });
-define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common", "index", "examples/extras/map-maker", "tests/spec/once"], function (require, exports, ol, base_2, common_5, index_3, map_maker_1, once_2) {
+define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common", "index", "examples/extras/map-maker", "examples/extras/once", "tests/spec/kill"], function (require, exports, ol, base_3, common_5, index_3, map_maker_1, once_2, kill_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    function createMapDiv() {
+        var div = document.createElement("div");
+        div.className = "map";
+        document.body.appendChild(div);
+        return div;
+    }
     function rect(extent) {
         var x1 = extent[0], y1 = extent[1], x2 = extent[2], y2 = extent[3];
         return [[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]];
@@ -2350,19 +2404,19 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
         points.splice(index + 1, 0, b0, b, b1);
         return points;
     }
-    base_2.describe("ol3-popup/popup-css", function () {
-        base_2.it("Ensures css is destroyed with popup", function () {
+    base_3.describe("ol3-popup/popup-css", function () {
+        base_3.it("Ensures css is destroyed with popup", function () {
             var popup = index_3.Popup.create({
                 id: "my-popup",
                 autoPopup: false
             });
             var styleNode = document.getElementById("style-my-popup_options");
-            base_2.should(!!styleNode, "css node exists");
+            base_3.should(!!styleNode, "css node exists");
             popup.destroy();
             styleNode = document.getElementById("style-my-popup_options");
-            base_2.should(!styleNode, "css node does not exist");
+            base_3.should(!styleNode, "css node does not exist");
         });
-        base_2.it("DIAMONDS", function () {
+        base_3.it("DIAMONDS", function () {
             var div = createMapDiv();
             var map = map_maker_1.MapMaker(div);
             var popup = index_3.Popup.create({
@@ -2391,22 +2445,18 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
             });
             map.addLayer(vectorLayer);
             return once_2.once(map, "postrender", function () {
-                return base_2.slowloop(Object.keys(popup.options.indicators).map(function (k) { return function () {
+                return base_3.slowloop(Object.keys(popup.options.indicators).map(function (k) { return function () {
                     popup.setPositioning(k);
                     popup.show(map.getView().getCenter(), "Popup with " + k);
-                    base_2.shouldEqual(popup.indicator.getElement().textContent, popup.options.indicators[k], k);
+                    base_3.shouldEqual(popup.indicator.getElement().textContent, popup.options.indicators[k], k);
                 }; }), 200)
-                    .then(function () {
-                    popup.destroy();
-                    map.setTarget(null);
-                    div.remove();
-                })
+                    .then(kill_2.kill(popup))
                     .catch(function (ex) {
-                    base_2.should(!ex, ex);
+                    base_3.should(!ex, ex);
                 });
             });
         });
-        base_2.it("renders a tooltip on a canvas", function () {
+        base_3.it("renders a tooltip on a canvas", function () {
             var div = document.createElement("div");
             div.className = "canvas-container";
             var cssRemove = common_5.cssin("canvas-test", ".canvas-container {\n            display: inline-block;\n            position: absolute;\n            top: 20px;\n            width: 200px;\n\t\t\theight: 200px;\n\t\t\tbackground: blue;\n            border: 1px solid white;\n        }");
@@ -2445,9 +2495,9 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
                     ctx.stroke();
                 }; }));
             }
-            return $.when(base_2.slowloop(common_5.range(100).map(function (n) { return function () {
+            return $.when(base_3.slowloop(common_5.range(100).map(function (n) { return function () {
                 div.style.left = div.style.top = 10 * Math.sin((n * Math.PI) / 100) * n + "px";
-            }; }), 50), base_2.slowloop(loop, 200).then(function () {
+            }; }), 50), base_3.slowloop(loop, 200).then(function () {
                 loop = [];
                 var points = common_5.range(70).map(function (index) {
                     return callout(rect([20, 20, 180, 180]), {
@@ -2497,48 +2547,36 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
                     ctx.closePath();
                     ctx.stroke();
                 }; }));
-                return base_2.slowloop(loop, 0).then(function () { return base_2.slowloop(loop.reverse(), 0).then(function () { return div.remove(); }); });
+                return base_3.slowloop(loop, 0).then(function () { return base_3.slowloop(loop.reverse(), 0).then(function () { return div.remove(); }); });
             })).then(function () { return cssRemove(); });
         }).timeout(6000);
     });
-    function createMapDiv() {
-        var div = document.createElement("div");
-        div.className = "map";
-        document.body.appendChild(div);
-        return div;
-    }
 });
-define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "ol3-popup/commands/smartpick", "examples/extras/map-maker", "index", "tests/spec/once"], function (require, exports, ol, base_3, smartpick_2, map_maker_2, index_4, once_3) {
+define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "ol3-popup/commands/smartpick", "examples/extras/map-maker", "index", "examples/extras/once", "tests/spec/kill"], function (require, exports, ol, base_4, smartpick_2, map_maker_2, index_4, once_3, kill_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function PopupMaker(map) {
         var popup = index_4.Popup.create({
             id: "spec-smartpicker-test",
             map: map,
-            showCoordinates: true,
-            autoPopup: false,
             autoPanAnimation: {
                 duration: 200,
                 source: [0, 0]
             },
-            css: "\n\t\t\t\t.ol-popup-element { color: rgb(200, 200, 200) }\n                .ol-popup-element .pagination { margin-bottom: 2px }\n                .ol-popup-element button.arrow  { background: transparent; border: none; color: rgb(200, 200, 200); }\n                .ol-popup-content { color: rgb(200, 200, 200); max-width: 8em; max-height: 4em; margin: 0.5em; padding: 0.5em; overflow: hidden; overflow-y: auto} \n\t\t\t\t.ol-popup { background-color: rgb(30, 30, 30); border: 0.1em solid rgb(200, 200, 200); } \n\t\t\t\t.ol-popup:before {\n\t\t\t\t\tcontent: \" \";\n\t\t\t\t\tposition: absolute;\n\t\t\t\t\ttop: -2px;\n\t\t\t\t\tleft: -2px;\n\t\t\t\t\tright: -2px;\n\t\t\t\t\tbottom: -2px;\n\t\t\t\t\tborder: 1px solid black;\n\t\t\t\t}\n                .ol-popup-element .ol-popup-closer { right: 4px }"
+            css: "\n\t\t\t\t.ol-popup-element { color: rgb(200, 200, 200) }\n                .ol-popup-element .pagination { margin-bottom: 2px }\n                .ol-popup-element button.arrow  { background: transparent; border: none; color: rgb(200, 200, 200); }\n                .ol-popup-content { color: rgb(200, 200, 200); max-width: 8em; max-height: 4em; margin: 0.5em; padding: 0.5em; overflow: hidden; overflow-y: auto} \n\t\t\t\t.ol-popup { background-color: rgb(30, 30, 30); border: 2px solid rgb(200, 200, 200); } \n\t\t\t\t.ol-popup:before {\n\t\t\t\t\tcontent: \" \";\n\t\t\t\t\tposition: absolute;\n\t\t\t\t\ttop: -2px;\n\t\t\t\t\tleft: -2px;\n\t\t\t\t\tright: -2px;\n\t\t\t\t\tbottom: -2px;\n\t\t\t\t\tborder: 1px solid rgb(30, 30, 30);\n\t\t\t\t}\n                .ol-popup-element .ol-popup-closer { right: 4px }"
         });
-        popup.options.indicatorOffsets["top-right"][1] -= 2;
-        popup.options.indicatorOffsets["center-right"][0] -= 0.5;
-        popup.options.indicatorOffsets["bottom-right"][1] -= 0.5;
-        popup.options.indicatorOffsets["top-left"][1] -= 6;
-        popup.options.indicatorOffsets["center-left"][0] -= 0.5;
-        popup.options.indicatorOffsets["bottom-left"][1] -= 0.5;
-        popup.options.indicatorOffsets["bottom-center"][1] -= 0.5;
-        popup.options.indicatorOffsets["top-center"][1] -= 2;
         return popup;
+    }
+    function createMapDiv() {
+        var div = document.createElement("div");
+        div.className = "map";
+        document.body.appendChild(div);
+        return div;
     }
     function GridMapMaker() {
         var _a = [20000, 20000], w = _a[0], h = _a[1];
         var points = GridMaker(w, h);
-        var div = document.createElement("div");
-        document.body.appendChild(div);
-        div.className = "map";
+        var div = createMapDiv();
         var map = map_maker_2.MapMaker(div);
         map.getView().setCenter([0, 0]);
         var rez = map.getView().getResolutionForExtent([-w, -h, w, h]);
@@ -2582,48 +2620,48 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
         });
         return vectorLayer;
     }
-    base_3.describe("smartpick", function () {
-        base_3.it("places 9 popups on the map", function () {
-            var popups = [];
+    base_4.describe("smartpick", function () {
+        base_4.it("places 9 popups on the map", function () {
             var _a = GridMapMaker(), map = _a.map, points = _a.points, div = _a.div;
             div.style.width = div.style.height = "480px";
             div.style.border = "1px solid white";
             map.setTarget(null);
             map.setTarget(div);
+            var popups = points.map(function () {
+                var popup = PopupMaker(map);
+                popup.options.autoPopup = false;
+                popup.options.pointerPosition = 0;
+                popup.options.indicatorOffsets["top-right"][1] -= 0;
+                popup.options.indicatorOffsets["top-center"][1] -= 1;
+                popup.options.indicatorOffsets["top-left"][1] -= 0;
+                popup.options.indicatorOffsets["center-left"][0] += 3;
+                popup.options.indicatorOffsets["center-right"][0] += 3;
+                popup.options.indicatorOffsets["bottom-left"][1] += 1;
+                popup.options.indicatorOffsets["bottom-center"][1] += 1;
+                popup.options.indicatorOffsets["bottom-right"][1] += 1;
+                return popup;
+            });
             return once_3.once(map, "postrender", function () {
-                return base_3.slowloop(points.map(function (p) { return function () {
-                    var popup = PopupMaker(map);
-                    popups.push(popup);
+                return base_4.slowloop(points.map(function (p, i) { return function () {
+                    var popup = popups[i];
                     popup.show(p, smartpick_2.smartpick(popup, p));
                 }; }), 0);
-            }).then(function () {
-                return base_3.slowloop([
-                    function () {
-                        popups.map(function (p) { return p.destroy(); });
-                        map.setTarget(null);
-                        div.remove();
-                    }
-                ], 1000);
-            });
+            })
+                .then(kill_3.kill(popups[0]))
+                .then(function () { return popups.map(function (p) { return p.destroy(); }); });
         });
-        base_3.it("configures a map with popup and points in strategic locations to ensure the positioning is correct", function () {
-            var _a = GridMapMaker(), map = _a.map, points = _a.points, div = _a.div;
-            var popups = [];
+        base_4.it("configures a map with popup and points in strategic locations to ensure the positioning is correct", function () {
+            var _a = GridMapMaker(), map = _a.map, points = _a.points;
             return once_3.once(map, "postrender", function () {
                 var popup = PopupMaker(map);
-                popups.push(popup);
-                return base_3.slowloop(points.map(function (p) { return function () {
+                return base_4.slowloop(points.map(function (p) { return function () {
                     var expected = smartpick_2.smartpick(popup, p);
                     popup.show(p, "" + expected);
                     var actual = popup.getPositioning();
-                    base_3.shouldEqual(expected, actual, "positioning");
-                }; }), 600, 1).then(function () {
-                    popups.map(function (p) { return p.destroy(); });
-                    map.setTarget(null);
-                    div.remove();
-                });
+                    base_4.shouldEqual(expected, actual, "positioning");
+                }; }), 400, 1).then(kill_3.kill(popup, 0));
             });
-        }).timeout(10000);
+        });
     });
 });
 define("tests/index", ["require", "exports", "tests/spec/popup", "tests/spec/popup-css", "tests/spec/smartpick"], function (require, exports) {
