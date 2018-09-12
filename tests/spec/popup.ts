@@ -1,7 +1,7 @@
 import ol = require("openlayers");
 import { describe, it, should, shouldEqual, stringify, slowloop } from "ol3-fun/tests/base";
 import { range, pair } from "ol3-fun/index";
-import { Popup, DEFAULT_OPTIONS, PopupOptions } from "../../index";
+import { Popup, DEFAULT_OPTIONS, PopupOptions, IPopup } from "../../index";
 import { once } from "./once";
 
 describe("spec/popup", () => {
@@ -16,11 +16,12 @@ describe("spec/popup", () => {
 	it("Constructors", () => {
 		let map = new ol.Map({});
 		try {
-			// todo: ideally this would be possibles
-			Popup.create().destroy();
+			// todo: ideally this would be possibles but it currently leaves dangling resources
+			Popup.create({ id: "constructor-test" }).destroy();
 		} catch {
 			should(true, "empty constructor throws, either map or autoPopup=false necessary");
 		}
+
 		Popup.create({ autoPopup: false }).destroy();
 		Popup.create({ map: map }).destroy();
 
@@ -40,8 +41,8 @@ describe("spec/popup", () => {
 				zoom: 24
 			})
 		});
+		let popup = Popup.create({ id: "paging-test", map: map });
 		return once(map, "postrender", () => {
-			let popup = Popup.create({ map: map });
 			let c = map.getView().getCenter();
 			let points = pair(range(3), range(3)).map(n => new ol.geom.Point([c[0] + n[0], c[1] + n[1]]));
 			let count = 0;
@@ -64,6 +65,7 @@ describe("spec/popup", () => {
 			return slowloop(
 				[
 					() => {
+						popup.destroy();
 						map.setTarget(null);
 						target.remove();
 					}

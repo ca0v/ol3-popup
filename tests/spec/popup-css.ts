@@ -72,14 +72,25 @@ function callout(
 }
 
 describe("ol3-popup/popup-css", () => {
-	it("△▽◁▷", () => {
+	it("Ensures css is destroyed with popup", () => {
+		let popup = Popup.create({
+			id: "my-popup",
+			autoPopup: false
+		});
+		let styleNode = document.getElementById("style-my-popup_options");
+		should(!!styleNode, "css node exists");
+		popup.destroy();
+		styleNode = document.getElementById("style-my-popup_options");
+		should(!styleNode, "css node does not exist");
+	});
+
+	it("DIAMONDS", () => {
 		// TODO - uses different symbols for tooltip
-		let div = document.createElement("div");
-		div.className = "map";
-		document.body.appendChild(div);
+		let div = createMapDiv();
 		let map = MapMaker(div);
 
 		let popup = Popup.create({
+			id: "diamonds-test",
 			map: map,
 			indicators: DIAMONDS,
 			indicatorOffsets: {
@@ -148,6 +159,7 @@ describe("ol3-popup/popup-css", () => {
 				200
 			)
 				.then(() => {
+					popup.destroy();
 					map.setTarget(null);
 					div.remove();
 				})
@@ -160,7 +172,7 @@ describe("ol3-popup/popup-css", () => {
 	it("renders a tooltip on a canvas", () => {
 		let div = document.createElement("div");
 		div.className = "canvas-container";
-		cssin(
+		let cssRemove = cssin(
 			"canvas-test",
 			`.canvas-container {
             display: inline-block;
@@ -281,6 +293,12 @@ describe("ol3-popup/popup-css", () => {
 				// 4 * 140 * 2 * 10 ms => 11 seconds
 				return slowloop(loop, 0).then(() => slowloop(loop.reverse(), 0).then(() => div.remove()));
 			})
-		);
+		).then(() => cssRemove());
 	}).timeout(6000);
 });
+function createMapDiv() {
+	let div = document.createElement("div");
+	div.className = "map";
+	document.body.appendChild(div);
+	return div;
+}

@@ -308,16 +308,21 @@ export class Popup extends ol.Overlay implements IPopup {
 		this.options = options;
 		this.handlers = [];
 
-		this.configureDom(options);
-		this.configureDockerButton(this.domNode);
-		this.configureCloserButton(this.domNode);
-		this.configureContentContainer();
-		this.configurePaging();
-		this.configureAutoPopup();
+		try {
+			this.configureDom(options);
+			this.configureDockerButton(this.domNode);
+			this.configureCloserButton(this.domNode);
+			this.configureContentContainer();
+			this.configurePaging();
+			this.configureAutoPopup();
+		} catch (ex) {
+			this.destroy();
+			throw ex;
+		}
 	}
 
 	private configureDom(options: PopupOptions) {
-		cssin("ol3-popup", css);
+		this.handlers.push(cssin("ol3-popup", css));
 		options.css && this.injectCss("options", options.css);
 		let domNode = (this.domNode = document.createElement("div"));
 		domNode.className = classNames.olPopupElement;

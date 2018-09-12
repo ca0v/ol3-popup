@@ -1858,12 +1858,18 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             }
             _this.options = options;
             _this.handlers = [];
-            _this.configureDom(options);
-            _this.configureDockerButton(_this.domNode);
-            _this.configureCloserButton(_this.domNode);
-            _this.configureContentContainer();
-            _this.configurePaging();
-            _this.configureAutoPopup();
+            try {
+                _this.configureDom(options);
+                _this.configureDockerButton(_this.domNode);
+                _this.configureCloserButton(_this.domNode);
+                _this.configureContentContainer();
+                _this.configurePaging();
+                _this.configureAutoPopup();
+            }
+            catch (ex) {
+                _this.destroy();
+                throw ex;
+            }
             return _this;
         }
         Popup.create = function (options) {
@@ -1873,7 +1879,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             return popup;
         };
         Popup.prototype.configureDom = function (options) {
-            common_4.cssin("ol3-popup", css);
+            this.handlers.push(common_4.cssin("ol3-popup", css));
             options.css && this.injectCss("options", options.css);
             var domNode = (this.domNode = document.createElement("div"));
             domNode.className = classNames.olPopupElement;
@@ -2199,7 +2205,7 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
         base_1.it("Constructors", function () {
             var map = new ol.Map({});
             try {
-                index_2.Popup.create().destroy();
+                index_2.Popup.create({ id: "constructor-test" }).destroy();
             }
             catch (_a) {
                 base_1.should(true, "empty constructor throws, either map or autoPopup=false necessary");
@@ -2220,8 +2226,8 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
                     zoom: 24
                 })
             });
+            var popup = index_2.Popup.create({ id: "paging-test", map: map });
             return once_1.once(map, "postrender", function () {
-                var popup = index_2.Popup.create({ map: map });
                 var c = map.getView().getCenter();
                 var points = index_1.pair(index_1.range(3), index_1.range(3)).map(function (n) { return new ol.geom.Point([c[0] + n[0], c[1] + n[1]]); });
                 var count = 0;
@@ -2238,6 +2244,7 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
             }).then(function () {
                 return base_1.slowloop([
                     function () {
+                        popup.destroy();
                         map.setTarget(null);
                         target.remove();
                     }
@@ -2344,12 +2351,22 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
         return points;
     }
     base_2.describe("ol3-popup/popup-css", function () {
-        base_2.it("△▽◁▷", function () {
-            var div = document.createElement("div");
-            div.className = "map";
-            document.body.appendChild(div);
+        base_2.it("Ensures css is destroyed with popup", function () {
+            var popup = index_3.Popup.create({
+                id: "my-popup",
+                autoPopup: false
+            });
+            var styleNode = document.getElementById("style-my-popup_options");
+            base_2.should(!!styleNode, "css node exists");
+            popup.destroy();
+            styleNode = document.getElementById("style-my-popup_options");
+            base_2.should(!styleNode, "css node does not exist");
+        });
+        base_2.it("DIAMONDS", function () {
+            var div = createMapDiv();
             var map = map_maker_1.MapMaker(div);
             var popup = index_3.Popup.create({
+                id: "diamonds-test",
                 map: map,
                 indicators: index_3.DIAMONDS,
                 indicatorOffsets: {
@@ -2380,6 +2397,7 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
                     base_2.shouldEqual(popup.indicator.getElement().textContent, popup.options.indicators[k], k);
                 }; }), 200)
                     .then(function () {
+                    popup.destroy();
                     map.setTarget(null);
                     div.remove();
                 })
@@ -2391,7 +2409,7 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
         base_2.it("renders a tooltip on a canvas", function () {
             var div = document.createElement("div");
             div.className = "canvas-container";
-            common_5.cssin("canvas-test", ".canvas-container {\n            display: inline-block;\n            position: absolute;\n            top: 20px;\n            width: 200px;\n\t\t\theight: 200px;\n\t\t\tbackground: blue;\n            border: 1px solid white;\n        }");
+            var cssRemove = common_5.cssin("canvas-test", ".canvas-container {\n            display: inline-block;\n            position: absolute;\n            top: 20px;\n            width: 200px;\n\t\t\theight: 200px;\n\t\t\tbackground: blue;\n            border: 1px solid white;\n        }");
             div.innerHTML = "DIV CONTENT";
             var canvas = document.createElement("canvas");
             canvas.width = canvas.height = 200;
@@ -2480,9 +2498,15 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
                     ctx.stroke();
                 }; }));
                 return base_2.slowloop(loop, 0).then(function () { return base_2.slowloop(loop.reverse(), 0).then(function () { return div.remove(); }); });
-            }));
+            })).then(function () { return cssRemove(); });
         }).timeout(6000);
     });
+    function createMapDiv() {
+        var div = document.createElement("div");
+        div.className = "map";
+        document.body.appendChild(div);
+        return div;
+    }
 });
 define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "ol3-popup/commands/smartpick", "examples/extras/map-maker", "index", "tests/spec/once"], function (require, exports, ol, base_3, smartpick_2, map_maker_2, index_4, once_3) {
     "use strict";
@@ -2560,6 +2584,7 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
     }
     base_3.describe("smartpick", function () {
         base_3.it("places 9 popups on the map", function () {
+            var popups = [];
             var _a = GridMapMaker(), map = _a.map, points = _a.points, div = _a.div;
             div.style.width = div.style.height = "480px";
             div.style.border = "1px solid white";
@@ -2568,11 +2593,13 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
             return once_3.once(map, "postrender", function () {
                 return base_3.slowloop(points.map(function (p) { return function () {
                     var popup = PopupMaker(map);
+                    popups.push(popup);
                     popup.show(p, smartpick_2.smartpick(popup, p));
                 }; }), 0);
             }).then(function () {
                 return base_3.slowloop([
                     function () {
+                        popups.map(function (p) { return p.destroy(); });
                         map.setTarget(null);
                         div.remove();
                     }
@@ -2581,14 +2608,17 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
         });
         base_3.it("configures a map with popup and points in strategic locations to ensure the positioning is correct", function () {
             var _a = GridMapMaker(), map = _a.map, points = _a.points, div = _a.div;
+            var popups = [];
             return once_3.once(map, "postrender", function () {
                 var popup = PopupMaker(map);
+                popups.push(popup);
                 return base_3.slowloop(points.map(function (p) { return function () {
                     var expected = smartpick_2.smartpick(popup, p);
                     popup.show(p, "" + expected);
                     var actual = popup.getPositioning();
                     base_3.shouldEqual(expected, actual, "positioning");
                 }; }), 600, 1).then(function () {
+                    popups.map(function (p) { return p.destroy(); });
                     map.setTarget(null);
                     div.remove();
                 });

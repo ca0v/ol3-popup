@@ -2,7 +2,7 @@ import ol = require("openlayers");
 import { describe, it, shouldEqual, slowloop } from "ol3-fun/tests/base";
 import { smartpick } from "../../ol3-popup/commands/smartpick";
 import { MapMaker } from "../../examples/extras/map-maker";
-import { Popup } from "../../index";
+import { Popup, IPopup } from "../../index";
 import { once } from "./once";
 
 function PopupMaker(map: ol.Map) {
@@ -101,6 +101,7 @@ function VectorMaker() {
 
 describe("smartpick", () => {
 	it("places 9 popups on the map", () => {
+		let popups: Array<IPopup> = [];
 		let { map, points, div } = GridMapMaker();
 		div.style.width = div.style.height = "480px";
 		div.style.border = "1px solid white";
@@ -111,6 +112,7 @@ describe("smartpick", () => {
 			return slowloop(
 				points.map(p => () => {
 					let popup = PopupMaker(map);
+					popups.push(popup);
 					// can't compute width/height without content
 					popup.show(p, smartpick(popup, p));
 				}),
@@ -121,6 +123,7 @@ describe("smartpick", () => {
 			return slowloop(
 				[
 					() => {
+						popups.map(p => p.destroy());
 						map.setTarget(null);
 						div.remove();
 					}
@@ -134,8 +137,10 @@ describe("smartpick", () => {
 		// map should have an width and height of 1000 units
 		// points should be in the four corners and four sides
 		let { map, points, div } = GridMapMaker();
+		let popups: Array<IPopup> = [];
 		return once(map, "postrender", () => {
 			let popup = PopupMaker(map);
+			popups.push(popup);
 			return slowloop(
 				points.map(p => () => {
 					let expected = smartpick(popup, p);
@@ -146,6 +151,7 @@ describe("smartpick", () => {
 				600,
 				1
 			).then(() => {
+				popups.map(p => p.destroy());
 				map.setTarget(null);
 				div.remove();
 			});
