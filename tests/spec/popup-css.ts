@@ -4,7 +4,7 @@ import { range, cssin, html } from "ol3-fun/ol3-fun/common";
 import { Popup, DEFAULT_OPTIONS, DIAMONDS, TRIANGLES } from "../../index";
 import { MapMaker } from "../../examples/extras/map-maker";
 import { Positions } from "../../ol3-popup/@types/popup-options";
-import { once } from "./once";
+import { once } from "../../examples/extras/once";
 
 function rect(extent: ol.Extent) {
 	let [x1, y1, x2, y2] = extent;

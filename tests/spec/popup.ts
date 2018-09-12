@@ -2,7 +2,7 @@ import ol = require("openlayers");
 import { describe, it, should, shouldEqual, stringify, slowloop } from "ol3-fun/tests/base";
 import { range, pair } from "ol3-fun/index";
 import { Popup, DEFAULT_OPTIONS, PopupOptions, IPopup } from "../../index";
-import { once } from "./once";
+import { once } from "../../examples/extras/once";
 
 describe("spec/popup", () => {
 	it("Popup", () => {
@@ -11,6 +11,26 @@ describe("spec/popup", () => {
 
 	it("DEFAULT_OPTIONS", () => {
 		checkDefaultInputOptions(DEFAULT_OPTIONS);
+	});
+
+	it("Ensures options do not leak into other instances", () => {
+		let p1 = Popup.create({ autoPopup: false });
+		let p2 = Popup.create({ autoPopup: false });
+		let expected = p1.options.indicatorOffsets["top-center"][0];
+		// settings on p1 has no effect on p2
+		p1.options.indicatorOffsets["top-center"][0] += 100;
+		let actual = p2.options.indicatorOffsets["top-center"][0];
+		shouldEqual(actual, expected, "default did not change");
+		p1.destroy();
+		p2.destroy();
+	});
+
+	it("Ensures global options can be tweaked", () => {
+		let expected = (DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] += 100);
+		let p1 = Popup.create({ autoPopup: false });
+		let actual = p1.options.indicatorOffsets["top-center"][0];
+		shouldEqual(actual, expected, "default did change");
+		p1.destroy();
 	});
 
 	it("Constructors", () => {

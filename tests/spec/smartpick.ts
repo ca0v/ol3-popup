@@ -3,13 +3,12 @@ import { describe, it, shouldEqual, slowloop } from "ol3-fun/tests/base";
 import { smartpick } from "../../ol3-popup/commands/smartpick";
 import { MapMaker } from "../../examples/extras/map-maker";
 import { Popup, IPopup } from "../../index";
-import { once } from "./once";
+import { once } from "../../examples/extras/once";
 
 function PopupMaker(map: ol.Map) {
 	let popup = Popup.create({
 		id: "spec-smartpicker-test",
 		map: map,
-		showCoordinates: true,
 		autoPopup: false,
 		autoPanAnimation: {
 			duration: 200,
@@ -28,18 +27,10 @@ function PopupMaker(map: ol.Map) {
 					left: -2px;
 					right: -2px;
 					bottom: -2px;
-					border: 1px solid black;
+					border: 3px solid blue;
 				}
                 .ol-popup-element .ol-popup-closer { right: 4px }`
 	});
-	popup.options.indicatorOffsets["top-right"][1] -= 2;
-	popup.options.indicatorOffsets["center-right"][0] -= 0.5;
-	popup.options.indicatorOffsets["bottom-right"][1] -= 0.5;
-	popup.options.indicatorOffsets["top-left"][1] -= 6;
-	popup.options.indicatorOffsets["center-left"][0] -= 0.5;
-	popup.options.indicatorOffsets["bottom-left"][1] -= 0.5;
-	popup.options.indicatorOffsets["bottom-center"][1] -= 0.5;
-	popup.options.indicatorOffsets["top-center"][1] -= 2;
 	return popup;
 }
 
@@ -112,6 +103,15 @@ describe("smartpick", () => {
 			return slowloop(
 				points.map(p => () => {
 					let popup = PopupMaker(map);
+					popup.options.indicatorOffsets["top-right"][1] -= 2;
+					popup.options.indicatorOffsets["center-right"][0] -= 0.5;
+					popup.options.indicatorOffsets["bottom-right"][1] -= 0.5;
+					// what is happening here, why 6 and why such minimal effect?
+					popup.options.indicatorOffsets["top-left"][1] -= 6;
+					popup.options.indicatorOffsets["center-left"][0] -= 0.5;
+					popup.options.indicatorOffsets["bottom-left"][1] -= 0.5;
+					popup.options.indicatorOffsets["bottom-center"][1] -= 0.5;
+					popup.options.indicatorOffsets["top-center"][1] -= 2;
 					popups.push(popup);
 					// can't compute width/height without content
 					popup.show(p, smartpick(popup, p));
@@ -148,7 +148,7 @@ describe("smartpick", () => {
 					let actual = popup.getPositioning();
 					shouldEqual(expected, actual, "positioning");
 				}),
-				600,
+				400,
 				1
 			).then(() => {
 				popups.map(p => p.destroy());
@@ -156,5 +156,5 @@ describe("smartpick", () => {
 				div.remove();
 			});
 		});
-	}).timeout(10000);
+	});
 });

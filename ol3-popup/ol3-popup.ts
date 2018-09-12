@@ -140,6 +140,10 @@ const eventNames = {
 	undock: "undock"
 };
 
+function clone<T>(o: T) {
+	return JSON.parse(JSON.stringify(o));
+}
+
 function arrayEqual<T>(a: T[], b: T[]) {
 	if (!a || !b) return false;
 	if (a === b) return true;
@@ -289,7 +293,8 @@ export class Popup extends ol.Overlay implements IPopup {
 	 * @returns IPopup
 	 */
 	static create(options?: PopupOptions) {
-		options = defaults({}, options || {}, DEFAULT_OPTIONS);
+		// deep clone DEFAULT_OPTIONS so they are not shared across instances
+		options = defaults({}, options || {}, clone(DEFAULT_OPTIONS));
 
 		let popup = new Popup(options);
 		options.map && options.map.addOverlay(popup);
