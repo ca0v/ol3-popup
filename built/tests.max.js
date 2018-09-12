@@ -1683,7 +1683,7 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
             threshold = (popup.options.autoPanMargin || 0) + (popup.options.pointerPosition || 0);
             var content = popup.content;
             var style = getComputedStyle(content);
-            var _a = [style.width, style.height].map(function (n) { return parseInt(n); }), w = _a[0], h = _a[1];
+            var _a = [style.width, style.height].map(function (n) { return parseInt(n); }).map(function (n) { return (isNaN(n) ? threshold : n); }), w = _a[0], h = _a[1];
             padding = [threshold + w / 2, threshold + h / 2];
         }
         else {
@@ -1712,13 +1712,12 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
             verticalPosition = "center";
         }
         horizontalPosition = horizontalPosition || "center";
-        verticalPosition = verticalPosition || ((distanceToTop < distanceToBottom) ? "top" : "bottom");
+        verticalPosition = verticalPosition || (distanceToTop < distanceToBottom ? "top" : "bottom");
         return verticalPosition + "-" + horizontalPosition;
     }
     exports.smartpick = smartpick;
-    ;
 });
-define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, $, ol, paging_1, page_navigator_1, common_4, interaction_1, Symbolizer, smartpick_1, mixin_2) {
+define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, ol, paging_1, page_navigator_1, common_4, interaction_1, Symbolizer, smartpick_1, mixin_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -1821,6 +1820,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         "top-right": "♢"
     };
     exports.DEFAULT_OPTIONS = {
+        id: "popup",
         map: null,
         asContent: asContent,
         multi: false,
@@ -1934,13 +1934,10 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             this.handlers.push(function () { return autoPopup.destroy(); });
         };
         Popup.prototype.injectCss = function (id, css) {
+            if (!this.getId())
+                throw "cannot injects css on anoverlay with no assigned id";
             id = this.getId() + "_" + id;
-            var style = document.getElementById(id);
-            if (style)
-                style.remove();
-            style = common_4.html("<style type='text/css' id='" + id + "'>" + css + "</style>");
-            $(document.head).append(style);
-            this.handlers.push(function () { return style.remove(); });
+            this.handlers.push(common_4.cssin(id, css));
         };
         Popup.prototype.hideIndicator = function () {
             this.indicator && this.indicator.setPosition(undefined);
@@ -2095,6 +2092,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 throw "unexpected html";
             }
             if (this.options.autoPositioning) {
+                this.element.style.display = "";
                 this.setPositioning(smartpick_1.smartpick(this, coord));
             }
             this.setPosition(coord);
@@ -2488,6 +2486,44 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
 define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "ol3-popup/commands/smartpick", "examples/extras/map-maker", "index", "tests/spec/once"], function (require, exports, ol, base_3, smartpick_2, map_maker_2, index_4, once_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
+    function PopupMaker(map) {
+        return index_4.Popup.create({
+            id: "spec-smartpicker-test",
+            map: map,
+            showCoordinates: true,
+            autoPopup: false,
+            autoPanAnimation: {
+                duration: 200,
+                source: [0, 0]
+            },
+            css: "\n\t\t\t\t.ol-popup-element { color: rgb(200, 200, 200) }\n                .ol-popup-element .pagination { margin-bottom: 2px }\n                .ol-popup-element button.arrow  { background: transparent; border: none; color: rgb(200, 200, 200); }\n                .ol-popup-content { color: rgb(200, 200, 200); max-width: 8em; max-height: 4em; margin: 0.5em; padding: 0.5em; overflow: hidden; overflow-y: auto} \n\t\t\t\t.ol-popup { background-color: rgb(30, 30, 30); border: 0.1em solid rgb(200, 200, 200); } \n\t\t\t\t.ol-popup:before {\n\t\t\t\t\tcontent: \" \";\n\t\t\t\t\tposition: absolute;\n\t\t\t\t\ttop: -2px;\n\t\t\t\t\tleft: -2px;\n\t\t\t\t\tright: -2px;\n\t\t\t\t\tbottom: -2px;\n\t\t\t\t\tborder: 1px solid black;\n\t\t\t\t}\n                .ol-popup-element .ol-popup-closer { right: 4px }"
+        });
+    }
+    function GridMapMaker() {
+        var _a = [20000, 20000], w = _a[0], h = _a[1];
+        var points = GridMaker(w, h);
+        var div = document.createElement("div");
+        document.body.appendChild(div);
+        div.className = "map";
+        var map = map_maker_2.MapMaker(div);
+        map.getView().setCenter([0, 0]);
+        var rez = map.getView().getResolutionForExtent([-w, -h, w, h]);
+        map.getView().setResolution(rez);
+        var vectors = VectorMaker();
+        map.addLayer(vectors);
+        vectors.getSource().addFeatures(points.map(function (p) {
+            var geom = new ol.geom.Point(p);
+            var ll = ol.proj.toLonLat(p);
+            return new ol.Feature({
+                geometry: geom,
+                latlon: ll[1].toPrecision(5) + " " + ll[0].toPrecision(5)
+            });
+        }));
+        return { map: map, points: points, div: div };
+    }
+    function GridMaker(w, h) {
+        return [[-w, h], [0, h], [w, h], [w, 0], [w, -h], [0, -h], [-w, -h], [-w, 0], [0, 0]];
+    }
     function VectorMaker() {
         var vectorSource = new ol.source.Vector({
             features: []
@@ -2513,47 +2549,28 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
         return vectorLayer;
     }
     base_3.describe("smartpick", function () {
-        base_3.it("configures a map with popup and points in strategic locations to ensure the positioning is correct", function () {
-            var _a = [20000, 20000], w = _a[0], h = _a[1];
-            var points = [
-                [-w, h],
-                [0, h],
-                [w, h],
-                [w, 0],
-                [w, -h],
-                [0, -h],
-                [-w, -h],
-                [-w, 0],
-                [0, 0]
-            ];
-            var div = document.createElement("div");
-            document.body.appendChild(div);
-            div.className = "map";
-            var map = map_maker_2.MapMaker(div);
-            map.getView().setCenter([0, 0]);
-            var rez = map.getView().getResolutionForExtent([-w, -h, w, h]);
-            map.getView().setResolution(rez);
-            var vectors = VectorMaker();
-            map.addLayer(vectors);
-            vectors.getSource().addFeatures(points.map(function (p) {
-                var geom = new ol.geom.Point(p);
-                var ll = ol.proj.toLonLat(p);
-                return new ol.Feature({
-                    geometry: geom,
-                    latlon: ll[1].toPrecision(5) + " " + ll[0].toPrecision(5)
-                });
-            }));
+        base_3.it("places 9 popups on the map", function () {
+            var _a = GridMapMaker(), map = _a.map, points = _a.points, div = _a.div;
+            div.style.width = div.style.height = "480px";
+            div.style.border = "1px solid white";
+            map.setTarget(null);
+            map.setTarget(div);
             return once_3.once(map, "postrender", function () {
-                var popup = index_4.Popup.create({
-                    map: map,
-                    multi: true,
-                    showCoordinates: true,
-                    autoPanAnimation: {
-                        duration: 200,
-                        source: [0, 0]
-                    },
-                    css: "\n\t\t\t\t.ol-popup-element { color: rgb(200, 200, 200) }\n                .ol-popup-element .pagination { margin-bottom: 2px }\n                .ol-popup-element button.arrow  { background: transparent; border: none; color: rgb(200, 200, 200); }\n                .ol-popup-content { color: rgb(200, 200, 200); max-width: 8em; max-height: 4em; margin: 0.5em; padding: 0.5em; overflow: hidden; overflow-y: auto} \n                .ol-popup { background-color: rgb(30, 30, 30); border: 1px solid rgb(200, 200, 200); } \n                .ol-popup-element .ol-popup-closer { right: 4px }"
+                return base_3.slowloop(points.map(function (p) { return function () {
+                    var popup = PopupMaker(map);
+                    popup.show(p, smartpick_2.smartpick(popup, p));
+                }; }), 50);
+            }).then(function () {
+                base_3.slowloop([function () { }], 2000).then(function () {
+                    map.setTarget(null);
+                    div.remove();
                 });
+            });
+        });
+        base_3.it("configures a map with popup and points in strategic locations to ensure the positioning is correct", function () {
+            var _a = GridMapMaker(), map = _a.map, points = _a.points, div = _a.div;
+            return once_3.once(map, "postrender", function () {
+                var popup = PopupMaker(map);
                 return base_3.slowloop(points.map(function (p) { return function () {
                     var expected = smartpick_2.smartpick(popup, p);
                     popup.show(p, "" + expected);

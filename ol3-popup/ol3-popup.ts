@@ -218,6 +218,7 @@ export const DIAMONDS = {
  * Default options for the popup control so it can be created without any contructor arguments
  */
 export const DEFAULT_OPTIONS: PopupOptions = {
+	id: "popup",
 	map: null,
 	asContent: asContent,
 	multi: false,
@@ -384,12 +385,9 @@ export class Popup extends ol.Overlay implements IPopup {
 	}
 
 	private injectCss(id: string, css: string) {
+		if (!this.getId()) throw "cannot injects css on anoverlay with no assigned id";
 		id = this.getId() + "_" + id;
-		let style = document.getElementById(id) as HTMLStyleElement;
-		if (style) style.remove();
-		style = html(`<style type='text/css' id='${id}'>${css}</style>`) as HTMLStyleElement;
-		$(document.head).append(style);
-		this.handlers.push(() => style.remove());
+		this.handlers.push(cssin(id, css));
 	}
 
 	public indicator: ol.Overlay;
@@ -558,6 +556,8 @@ export class Popup extends ol.Overlay implements IPopup {
 
 		// determine the positioning before assigning a position to prevent launching unwanted panning animations
 		if (this.options.autoPositioning) {
+			// the popup mayve have display:none, clear it so smartpick can measure the popup size
+			this.element.style.display = "";
 			this.setPositioning(smartpick(this, coord));
 		}
 		this.setPosition(coord);
