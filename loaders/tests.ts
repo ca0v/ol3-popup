@@ -20,10 +20,11 @@
 	let test = getParameterByName("test") || "tests/index";
 	let debug = getParameterByName("debug") === "1";
 	let localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+	let dark = getParameterByName("theme") === "dark";
 
-	document.body.classList.toggle("dark", !debug);
+	document.body.classList.toggle("dark", dark);
 	document.body.classList.toggle("verbose", !localhost);
-	document.body.classList.toggle("light", debug);
+	document.body.classList.toggle("light", !dark);
 	document.body.classList.toggle("terse", localhost && !debug);
 
 	loadCss(
