@@ -1,11 +1,11 @@
 # OpenLayers Popup
 
--   See [v5.1.3](https://github.com/ca0v/ol3-popup/tree/v5.1.3)
 -   Adds paging to [ol3-popup](https://github.com/walkermatt/ol3-popup).
+-   [v5.1.3](https://github.com/ca0v/ol3-popup/tree/v5.1.3) installs with npm
 
 ## Tests
 
--   [v5.1.3](https://rawgit.com/ca0v/ol3-popup/v5.1.3/loaders/tests.html)
+-   [v5.1.3](https://rawgit.com/ca0v/ol3-popup/v5.1.3/loaders/tests.html?debug=1&theme=dark)
 
 ## Examples
 
@@ -24,7 +24,7 @@
 
 ## Build
 
--   `tsc -w`
+-   `npm run build-for-amd`
 
 ## Consume
 
