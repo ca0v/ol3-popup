@@ -3,7 +3,7 @@ import { describe, it, should, shouldEqual, stringify, slowloop } from "ol3-fun/
 import { range, pair } from "ol3-fun/index";
 import { Popup, DEFAULT_OPTIONS, PopupOptions } from "../../index";
 import { once } from "../../examples/extras/once";
-import { kill } from "./kill";
+import { kill } from "../extras/kill";
 
 function createMapDiv() {
 	let div = document.createElement("div");

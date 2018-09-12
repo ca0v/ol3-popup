@@ -2203,7 +2203,7 @@ define("examples/extras/once", ["require", "exports"], function (require, export
     }
     exports.once = once;
 });
-define("tests/spec/kill", ["require", "exports", "node_modules/ol3-fun/tests/base"], function (require, exports, base_1) {
+define("tests/extras/kill", ["require", "exports", "node_modules/ol3-fun/tests/base"], function (require, exports, base_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function kill(popup, delay) {
@@ -2226,7 +2226,7 @@ define("tests/spec/kill", ["require", "exports", "node_modules/ol3-fun/tests/bas
     }
     exports.kill = kill;
 });
-define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/index", "index", "examples/extras/once", "tests/spec/kill"], function (require, exports, ol, base_2, index_1, index_2, once_1, kill_1) {
+define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/index", "index", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_2, index_1, index_2, once_1, kill_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function createMapDiv() {
@@ -2362,7 +2362,7 @@ define("examples/extras/map-maker", ["require", "exports", "openlayers"], functi
     }
     exports.MapMaker = MapMaker;
 });
-define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common", "index", "examples/extras/map-maker", "examples/extras/once", "tests/spec/kill"], function (require, exports, ol, base_4, common_5, index_4, map_maker_1, once_2, kill_2) {
+define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common", "index", "examples/extras/map-maker", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_4, common_5, index_4, map_maker_1, once_2, kill_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function createMapDiv() {
@@ -2573,7 +2573,7 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
         }).timeout(6000);
     });
 });
-define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "ol3-popup/commands/smartpick", "examples/extras/map-maker", "index", "examples/extras/once", "tests/spec/kill"], function (require, exports, ol, base_5, smartpick_2, map_maker_2, index_5, once_3, kill_3) {
+define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "ol3-popup/commands/smartpick", "examples/extras/map-maker", "index", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_5, smartpick_2, map_maker_2, index_5, once_3, kill_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function PopupMaker(map) {

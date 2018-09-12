@@ -5,7 +5,7 @@ import { Popup, DEFAULT_OPTIONS, DIAMONDS, TRIANGLES } from "../../index";
 import { MapMaker } from "../../examples/extras/map-maker";
 import { Positions } from "../../ol3-popup/@types/popup-options";
 import { once } from "../../examples/extras/once";
-import { kill } from "./kill";
+import { kill } from "../extras/kill";
 
 function createMapDiv() {
 	let div = document.createElement("div");

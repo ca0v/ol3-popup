@@ -2,9 +2,9 @@ import ol = require("openlayers");
 import { describe, it, shouldEqual, slowloop } from "ol3-fun/tests/base";
 import { smartpick } from "../../ol3-popup/commands/smartpick";
 import { MapMaker } from "../../examples/extras/map-maker";
-import { Popup, IPopup } from "../../index";
+import { Popup } from "../../index";
 import { once } from "../../examples/extras/once";
-import { kill } from "./kill";
+import { kill } from "../extras/kill";
 
 function PopupMaker(map: ol.Map) {
 	let popup = Popup.create({
