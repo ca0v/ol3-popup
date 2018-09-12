@@ -17,6 +17,7 @@
 		return decodeURIComponent(results[2].replace(/\+/g, " "));
 	}
 
+	let test = getParameterByName("test") || "tests/index";
 	let debug = getParameterByName("debug") === "1";
 	let localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
@@ -68,9 +69,9 @@
 				// window.Mocha is a
 				let Mocha = (<any>window)["mocha"];
 				let mocha = Mocha.setup({
-					timeout: 6000,
+					timeout: 5000,
 					ui: "bdd",
-					bail: false
+					bail: debug
 				});
 				console.log(mocha);
 
@@ -78,7 +79,7 @@
 				define("mocha", [], () => ({ describe, it }));
 
 				// execute "describe" and "it" methods before running mocha
-				requirejs(["tests/index"], () => mocha.run());
+				requirejs(test.split(","), () => mocha.run());
 			});
 		}
 	});

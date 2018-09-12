@@ -2,6 +2,7 @@ import ol = require("openlayers");
 import { describe, it, should, shouldEqual, stringify, slowloop } from "ol3-fun/tests/base";
 import { range, pair } from "ol3-fun/index";
 import { Popup, DEFAULT_OPTIONS, PopupOptions } from "../../index";
+import { once } from "./once";
 
 describe("Popup Options", () => {
 	it("Popup", () => {
@@ -30,7 +31,7 @@ describe("Popup Constructor", () => {
 });
 
 describe("Popup Paging", () => {
-	it("Paging", done => {
+	it("Paging", () => {
 		let target = document.createElement("div");
 		document.body.appendChild(target);
 
@@ -43,7 +44,7 @@ describe("Popup Paging", () => {
 				zoom: 24
 			})
 		});
-		map.once("postrender", () => {
+		return once(map, "postrender", () => {
 			let popup = Popup.create({ map: map });
 			let c = map.getView().getCenter();
 			let points = pair(range(3), range(3)).map(n => new ol.geom.Point([c[0] + n[0], c[1] + n[1]]));
@@ -54,7 +55,7 @@ describe("Popup Paging", () => {
 			});
 
 			let i = 0;
-			slowloop([() => popup.pages.goto(i++)], 30, popup.pages.count)
+			return slowloop([() => popup.pages.goto(i++)], 100, popup.pages.count)
 				.then(() => {
 					shouldEqual(
 						popup.getElement().getElementsByClassName("ol-popup-content")[0].textContent,
@@ -63,7 +64,6 @@ describe("Popup Paging", () => {
 					);
 					map.setTarget(null);
 					target.remove();
-					done();
 				})
 				.fail(ex => should(!ex, ex));
 		});

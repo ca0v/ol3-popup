@@ -4,6 +4,7 @@ import { range, cssin, html } from "ol3-fun/ol3-fun/common";
 import { Popup, DEFAULT_OPTIONS, DIAMONDS, TRIANGLES } from "../../index";
 import { MapMaker } from "../../examples/extras/map-maker";
 import { Positions } from "../../ol3-popup/@types/popup-options";
+import { once } from "./once";
 
 function rect(extent: ol.Extent) {
 	let [x1, y1, x2, y2] = extent;
@@ -71,7 +72,7 @@ function callout(
 }
 
 describe("ol3-popup/popup-css", () => {
-	it("△▽◁▷", done => {
+	it("△▽◁▷", () => {
 		// TODO - uses different symbols for tooltip
 		let div = document.createElement("div");
 		div.className = "map";
@@ -137,26 +138,26 @@ describe("ol3-popup/popup-css", () => {
 		});
 		map.addLayer(vectorLayer);
 
-		map.once("postrender", () => {
-			slowloop(
+		return once(map, "postrender", () => {
+			return slowloop(
 				Object.keys(popup.options.indicators).map((k: Positions) => () => {
 					popup.setPositioning(k);
 					popup.show(map.getView().getCenter(), `Popup with ${k}`);
 					shouldEqual(popup.indicator.getElement().textContent, popup.options.indicators[k], k);
 				}),
-				500
+				200
 			)
-				.fail(ex => {
-					should(!ex, ex);
-				})
 				.then(() => {
-					popup.options.autoPositioning = true;
-					done();
+					map.setTarget(null);
+					div.remove();
+				})
+				.catch(ex => {
+					should(!ex, ex);
 				});
 		});
 	});
 
-	it("renders a tooltip on a canvas", done => {
+	it("renders a tooltip on a canvas", () => {
 		let div = document.createElement("div");
 		div.className = "canvas-container";
 		cssin(
@@ -166,7 +167,8 @@ describe("ol3-popup/popup-css", () => {
             position: absolute;
             top: 20px;
             width: 200px;
-            height: 200px;
+			height: 200px;
+			background: blue;
             border: 1px solid white;
         }`
 		);
@@ -184,13 +186,6 @@ describe("ol3-popup/popup-css", () => {
 		ctx.lineWidth = 3;
 
 		let clear = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-		slowloop(
-			range(100).map(n => () => {
-				div.style.left = div.style.top = 10 * Math.sin((n * Math.PI) / 100) * n + "px";
-			}),
-			50
-		);
 
 		let loop = [
 			() => {
@@ -218,64 +213,74 @@ describe("ol3-popup/popup-css", () => {
 				})
 			);
 		}
-		slowloop(loop, 200).then(() => {
-			loop = [];
-			let points = range(140).map(index =>
-				callout(rect([20, 20, 180, 180]), { index: 0, size: 10, width: 20, skew: 0, offset: index - 70 })
-			);
-			points = points.concat(
-				range(140).map(index =>
+		return $.when(
+			slowloop(
+				range(100).map(n => () => {
+					div.style.left = div.style.top = 10 * Math.sin((n * Math.PI) / 100) * n + "px";
+				}),
+				50
+			),
+			slowloop(loop, 200).then(() => {
+				loop = [];
+				let points = range(70).map(index =>
 					callout(rect([20, 20, 180, 180]), {
-						index: 1,
+						index: 0,
 						size: 10,
 						width: 20,
 						skew: 0,
-						offset: index - 70
+						offset: 2 * index - 70
 					})
-				)
-			);
-			points = points.concat(
-				range(140)
-					.reverse()
-					.map(index =>
+				);
+				points = points.concat(
+					range(140).map(index =>
 						callout(rect([20, 20, 180, 180]), {
-							index: 2,
+							index: 1,
 							size: 10,
 							width: 20,
 							skew: 0,
 							offset: index - 70
 						})
 					)
-			);
-			points = points.concat(
-				range(140)
-					.reverse()
-					.map(index =>
-						callout(rect([20, 20, 180, 180]), {
-							index: 3,
-							size: 10,
-							width: 20,
-							skew: 0,
-							offset: index - 70
-						})
-					)
-			);
-			loop = loop.concat(
-				points.map(points => () => {
-					clear();
-					ctx.beginPath();
-					ctx.moveTo(points[0][0], points[0][1]);
-					points.forEach(p => ctx.lineTo(p[0], p[1]));
-					ctx.closePath();
-					ctx.stroke();
-				})
-			);
-			slowloop(loop, 0, 1).then(() =>
-				slowloop(loop.reverse(), 0, 1).then(() => {
-					div.remove();
-					done();
-				})
-			);
-		});
-	});
+				);
+				points = points.concat(
+					range(140)
+						.reverse()
+						.map(index =>
+							callout(rect([20, 20, 180, 180]), {
+								index: 2,
+								size: 10,
+								width: 20,
+								skew: 0,
+								offset: index - 70
+							})
+						)
+				);
+				points = points.concat(
+					range(140)
+						.reverse()
+						.map(index =>
+							callout(rect([20, 20, 180, 180]), {
+								index: 3,
+								size: 10,
+								width: 20,
+								skew: 0,
+								offset: index - 70
+							})
+						)
+				);
+				loop = loop.concat(
+					points.map(points => () => {
+						clear();
+						ctx.beginPath();
+						ctx.moveTo(points[0][0], points[0][1]);
+						points.forEach(p => ctx.lineTo(p[0], p[1]));
+						ctx.closePath();
+						ctx.stroke();
+					})
+				);
+				// 4 * 140 * 2 * 10 ms => 11 seconds
+				return slowloop(loop, 0).then(() => slowloop(loop.reverse(), 0).then(() => div.remove()));
+			})
+		);
+	}).timeout(6000);
 });

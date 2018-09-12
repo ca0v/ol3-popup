@@ -156,7 +156,7 @@ declare module "ol3-popup/ol3-popup" {
         };
         content: HTMLDivElement;
         domNode: HTMLDivElement;
-        element: HTMLElement;
+        private element;
         private closer;
         private docker;
         pages: Paging;

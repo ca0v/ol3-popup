@@ -17,6 +17,7 @@
             return "";
         return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
+    var test = getParameterByName("test") || "tests/index";
     var debug = getParameterByName("debug") === "1";
     var localhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     document.body.classList.toggle("dark", !debug);
@@ -60,15 +61,15 @@
                 // window.Mocha is a
                 var Mocha = window["mocha"];
                 var mocha = Mocha.setup({
-                    timeout: 6000,
+                    timeout: 5000,
                     ui: "bdd",
-                    bail: false
+                    bail: debug
                 });
                 console.log(mocha);
                 // mocha is putting out globals...hide them (should only be when running as CLI so not sure what's happening)
                 define("mocha", [], function () { return ({ describe: describe, it: it }); });
                 // execute "describe" and "it" methods before running mocha
-                requirejs(["tests/index"], function () { return mocha.run(); });
+                requirejs(test.split(","), function () { return mocha.run(); });
             });
         }
     });
