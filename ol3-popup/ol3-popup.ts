@@ -385,7 +385,7 @@ export class Popup extends ol.Overlay implements IPopup {
 	}
 
 	private injectCss(id: string, css: string) {
-		if (!this.getId()) throw "cannot injects css on anoverlay with no assigned id";
+		if (!this.getId()) throw "cannot injects css on an overlay with no assigned id";
 		id = this.getId() + "_" + id;
 		this.handlers.push(cssin(id, css));
 	}

@@ -6,7 +6,7 @@ import { Popup } from "../../index";
 import { once } from "./once";
 
 function PopupMaker(map: ol.Map) {
-	return Popup.create({
+	let popup = Popup.create({
 		id: "spec-smartpicker-test",
 		map: map,
 		showCoordinates: true,
@@ -32,6 +32,15 @@ function PopupMaker(map: ol.Map) {
 				}
                 .ol-popup-element .ol-popup-closer { right: 4px }`
 	});
+	popup.options.indicatorOffsets["top-right"][1] -= 2;
+	popup.options.indicatorOffsets["center-right"][0] -= 0.5;
+	popup.options.indicatorOffsets["bottom-right"][1] -= 0.5;
+	popup.options.indicatorOffsets["top-left"][1] -= 6;
+	popup.options.indicatorOffsets["center-left"][0] -= 0.5;
+	popup.options.indicatorOffsets["bottom-left"][1] -= 0.5;
+	popup.options.indicatorOffsets["bottom-center"][1] -= 0.5;
+	popup.options.indicatorOffsets["top-center"][1] -= 2;
+	return popup;
 }
 
 function GridMapMaker() {
@@ -105,14 +114,19 @@ describe("smartpick", () => {
 					// can't compute width/height without content
 					popup.show(p, smartpick(popup, p));
 				}),
-				50
+				0
 			);
 		}).then(() => {
-			// let next test start but sleep before destroying
-			slowloop([() => {}], 2000).then(() => {
-				map.setTarget(null);
-				div.remove();
-			});
+			// allow 1 second to observe since no assertions are being made
+			return slowloop(
+				[
+					() => {
+						map.setTarget(null);
+						div.remove();
+					}
+				],
+				1000
+			);
 		});
 	});
 
@@ -129,7 +143,7 @@ describe("smartpick", () => {
 					let actual = popup.getPositioning();
 					shouldEqual(expected, actual, "positioning");
 				}),
-				800,
+				600,
 				1
 			).then(() => {
 				map.setTarget(null);

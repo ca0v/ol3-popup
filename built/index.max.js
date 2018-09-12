@@ -665,7 +665,7 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
             threshold = (popup.options.autoPanMargin || 0) + (popup.options.pointerPosition || 0);
             var content = popup.content;
             var style = getComputedStyle(content);
-            var _a = [style.width, style.height].map(function (n) { return parseInt(n); }), w = _a[0], h = _a[1];
+            var _a = [style.width, style.height].map(function (n) { return parseInt(n); }).map(function (n) { return (isNaN(n) ? threshold : n); }), w = _a[0], h = _a[1];
             padding = [threshold + w / 2, threshold + h / 2];
         }
         else {
@@ -694,13 +694,12 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
             verticalPosition = "center";
         }
         horizontalPosition = horizontalPosition || "center";
-        verticalPosition = verticalPosition || ((distanceToTop < distanceToBottom) ? "top" : "bottom");
+        verticalPosition = verticalPosition || (distanceToTop < distanceToBottom ? "top" : "bottom");
         return verticalPosition + "-" + horizontalPosition;
     }
     exports.smartpick = smartpick;
-    ;
 });
-define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, $, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer, smartpick_1, mixin_1) {
+define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, ol, paging_1, page_navigator_1, common_2, interaction_1, Symbolizer, smartpick_1, mixin_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -803,6 +802,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
         "top-right": "♢"
     };
     exports.DEFAULT_OPTIONS = {
+        id: "popup",
         map: null,
         asContent: asContent,
         multi: false,
@@ -916,13 +916,10 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
             this.handlers.push(function () { return autoPopup.destroy(); });
         };
         Popup.prototype.injectCss = function (id, css) {
+            if (!this.getId())
+                throw "cannot injects css on an overlay with no assigned id";
             id = this.getId() + "_" + id;
-            var style = document.getElementById(id);
-            if (style)
-                style.remove();
-            style = common_2.html("<style type='text/css' id='" + id + "'>" + css + "</style>");
-            $(document.head).append(style);
-            this.handlers.push(function () { return style.remove(); });
+            this.handlers.push(common_2.cssin(id, css));
         };
         Popup.prototype.hideIndicator = function () {
             this.indicator && this.indicator.setPosition(undefined);
@@ -1077,6 +1074,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "jquery", "openlayers", "ol
                 throw "unexpected html";
             }
             if (this.options.autoPositioning) {
+                this.element.style.display = "";
                 this.setPositioning(smartpick_1.smartpick(this, coord));
             }
             this.setPosition(coord);

@@ -1935,7 +1935,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
         };
         Popup.prototype.injectCss = function (id, css) {
             if (!this.getId())
-                throw "cannot injects css on anoverlay with no assigned id";
+                throw "cannot injects css on an overlay with no assigned id";
             id = this.getId() + "_" + id;
             this.handlers.push(common_4.cssin(id, css));
         };
@@ -2189,15 +2189,13 @@ define("tests/spec/once", ["require", "exports"], function (require, exports) {
 define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/index", "index", "tests/spec/once"], function (require, exports, ol, base_1, index_1, index_2, once_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    base_1.describe("Popup Options", function () {
+    base_1.describe("spec/popup", function () {
         base_1.it("Popup", function () {
             base_1.should(!!index_2.Popup, "Popup");
         });
         base_1.it("DEFAULT_OPTIONS", function () {
             checkDefaultInputOptions(index_2.DEFAULT_OPTIONS);
         });
-    });
-    base_1.describe("Popup Constructor", function () {
         base_1.it("Constructors", function () {
             var map = new ol.Map({});
             try {
@@ -2210,8 +2208,6 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
             index_2.Popup.create({ map: map }).destroy();
             map.setTarget(null);
         });
-    });
-    base_1.describe("Popup Paging", function () {
         base_1.it("Paging", function () {
             var target = document.createElement("div");
             document.body.appendChild(target);
@@ -2237,10 +2233,15 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
                 return base_1.slowloop([function () { return popup.pages.goto(i++); }], 100, popup.pages.count)
                     .then(function () {
                     base_1.shouldEqual(popup.getElement().getElementsByClassName("ol-popup-content")[0].textContent, "Page 9: visit counter: 9", "last page contains correct text");
-                    map.setTarget(null);
-                    target.remove();
                 })
                     .fail(function (ex) { return base_1.should(!ex, ex); });
+            }).then(function () {
+                return base_1.slowloop([
+                    function () {
+                        map.setTarget(null);
+                        target.remove();
+                    }
+                ], 1000);
             });
         });
     });
@@ -2256,7 +2257,7 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
         base_1.shouldEqual(typeof options.css, "string", "css");
         base_1.shouldEqual(!options.dockContainer, true, "dockContainer");
         base_1.shouldEqual(!options.element, true, "element");
-        base_1.shouldEqual(!options.id, true, "id");
+        base_1.shouldEqual(!!options.id, true, "id");
         base_1.shouldEqual(options.insertFirst, true, "insertFirst");
         base_1.shouldEqual(!options.layers, true, "layers");
         base_1.shouldEqual(!options.map, true, "map");
@@ -2487,7 +2488,7 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function PopupMaker(map) {
-        return index_4.Popup.create({
+        var popup = index_4.Popup.create({
             id: "spec-smartpicker-test",
             map: map,
             showCoordinates: true,
@@ -2498,6 +2499,15 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
             },
             css: "\n\t\t\t\t.ol-popup-element { color: rgb(200, 200, 200) }\n                .ol-popup-element .pagination { margin-bottom: 2px }\n                .ol-popup-element button.arrow  { background: transparent; border: none; color: rgb(200, 200, 200); }\n                .ol-popup-content { color: rgb(200, 200, 200); max-width: 8em; max-height: 4em; margin: 0.5em; padding: 0.5em; overflow: hidden; overflow-y: auto} \n\t\t\t\t.ol-popup { background-color: rgb(30, 30, 30); border: 0.1em solid rgb(200, 200, 200); } \n\t\t\t\t.ol-popup:before {\n\t\t\t\t\tcontent: \" \";\n\t\t\t\t\tposition: absolute;\n\t\t\t\t\ttop: -2px;\n\t\t\t\t\tleft: -2px;\n\t\t\t\t\tright: -2px;\n\t\t\t\t\tbottom: -2px;\n\t\t\t\t\tborder: 1px solid black;\n\t\t\t\t}\n                .ol-popup-element .ol-popup-closer { right: 4px }"
         });
+        popup.options.indicatorOffsets["top-right"][1] -= 2;
+        popup.options.indicatorOffsets["center-right"][0] -= 0.5;
+        popup.options.indicatorOffsets["bottom-right"][1] -= 0.5;
+        popup.options.indicatorOffsets["top-left"][1] -= 6;
+        popup.options.indicatorOffsets["center-left"][0] -= 0.5;
+        popup.options.indicatorOffsets["bottom-left"][1] -= 0.5;
+        popup.options.indicatorOffsets["bottom-center"][1] -= 0.5;
+        popup.options.indicatorOffsets["top-center"][1] -= 2;
+        return popup;
     }
     function GridMapMaker() {
         var _a = [20000, 20000], w = _a[0], h = _a[1];
@@ -2559,12 +2569,14 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
                 return base_3.slowloop(points.map(function (p) { return function () {
                     var popup = PopupMaker(map);
                     popup.show(p, smartpick_2.smartpick(popup, p));
-                }; }), 50);
+                }; }), 0);
             }).then(function () {
-                base_3.slowloop([function () { }], 2000).then(function () {
-                    map.setTarget(null);
-                    div.remove();
-                });
+                return base_3.slowloop([
+                    function () {
+                        map.setTarget(null);
+                        div.remove();
+                    }
+                ], 1000);
             });
         });
         base_3.it("configures a map with popup and points in strategic locations to ensure the positioning is correct", function () {
@@ -2576,7 +2588,7 @@ define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_module
                     popup.show(p, "" + expected);
                     var actual = popup.getPositioning();
                     base_3.shouldEqual(expected, actual, "positioning");
-                }; }), 800, 1).then(function () {
+                }; }), 600, 1).then(function () {
                     map.setTarget(null);
                     div.remove();
                 });

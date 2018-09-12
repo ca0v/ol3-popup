@@ -4,7 +4,7 @@ import { range, pair } from "ol3-fun/index";
 import { Popup, DEFAULT_OPTIONS, PopupOptions } from "../../index";
 import { once } from "./once";
 
-describe("Popup Options", () => {
+describe("spec/popup", () => {
 	it("Popup", () => {
 		should(!!Popup, "Popup");
 	});
@@ -12,9 +12,7 @@ describe("Popup Options", () => {
 	it("DEFAULT_OPTIONS", () => {
 		checkDefaultInputOptions(DEFAULT_OPTIONS);
 	});
-});
 
-describe("Popup Constructor", () => {
 	it("Constructors", () => {
 		let map = new ol.Map({});
 		try {
@@ -28,9 +26,7 @@ describe("Popup Constructor", () => {
 
 		map.setTarget(null);
 	});
-});
 
-describe("Popup Paging", () => {
 	it("Paging", () => {
 		let target = document.createElement("div");
 		document.body.appendChild(target);
@@ -62,10 +58,18 @@ describe("Popup Paging", () => {
 						"Page 9: visit counter: 9",
 						"last page contains correct text"
 					);
-					map.setTarget(null);
-					target.remove();
 				})
 				.fail(ex => should(!ex, ex));
+		}).then(() => {
+			return slowloop(
+				[
+					() => {
+						map.setTarget(null);
+						target.remove();
+					}
+				],
+				1000
+			);
 		});
 	});
 });
@@ -82,7 +86,7 @@ function checkDefaultInputOptions(options: PopupOptions) {
 	shouldEqual(typeof options.css, "string", "css");
 	shouldEqual(!options.dockContainer, true, "dockContainer");
 	shouldEqual(!options.element, true, "element");
-	shouldEqual(!options.id, true, "id");
+	shouldEqual(!!options.id, true, "id");
 	shouldEqual(options.insertFirst, true, "insertFirst");
 	shouldEqual(!options.layers, true, "layers");
 	shouldEqual(!options.map, true, "map");
