@@ -10,7 +10,6 @@ function PopupMaker(map: ol.Map) {
 	let popup = Popup.create({
 		id: "spec-smartpicker-test",
 		map: map,
-		autoPopup: false,
 		autoPanAnimation: {
 			duration: 200,
 			source: [0, 0]
@@ -20,7 +19,7 @@ function PopupMaker(map: ol.Map) {
                 .ol-popup-element .pagination { margin-bottom: 2px }
                 .ol-popup-element button.arrow  { background: transparent; border: none; color: rgb(200, 200, 200); }
                 .ol-popup-content { color: rgb(200, 200, 200); max-width: 8em; max-height: 4em; margin: 0.5em; padding: 0.5em; overflow: hidden; overflow-y: auto} 
-				.ol-popup { background-color: rgb(30, 30, 30); border: 0.1em solid rgb(200, 200, 200); } 
+				.ol-popup { background-color: rgb(30, 30, 30); border: 2px solid rgb(200, 200, 200); } 
 				.ol-popup:before {
 					content: " ";
 					position: absolute;
@@ -28,19 +27,24 @@ function PopupMaker(map: ol.Map) {
 					left: -2px;
 					right: -2px;
 					bottom: -2px;
-					border: 3px solid blue;
+					border: 1px solid rgb(30, 30, 30);
 				}
                 .ol-popup-element .ol-popup-closer { right: 4px }`
 	});
 	return popup;
 }
 
+function createMapDiv() {
+	let div = document.createElement("div");
+	div.className = "map";
+	document.body.appendChild(div);
+	return div;
+}
+
 function GridMapMaker() {
 	let [w, h] = [20000, 20000];
 	let points: Array<[number, number]> = GridMaker(w, h);
-	let div = document.createElement("div");
-	document.body.appendChild(div);
-	div.className = "map";
+	let div = createMapDiv();
 	let map = MapMaker(div);
 	map.getView().setCenter([0, 0]);
 	let rez = map.getView().getResolutionForExtent([-w, -h, w, h]);
@@ -101,15 +105,16 @@ describe("smartpick", () => {
 		// //map.getView().setZoom(map.getView().getZoom() + 1);
 		let popups = points.map(() => {
 			let popup = PopupMaker(map);
-			popup.options.indicatorOffsets["top-right"][1] -= 2;
-			popup.options.indicatorOffsets["center-right"][0] -= 0.5;
-			popup.options.indicatorOffsets["bottom-right"][1] -= 0.5;
-			// what is happening here, why 6 and why such minimal effect?
-			popup.options.indicatorOffsets["top-left"][1] -= 6;
-			popup.options.indicatorOffsets["center-left"][0] -= 0.5;
-			popup.options.indicatorOffsets["bottom-left"][1] -= 0.5;
-			popup.options.indicatorOffsets["bottom-center"][1] -= 0.5;
-			popup.options.indicatorOffsets["top-center"][1] -= 2;
+			popup.options.autoPopup = false;
+			popup.options.pointerPosition = 0;
+			popup.options.indicatorOffsets["top-right"][1] -= 0;
+			popup.options.indicatorOffsets["top-center"][1] -= 1;
+			popup.options.indicatorOffsets["top-left"][1] -= 0;
+			popup.options.indicatorOffsets["center-left"][0] += 3;
+			popup.options.indicatorOffsets["center-right"][0] += 3;
+			popup.options.indicatorOffsets["bottom-left"][1] += 1;
+			popup.options.indicatorOffsets["bottom-center"][1] += 1;
+			popup.options.indicatorOffsets["bottom-right"][1] += 1;
 			return popup;
 		});
 

@@ -7,6 +7,13 @@ import { Positions } from "../../ol3-popup/@types/popup-options";
 import { once } from "../../examples/extras/once";
 import { kill } from "./kill";
 
+function createMapDiv() {
+	let div = document.createElement("div");
+	div.className = "map";
+	document.body.appendChild(div);
+	return div;
+}
+
 function rect(extent: ol.Extent) {
 	let [x1, y1, x2, y2] = extent;
 	return [[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]] as Array<ol.Coordinate>;
@@ -293,9 +300,3 @@ describe("ol3-popup/popup-css", () => {
 		).then(() => cssRemove());
 	}).timeout(6000);
 });
-function createMapDiv() {
-	let div = document.createElement("div");
-	div.className = "map";
-	document.body.appendChild(div);
-	return div;
-}
