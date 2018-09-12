@@ -3,6 +3,8 @@
     function cssin(css) {
         var styleTag = document.createElement("style");
         styleTag.type = "text/css";
+        if (!document.head)
+            throw "document must have a head element to use css-injection";
         document.head.appendChild(styleTag);
         styleTag.appendChild(document.createTextNode(css));
     }
