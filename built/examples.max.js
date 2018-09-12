@@ -1798,6 +1798,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
     exports.DEFAULT_OPTIONS = {
         id: "popup",
         map: null,
+        pagingStyle: null,
         asContent: asContent,
         multi: false,
         autoPan: true,
@@ -1849,7 +1850,10 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
             return _this;
         }
         Popup.create = function (options) {
-            options = common_4.defaults({}, options || {}, clone(exports.DEFAULT_OPTIONS));
+            options = common_4.defaults({}, options || {}, clone(exports.DEFAULT_OPTIONS), {
+                pagingStyle: exports.DEFAULT_OPTIONS.pagingStyle,
+                asContent: exports.DEFAULT_OPTIONS.asContent
+            });
             var popup = new Popup(options);
             options.map && options.map.addOverlay(popup);
             return popup;
