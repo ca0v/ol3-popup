@@ -224,6 +224,7 @@ export const DIAMONDS = {
 export const DEFAULT_OPTIONS: PopupOptions = {
 	id: "popup",
 	map: null,
+	pagingStyle: null,
 	asContent: asContent,
 	multi: false,
 	autoPan: true,
@@ -294,7 +295,10 @@ export class Popup extends ol.Overlay implements IPopup {
 	 */
 	static create(options?: PopupOptions) {
 		// deep clone DEFAULT_OPTIONS so they are not shared across instances
-		options = defaults({}, options || {}, clone(DEFAULT_OPTIONS));
+		options = defaults({}, options || {}, clone(DEFAULT_OPTIONS), {
+			pagingStyle: DEFAULT_OPTIONS.pagingStyle,
+			asContent: DEFAULT_OPTIONS.asContent
+		});
 
 		let popup = new Popup(options);
 		options.map && options.map.addOverlay(popup);

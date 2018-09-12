@@ -19,6 +19,12 @@ describe("spec/popup", () => {
 
 	it("DEFAULT_OPTIONS", () => {
 		checkDefaultInputOptions(DEFAULT_OPTIONS);
+		should(!DEFAULT_OPTIONS.pagingStyle, "pagingStyle");
+		// workaround to create a popup w/out a map
+		let p1 = Popup.create({ autoPopup: false });
+		p1.options.autoPopup = true;
+		checkDefaultInputOptions(p1.options);
+		should(!!p1.options.pagingStyle, "pagingStyle");
 	});
 
 	it("Ensures options do not leak into other instances", () => {
@@ -113,7 +119,6 @@ function checkDefaultInputOptions(options: PopupOptions) {
 	shouldEqual(!options.map, true, "map");
 	shouldEqual(!options.multi, true, "multi");
 	shouldEqual(stringify(options.offset), stringify([0, -10]), "offset");
-	shouldEqual(!options.pagingStyle, true, "pagingStyle");
 	shouldEqual(options.pointerPosition, 20, "pointerPosition");
 	shouldEqual(!options.position, true, "position");
 	shouldEqual(options.positioning, "bottom-center", "positioning");
