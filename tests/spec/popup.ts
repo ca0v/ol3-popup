@@ -5,6 +5,13 @@ import { Popup, DEFAULT_OPTIONS, PopupOptions } from "../../index";
 import { once } from "../../examples/extras/once";
 import { kill } from "./kill";
 
+function createMapDiv() {
+	let div = document.createElement("div");
+	div.className = "map";
+	document.body.appendChild(div);
+	return div;
+}
+
 describe("spec/popup", () => {
 	it("Popup", () => {
 		should(!!Popup, "Popup");
@@ -19,7 +26,7 @@ describe("spec/popup", () => {
 		let p2 = Popup.create({ autoPopup: false });
 		let expected = p1.options.indicatorOffsets["top-center"][0];
 		// settings on p1 has no effect on p2
-		p1.options.indicatorOffsets["top-center"][0] += 100;
+		p1.options.indicatorOffsets["top-center"][0] += 200;
 		let actual = p2.options.indicatorOffsets["top-center"][0];
 		shouldEqual(actual, expected, "default did not change");
 		p1.destroy();
@@ -27,11 +34,16 @@ describe("spec/popup", () => {
 	});
 
 	it("Ensures global options can be tweaked", () => {
-		let expected = (DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] += 100);
-		let p1 = Popup.create({ autoPopup: false });
-		let actual = p1.options.indicatorOffsets["top-center"][0];
-		shouldEqual(actual, expected, "default did change");
-		p1.destroy();
+		let originalDefaultValue = DEFAULT_OPTIONS.indicatorOffsets["top-center"][0];
+		let expected = (DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] += 200);
+		try {
+			let p1 = Popup.create({ autoPopup: false });
+			let actual = p1.options.indicatorOffsets["top-center"][0];
+			shouldEqual(actual, expected, "default did change");
+			p1.destroy();
+		} finally {
+			DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] = originalDefaultValue;
+		}
 	});
 
 	it("Constructors", () => {
@@ -50,8 +62,7 @@ describe("spec/popup", () => {
 	});
 
 	it("Paging", () => {
-		let target = document.createElement("div");
-		document.body.appendChild(target);
+		let target = createMapDiv();
 
 		let map = new ol.Map({
 			target: target,
