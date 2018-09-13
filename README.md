@@ -3,6 +3,10 @@
 -   Adds paging to [ol3-popup](https://github.com/walkermatt/ol3-popup).
 -   [v5.1.3](https://github.com/ca0v/ol3-popup/tree/v5.1.3) installs with npm
 
+## Docs
+
+-   [index](https://rawgit.com/ca0v/ol3-popup/v5.1.3/built/docs/modules/_index_.html)
+
 ## Tests
 
 -   [v5.1.3](https://rawgit.com/ca0v/ol3-popup/v5.1.3/loaders/tests.html?test=*&debug=1&theme=dark)

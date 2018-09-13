@@ -5,6 +5,8 @@
 	"main": "built/index.js",
 	"scripts": {
 		"clean": "rm built/** -rf",
+		"update": "npm install ol3-fun ol3-symbolizer",
+		"doc": "typedoc --out ./built/docs --tsconfig ./tsconfig.json --readme none --ignoreCompilerErrors --exclude ./node_modules/**",
 		"build-for-amd": "tsc -p tsconfig.json --outFile built/index.max.js",
 		"build-for-examples": "tsc -p examples/tsconfig.json --outFile ./built/examples.max.js",
 		"live-for-examples": "live-server --port=5001 --wait=200 --watch=./built/examples.max.js --open=\"./loaders/tests.html?theme=dark&run=*\" --browser=CHROME",
@@ -15,7 +17,7 @@
 		"dev-for-tests": "npm run build-for-tests && start npm run live-for-tests && npm run build-for-tests -- -w",
 		"tests": "npm run dev-for-tests",
 		"install": "npm run build-for-amd",
-		"before-push": "npm run clean && npm run build-for-loaders && npm run build-for-amd && npm run build-for-tests && npm run build-for-examples && mv built/index.max.d.ts built/index.d.ts && npm run live-for-tests",
+		"before-push": "npm run clean && npm run doc && npm run build-for-loaders && npm run build-for-amd && npm run build-for-tests && npm run build-for-examples && mv built/index.max.d.ts built/index.d.ts && npm run live-for-tests",
 		"test": "npm run before-push && npm run live-for-tests"
 	},
 	"repository": {
