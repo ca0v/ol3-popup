@@ -1,10 +1,10 @@
 import ol = require("openlayers");
-import { Popup } from "../ol3-popup";
-import Symbolizer = require("ol3-symbolizer");
+import { Popup } from "../ol3-popup/ol3-popup";
+import Symbolizer = require("ol3-symbolizer/index");
 import { cssin, html as asHtml } from "ol3-fun/ol3-fun/common";
 import FeatureCreator = require("./extras/feature-creator");
 
-const symbolizer = new Symbolizer.StyleConverter();
+const symbolizer = new Symbolizer.Symbolizer.StyleConverter();
 
 const css = `
 head, body {
@@ -64,7 +64,7 @@ div.map > label {
 
 const html = `
 <div class="map">
-<label>Hold the shift key down when clicking the marker to multi-select</label>
+<label>Hold the shift key down when clicking the marker to multi-select, need to click a little left of the markers..it's looking at feature coordinates not symbols (but still a bit off)</label>
 </div>
 `;
 

@@ -1,22 +1,52 @@
 {
-  "name": "ol3-popup",
-  "version": "4.0.1",
-  "description": "OpenLayers Popup",
-  "main": "built/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ca0v/ol3-popup.git"
-  },
-  "keywords": [
-    "OpenLayers"
-  ],
-  "author": "coreyalix@hotmail.com",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ca0v/ol3-popup/issues"
-  },
-  "homepage": "https://github.com/ca0v/ol3-popup#readme"
+	"name": "ol3-popup",
+	"version": "5.1.3",
+	"description": "OpenLayers Popup",
+	"main": "built/index.js",
+	"scripts": {
+		"clean": "rm built/** -rf",
+		"build-for-amd": "tsc -p tsconfig.json --outFile built/index.max.js",
+		"build-for-examples": "tsc -p examples/tsconfig.json --outFile ./built/examples.max.js",
+		"live-for-examples": "live-server --port=5001 --wait=200 --watch=./built/examples.max.js --open=\"./loaders/tests.html?theme=dark&run=*\" --browser=CHROME",
+		"dev-for-examples": "npm run build-for-examples && start npm run live-for-examples && start npm run build-for-examples -- -w",
+		"build-for-tests": "tsc -p tests/tsconfig.json --outFile ./built/tests.max.js",
+		"build-for-loaders": "tsc -p loaders/tsconfig.json",
+		"live-for-tests": "live-server --port=5000 --wait=200 --watch=./built/tests.max.js --open=\"./loaders/tests.html?theme=dark&test=*\" --browser=CHROME",
+		"dev-for-tests": "npm run build-for-tests && start npm run live-for-tests && npm run build-for-tests -- -w",
+		"tests": "npm run dev-for-tests",
+		"install": "npm run build-for-amd",
+		"before-push": "npm run clean && npm run build-for-loaders && npm run build-for-amd && npm run build-for-tests && npm run build-for-examples && mv built/index.max.d.ts built/index.d.ts && npm run live-for-tests",
+		"test": "npm run before-push && npm run live-for-tests"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ca0v/ol3-popup.git"
+	},
+	"keywords": [
+		"OpenLayers"
+	],
+	"author": "coreyalix@hotmail.com",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/ca0v/ol3-popup/issues"
+	},
+	"homepage": "https://github.com/ca0v/ol3-popup#readme",
+	"devDependencies": {
+		"@types/mocha": "^5.2.5",
+		"live-server": "^1.2.0",
+		"mocha": "^5.2.0",
+		"uglify-js": "^3.4.8"
+	},
+	"dependencies": {
+		"@types/jquery": "^3.3.6",
+		"@types/ol": "^4.6.2",
+		"@types/requirejs": "^2.1.31",
+		"jquery": "^3.3.1",
+		"ol": "^5.1.3",
+		"ol3-fun": "https://github.com/ca0v/ol3-fun/tarball/v5.1.3",
+		"ol3-symbolizer": "https://github.com/ca0v/ol3-symbolizer/tarball/v5.1.3",
+		"requirejs": "^2.3.5",
+		"typescript": "^3.0.3",
+		"xstyle": "^0.3.2"
+	}
 }

@@ -1,5 +1,5 @@
 import ol = require("openlayers");
-import Symbolizer = require("ol3-symbolizer");
+import { Symbolizer, Format as SymbolizerFormat } from "ol3-symbolizer/index";
 
 const symbolizer = new Symbolizer.StyleConverter();
 
@@ -11,7 +11,7 @@ function translate(center: ol.Coordinate, t: ol.Coordinate): ol.Coordinate {
     return [center[0] + t[0], center[1] + t[1]];
 }
 
-function setStyle(feature: ol.Feature, json: Symbolizer.Format.Style) {
+function setStyle(feature: ol.Feature, json: SymbolizerFormat.Style) {
     let style = symbolizer.fromJson(json);
     feature.setStyle(style);
     return style;
@@ -59,10 +59,10 @@ class FeatureCreator {
 
         map.addLayer(vectorLayer);
 
-        map.on("click", event => {
+        map.on("click", (event: ol.MapBrowserEvent) => {
             if (!ol.events.condition.altKeyOnly(event)) return;
 
-            event = event["mapBrowserEvent"] || event;
+            event = (<any>event).mapBrowserEvent || event;
             let coord = event.coordinate;
             let geom = new ol.geom.Point(coord);
             let feature = new ol.Feature({
@@ -84,7 +84,7 @@ class FeatureCreator {
         });
         circleFeature.setGeometry(new ol.geom.Point(random(center, 100)));
 
-        setStyle(circleFeature, {
+        let style: SymbolizerFormat.Style = {
             "circle": {
                 "fill": {
                     "color": "rgba(255,0,0,0.90)"
@@ -96,7 +96,8 @@ class FeatureCreator {
                 },
                 "radius": 6
             }
-        });
+        };
+        setStyle(circleFeature, style);
 
         let svgFeature = new ol.Feature({
             id: 123,

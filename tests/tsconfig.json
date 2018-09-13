@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"allowJs": false,
+		"removeComments": true,
+		"declaration": false,
+		"module": "amd",
+		"target": "es5",
+		"lib": ["es2015", "es2015.promise", "dom", "es2015.iterable", "es2015.proxy", "es2015.reflect"],
+		"noImplicitAny": true,
+		"sourceMap": true,
+		"rootDir": "../",
+		"outFile": "../built/tests.max.js",
+		"moduleResolution": "classic",
+		"baseUrl": "../node_modules"
+	},
+	"include": ["index.ts", "spec/**/*.ts", "packages/**/*.ts"]
+}

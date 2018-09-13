@@ -1,5 +1,6 @@
+
 import ol = require("openlayers");
-import { Popup } from "../ol3-popup";
+import { Popup } from "../ol3-popup/ol3-popup";
 import { cssin, html as asHtml } from "ol3-fun/ol3-fun/common";
 import FeatureCreator = require("./extras/feature-creator");
 
