@@ -58,7 +58,7 @@ declare module "ol3-popup/paging/paging" {
 declare module "ol3-popup/paging/page-navigator" {
     import ol = require("openlayers");
     import { Paging } from "ol3-popup/paging/paging";
-    export default class PageNavigator extends ol.Observable {
+    export class PageNavigator extends ol.Observable {
         options: {
             pages: Paging;
         };
@@ -73,6 +73,23 @@ declare module "ol3-popup/paging/page-navigator" {
         hide(): void;
         show(): void;
     }
+}
+declare module "node_modules/ol3-fun/ol3-fun/common" {
+    export function uuid(): string;
+    export function asArray<T extends HTMLInputElement>(list: NodeList | HTMLCollectionOf<Element>): T[];
+    export function toggle(e: HTMLElement, className: string, force?: boolean): boolean;
+    export function parse<T>(v: string, type: T): T;
+    export function getQueryParameters(options: any, url?: string): void;
+    export function getParameterByName(name: string, url?: string): string;
+    export function doif<T>(v: T, cb: (v: T) => void): void;
+    export function mixin<A extends any, B extends any>(a: A, ...b: B[]): A & B;
+    export function defaults<A extends any, B extends any>(a: A, ...b: B[]): A & B;
+    export function cssin(name: string, css: string): () => void;
+    export function debounce<T extends Function>(func: T, wait?: number, immediate?: boolean): T;
+    export function html(html: string): HTMLElement;
+    export function pair<A, B>(a1: A[], a2: B[]): [A, B][];
+    export function range(n: number): number[];
+    export function shuffle<T>(array: T[]): T[];
 }
 declare module "ol3-popup/interaction" {
     import ol = require("openlayers");
@@ -92,6 +109,13 @@ declare module "ol3-popup/interaction" {
         private setupOverlay;
         destroy(): void;
     }
+}
+declare module "node_modules/ol3-symbolizer/index" {
+    import Symbolizer = require("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer");
+    import { StyleConverter as AgsStyleConverter } from "node_modules/ol3-symbolizer/ol3-symbolizer/format/ags-symbolizer";
+    import { StyleConverter } from "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer";
+    import { Format } from "./ol3-symbolizer/format/@types/formats";
+    export { Symbolizer, AgsStyleConverter, StyleConverter, Format };
 }
 declare module "ol3-popup/commands/smartpick" {
     import { IPopup } from "../@types/popup";

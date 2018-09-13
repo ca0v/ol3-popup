@@ -915,24 +915,6 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/common/assign", ["require", "
     }
     exports.assign = assign;
 });
-define("node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function mixin(a, b) {
-        Object.keys(b).forEach(function (k) { return a[k] = b[k]; });
-        return a;
-    }
-    exports.mixin = mixin;
-});
-define("node_modules/ol3-symbolizer/ol3-symbolizer/common/doif", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function doif(v, cb) {
-        if (v !== undefined && v !== null)
-            cb(v);
-    }
-    exports.doif = doif;
-});
 define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-cross", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1254,7 +1236,7 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-x", ["requi
     }());
     exports.Shapeshifter = Shapeshifter;
 });
-define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["require", "exports", "openlayers", "node_modules/ol3-symbolizer/ol3-symbolizer/common/assign", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin", "node_modules/ol3-symbolizer/ol3-symbolizer/common/doif", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-cross", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-square", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-diamond", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-triangle", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-x"], function (require, exports, ol, assign_1, mixin_1, doif_1, as_cross_1, as_square_1, as_diamond_1, as_triangle_1, as_x_1) {
+define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["require", "exports", "openlayers", "node_modules/ol3-symbolizer/ol3-symbolizer/common/assign", "node_modules/ol3-fun/index", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-cross", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-square", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-diamond", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-triangle", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-x"], function (require, exports, ol, assign_1, index_1, as_cross_1, as_square_1, as_diamond_1, as_triangle_1, as_x_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var StyleConverter = (function () {
@@ -1291,7 +1273,7 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
             if (typeof style === "number")
                 throw style;
             if (style.getColor)
-                mixin_1.mixin(s, this.serializeColor(style.getColor()));
+                index_1.mixin(s, this.serializeColor(style.getColor()));
             if (style.getImage)
                 assign_1.assign(s, "image", this.serializeImage(style.getImage()));
             if (style.getFill)
@@ -1470,8 +1452,8 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
                 fill: json.fill && this.deserializeFill(json.fill),
                 stroke: json.stroke && this.deserializeStroke(json.stroke)
             });
-            doif_1.doif(json.rotation, function (v) { return image.setRotation(v); });
-            doif_1.doif(json.opacity, function (v) { return image.setOpacity(v); });
+            index_1.doif(json.rotation, function (v) { return image.setRotation(v); });
+            index_1.doif(json.opacity, function (v) { return image.setOpacity(v); });
             return image;
         };
         StyleConverter.prototype.deserializeIcon = function (json) {
@@ -1562,7 +1544,7 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
                 size: [canvas.width, canvas.height],
                 src: undefined
             });
-            return mixin_1.mixin(icon, {
+            return index_1.mixin(icon, {
                 path: json.path,
                 stroke: json.stroke,
                 fill: json.fill,
@@ -1578,12 +1560,12 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
         };
         StyleConverter.prototype.deserializeStroke = function (json) {
             var stroke = new ol.style.Stroke();
-            doif_1.doif(json.color, function (v) { return stroke.setColor(v); });
-            doif_1.doif(json.lineCap, function (v) { return stroke.setLineCap(v); });
-            doif_1.doif(json.lineDash, function (v) { return stroke.setLineDash(v); });
-            doif_1.doif(json.lineJoin, function (v) { return stroke.setLineJoin(v); });
-            doif_1.doif(json.miterLimit, function (v) { return stroke.setMiterLimit(v); });
-            doif_1.doif(json.width, function (v) { return stroke.setWidth(v); });
+            index_1.doif(json.color, function (v) { return stroke.setColor(v); });
+            index_1.doif(json.lineCap, function (v) { return stroke.setLineCap(v); });
+            index_1.doif(json.lineDash, function (v) { return stroke.setLineDash(v); });
+            index_1.doif(json.lineJoin, function (v) { return stroke.setLineJoin(v); });
+            index_1.doif(json.miterLimit, function (v) { return stroke.setMiterLimit(v); });
+            index_1.doif(json.width, function (v) { return stroke.setWidth(v); });
             return stroke;
         };
         StyleConverter.prototype.deserializeColor = function (fill) {
@@ -1601,7 +1583,7 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
                     gradient_1 = this.deserializeRadialGradient(fill.gradient);
                 }
                 if (fill.gradient.stops) {
-                    mixin_1.mixin(gradient_1, {
+                    index_1.mixin(gradient_1, {
                         stops: fill.gradient.stops
                     });
                     var stops = fill.gradient.stops.split(";");
@@ -1654,7 +1636,7 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
                         }
                         break;
                 }
-                return mixin_1.mixin(context_1.createPattern(canvas, repitition), fill.pattern);
+                return index_1.mixin(context_1.createPattern(canvas, repitition), fill.pattern);
             }
             if (fill.image) {
                 var canvas = document.createElement('canvas');
@@ -1676,7 +1658,7 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
             canvas.height = Math.max(y0, y1);
             var context = canvas.getContext('2d');
             var gradient = context.createLinearGradient(x0, y0, x1, y1);
-            mixin_1.mixin(gradient, {
+            index_1.mixin(gradient, {
                 type: "linear(" + [x0, y0, x1, y1].join(",") + ")"
             });
             return gradient;
@@ -1689,7 +1671,7 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
             canvas.height = 2 * Math.max(y0, y1);
             var context = canvas.getContext('2d');
             var gradient = context.createRadialGradient(x0, y0, r0, x1, y1, r1);
-            mixin_1.mixin(gradient, {
+            index_1.mixin(gradient, {
                 type: "radial(" + [x0, y0, r0, x1, y1, r1].join(",") + ")"
             });
             return gradient;
@@ -2077,7 +2059,7 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
     }
     exports.smartpick = smartpick;
 });
-define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin"], function (require, exports, ol, paging_1, page_navigator_1, common_4, interaction_1, Symbolizer, smartpick_1, mixin_2) {
+define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick"], function (require, exports, ol, paging_1, page_navigator_1, common_4, interaction_1, Symbolizer, smartpick_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
@@ -2432,7 +2414,7 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
                     center: position
                 };
                 var view = this.options.map.getView();
-                this.options.autoPanAnimation && mixin_2.mixin(animation, this.options.autoPanAnimation.duration);
+                this.options.autoPanAnimation && common_4.mixin(animation, this.options.autoPanAnimation.duration);
                 view.animate(animation);
             }
         };
@@ -2582,7 +2564,7 @@ define("tests/extras/kill", ["require", "exports", "node_modules/ol3-fun/tests/b
     }
     exports.kill = kill;
 });
-define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/index", "index", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_2, index_1, index_2, once_1, kill_1) {
+define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/index", "index", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_2, index_2, index_3, once_1, kill_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function createMapDiv() {
@@ -2593,19 +2575,19 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
     }
     base_2.describe("spec/popup", function () {
         base_2.it("Popup", function () {
-            base_2.should(!!index_2.Popup, "Popup");
+            base_2.should(!!index_3.Popup, "Popup");
         });
         base_2.it("DEFAULT_OPTIONS", function () {
-            checkDefaultInputOptions(index_2.DEFAULT_OPTIONS);
-            base_2.should(!index_2.DEFAULT_OPTIONS.pagingStyle, "pagingStyle");
-            var p1 = index_2.Popup.create({ autoPopup: false });
+            checkDefaultInputOptions(index_3.DEFAULT_OPTIONS);
+            base_2.should(!index_3.DEFAULT_OPTIONS.pagingStyle, "pagingStyle");
+            var p1 = index_3.Popup.create({ autoPopup: false });
             p1.options.autoPopup = true;
             checkDefaultInputOptions(p1.options);
             base_2.should(!!p1.options.pagingStyle, "pagingStyle");
         });
         base_2.it("Ensures options do not leak into other instances", function () {
-            var p1 = index_2.Popup.create({ autoPopup: false });
-            var p2 = index_2.Popup.create({ autoPopup: false });
+            var p1 = index_3.Popup.create({ autoPopup: false });
+            var p2 = index_3.Popup.create({ autoPopup: false });
             var expected = p1.options.indicatorOffsets["top-center"][0];
             p1.options.indicatorOffsets["top-center"][0] += 200;
             var actual = p2.options.indicatorOffsets["top-center"][0];
@@ -2614,28 +2596,28 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
             p2.destroy();
         });
         base_2.it("Ensures global options can be tweaked", function () {
-            var originalDefaultValue = index_2.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0];
-            var expected = (index_2.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] += 200);
+            var originalDefaultValue = index_3.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0];
+            var expected = (index_3.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] += 200);
             try {
-                var p1 = index_2.Popup.create({ autoPopup: false });
+                var p1 = index_3.Popup.create({ autoPopup: false });
                 var actual = p1.options.indicatorOffsets["top-center"][0];
                 base_2.shouldEqual(actual, expected, "default did change");
                 p1.destroy();
             }
             finally {
-                index_2.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] = originalDefaultValue;
+                index_3.DEFAULT_OPTIONS.indicatorOffsets["top-center"][0] = originalDefaultValue;
             }
         });
         base_2.it("Constructors", function () {
             var map = new ol.Map({});
             try {
-                index_2.Popup.create({ id: "constructor-test" }).destroy();
+                index_3.Popup.create({ id: "constructor-test" }).destroy();
             }
             catch (_a) {
                 base_2.should(true, "empty constructor throws, either map or autoPopup=false necessary");
             }
-            index_2.Popup.create({ autoPopup: false }).destroy();
-            index_2.Popup.create({ map: map }).destroy();
+            index_3.Popup.create({ autoPopup: false }).destroy();
+            index_3.Popup.create({ map: map }).destroy();
             map.setTarget(null);
         });
         base_2.it("Paging", function () {
@@ -2649,10 +2631,10 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
                     zoom: 24
                 })
             });
-            var popup = index_2.Popup.create({ id: "paging-test", map: map });
+            var popup = index_3.Popup.create({ id: "paging-test", map: map });
             return once_1.once(map, "postrender", function () {
                 var c = map.getView().getCenter();
-                var points = index_1.pair(index_1.range(3), index_1.range(3)).map(function (n) { return new ol.geom.Point([c[0] + n[0], c[1] + n[1]]); });
+                var points = index_2.pair(index_2.range(3), index_2.range(3)).map(function (n) { return new ol.geom.Point([c[0] + n[0], c[1] + n[1]]); });
                 var count = 0;
                 points.forEach(function (p, i) {
                     popup.pages.add(function () { return "Page " + (i + 1) + ": visit counter: " + ++count; }, p);
@@ -2690,12 +2672,12 @@ define("tests/spec/popup", ["require", "exports", "openlayers", "node_modules/ol
         base_2.shouldEqual(options.stopEvent, true, "stopEvent");
     }
 });
-define("tests/spec/popup-content", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "index"], function (require, exports, ol, base_3, index_3) {
+define("tests/spec/popup-content", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "index"], function (require, exports, ol, base_3, index_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     base_3.describe("spec/popup-content", function () {
         base_3.it("asContent returns a DOM node with content", function () {
-            var popup = index_3.Popup.create({ autoPopup: false });
+            var popup = index_4.Popup.create({ autoPopup: false });
             var feature = new ol.Feature({ name: "Feature Name" });
             var html = popup.options.asContent(feature);
             base_3.should(0 < html.outerHTML.indexOf("Feature Name"), "Feature Name");
@@ -2718,7 +2700,7 @@ define("examples/extras/map-maker", ["require", "exports", "openlayers"], functi
     }
     exports.MapMaker = MapMaker;
 });
-define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common", "index", "examples/extras/map-maker", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_4, common_5, index_4, map_maker_1, once_2, kill_2) {
+define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "node_modules/ol3-fun/ol3-fun/common", "index", "examples/extras/map-maker", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_4, common_5, index_5, map_maker_1, once_2, kill_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function createMapDiv() {
@@ -2783,7 +2765,7 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
     }
     base_4.describe("ol3-popup/popup-css", function () {
         base_4.it("Ensures css is destroyed with popup", function () {
-            var popup = index_4.Popup.create({
+            var popup = index_5.Popup.create({
                 id: "my-popup",
                 autoPopup: false
             });
@@ -2796,10 +2778,10 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
         base_4.it("DIAMONDS", function () {
             var div = createMapDiv();
             var map = map_maker_1.MapMaker(div);
-            var popup = index_4.Popup.create({
+            var popup = index_5.Popup.create({
                 id: "diamonds-test",
                 map: map,
-                indicators: index_4.DIAMONDS,
+                indicators: index_5.DIAMONDS,
                 indicatorOffsets: {
                     "bottom-left": [15, 16],
                     "bottom-center": [0, 16],
@@ -2814,7 +2796,7 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
                 pointerPosition: 1,
                 positioning: "bottom-center",
                 autoPositioning: false,
-                css: index_4.DEFAULT_OPTIONS.css +
+                css: index_5.DEFAULT_OPTIONS.css +
                     "\n\t\t\t\t.ol-popup {\n\t\t\t\t\tbackground: silver;\n\t\t\t\t\tcolor: black;\n\t\t\t\t\tborder-radius: 1em;\n\t\t\t\t\tpadding: 1em;\n\t\t\t\t\tborder-color: silver;\n\t\t\t\t}\n\t\t\t\t.ol-popup.top.right {\n\t\t\t\t\tborder-top-right-radius: 0em;\n\t\t\t\t}\t\n\t\t\t\t.ol-popup.top.left {\n\t\t\t\t\tborder-top-left-radius: 0em;\n\t\t\t\t}\t\n\t\t\t\t.ol-popup.bottom.right {\n\t\t\t\t\tborder-bottom-right-radius: 0em;\n\t\t\t\t}\t\n\t\t\t\t.ol-popup.bottom.left {\n\t\t\t\t\tborder-bottom-left-radius: 0em;\n\t\t\t\t}\t\n\t\t\t\t.ol-popup.center.left {\n\t\t\t\t\tborder-top-left-radius: 0em;\n\t\t\t\t\tborder-bottom-left-radius: 0em;\n\t\t\t\t}\t\n\t\t\t\t.ol-popup.center.right {\n\t\t\t\t\tborder-top-right-radius: 0em;\n\t\t\t\t\tborder-bottom-right-radius: 0em;\n\t\t\t\t}\t\n\t\t\t\t.popup-indicator { \n\t\t\t\tcolor: silver;\n\t\t\t\tfont-weight: 900;\n\t\t\t}\n"
             });
             var vectorLayer = new ol.layer.Vector({
@@ -2929,11 +2911,11 @@ define("tests/spec/popup-css", ["require", "exports", "openlayers", "node_module
         }).timeout(6000);
     });
 });
-define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "ol3-popup/commands/smartpick", "examples/extras/map-maker", "index", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_5, smartpick_2, map_maker_2, index_5, once_3, kill_3) {
+define("tests/spec/smartpick", ["require", "exports", "openlayers", "node_modules/ol3-fun/tests/base", "ol3-popup/commands/smartpick", "examples/extras/map-maker", "index", "examples/extras/once", "tests/extras/kill"], function (require, exports, ol, base_5, smartpick_2, map_maker_2, index_6, once_3, kill_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function PopupMaker(map) {
-        var popup = index_5.Popup.create({
+        var popup = index_6.Popup.create({
             id: "spec-smartpicker-test",
             map: map,
             autoPanAnimation: {
@@ -3696,86 +3678,41 @@ define("tests/packages/ol3-fun", ["require", "exports", "node_modules/ol3-fun/te
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("node_modules/ol3-symbolizer/ol3-symbolizer/common/defaults", ["require", "exports"], function (require, exports) {
+define("node_modules/ol3-symbolizer/tests/common", ["require", "exports", "node_modules/ol3-symbolizer/ol3-symbolizer/common/assign", "node_modules/ol3-fun/index", "node_modules/ol3-fun/tests/base"], function (require, exports, assign_2, index_7, base_14) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    function defaults(a) {
-        var b = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            b[_i - 1] = arguments[_i];
-        }
-        b.filter(function (b) { return !!b; }).forEach(function (b) {
-            Object.keys(b).filter(function (k) { return a[k] === undefined; }).forEach(function (k) { return a[k] = b[k]; });
+    base_14.describe("assign tests", function () {
+        base_14.it("assign empty", function () {
         });
-        return a;
-    }
-    exports.defaults = defaults;
-});
-define("node_modules/ol3-symbolizer/tests/base", ["require", "exports"], function (require, exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function describe(title, cb) {
-        console.log(title || "undocumented test group");
-        return window.describe(title, cb);
-    }
-    exports.describe = describe;
-    function it(title, cb) {
-        console.log(title || "undocumented test");
-        return window.it(title, cb);
-    }
-    exports.it = it;
-    function should(result, message) {
-        console.log(message || "undocumented assertion");
-        if (!result)
-            throw message;
-    }
-    exports.should = should;
-    function shouldEqual(a, b, message) {
-        if (a != b)
-            console.warn(a, b);
-        should(a == b, message);
-    }
-    exports.shouldEqual = shouldEqual;
-    function stringify(o) {
-        return JSON.stringify(o, null, "\t");
-    }
-    exports.stringify = stringify;
-});
-define("node_modules/ol3-symbolizer/tests/common", ["require", "exports", "node_modules/ol3-symbolizer/ol3-symbolizer/common/assign", "node_modules/ol3-symbolizer/ol3-symbolizer/common/mixin", "node_modules/ol3-symbolizer/ol3-symbolizer/common/defaults", "node_modules/ol3-symbolizer/tests/base"], function (require, exports, assign_2, mixin_3, defaults_1, base_14) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    describe("assign tests", function () {
-        it("assign empty", function () {
-        });
-        it("assign number", function () {
+        base_14.it("assign number", function () {
             var target = {};
             assign_2.assign(target, "a", 100);
             base_14.should(target.a === 100, "");
         });
-        it("assign object", function () {
+        base_14.it("assign object", function () {
             var target = {};
-            assign_2.assign(target, "a", { "a": 100 });
+            assign_2.assign(target, "a", { a: 100 });
             base_14.should(target.a.a === 100, "");
         });
     });
-    describe("defaults tests", function () {
-        it("defaults number", function () {
-            base_14.should(defaults_1.defaults({}, { a: 100 }).a === 100, "");
-            base_14.should(defaults_1.defaults(defaults_1.defaults({}, { a: 100 }), { a: 200 }).a === 100, "");
-            var a = defaults_1.defaults({}, { a: 1 });
-            base_14.should(a === defaults_1.defaults(a, { a: 2 }), "");
+    base_14.describe("defaults tests", function () {
+        base_14.it("defaults number", function () {
+            base_14.should(index_7.defaults({}, { a: 100 }).a === 100, "");
+            base_14.should(index_7.defaults(index_7.defaults({}, { a: 100 }), { a: 200 }).a === 100, "");
+            var a = index_7.defaults({}, { a: 1 });
+            base_14.should(a === index_7.defaults(a, { a: 2 }), "");
         });
     });
-    describe("mixin tests", function () {
-        it("mixin number", function () {
-            base_14.should(mixin_3.mixin({}, { a: 100 }).a === 100, "");
-            base_14.should(mixin_3.mixin(mixin_3.mixin({}, { a: 100 }), { a: 200 }).a === 200, "");
-            var a = mixin_3.mixin({}, { a: 1 });
-            base_14.should(a === mixin_3.mixin(a, { a: 2 }), "");
+    base_14.describe("mixin tests", function () {
+        base_14.it("mixin number", function () {
+            base_14.should(index_7.mixin({}, { a: 100 }).a === 100, "");
+            base_14.should(index_7.mixin(index_7.mixin({}, { a: 100 }), { a: 200 }).a === 200, "");
+            var a = index_7.mixin({}, { a: 1 });
+            base_14.should(a === index_7.mixin(a, { a: 2 }), "");
         });
     });
-    describe("test accessing openlayers using amd", function () {
-        it("log ol.style.Style", function () {
+    base_14.describe("test accessing openlayers using amd", function () {
+        base_14.it("log ol.style.Style", function () {
             require(["openlayers"], function (ol) {
                 var style = ol.style.Style;
                 base_14.should(!!style, "");
@@ -3801,7 +3738,7 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/styles/stroke/linedash", ["re
     };
     return dasharray;
 });
-define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports", "node_modules/ol3-symbolizer/ol3-symbolizer/styles/stroke/linedash", "node_modules/ol3-symbolizer/tests/base", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, Dashes, base_15, ol3_symbolizer_2) {
+define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports", "node_modules/ol3-symbolizer/ol3-symbolizer/styles/stroke/linedash", "node_modules/ol3-fun/tests/base", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, Dashes, base_15, ol3_symbolizer_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var converter = new ol3_symbolizer_2.StyleConverter();
@@ -3856,29 +3793,29 @@ define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports"
     base_15.describe("OL StyleConverter Json Tests", function () {
         base_15.it("Circle Tests", function () {
             var baseline = {
-                "circle": {
-                    "fill": {
-                        "color": "rgba(197,37,84,0.90)"
+                circle: {
+                    fill: {
+                        color: "rgba(197,37,84,0.90)"
                     },
-                    "opacity": 1,
-                    "stroke": {
-                        "color": "rgba(227,83,105,1)",
-                        "width": 4.4
+                    opacity: 1,
+                    stroke: {
+                        color: "rgba(227,83,105,1)",
+                        width: 4.4
                     },
-                    "radius": 7.3
+                    radius: 7.3
                 },
-                "text": {
-                    "fill": {
-                        "color": "rgba(205,86,109,0.9)"
+                text: {
+                    fill: {
+                        color: "rgba(205,86,109,0.9)"
                     },
-                    "stroke": {
-                        "color": "rgba(252,175,131,0.5)",
-                        "width": 2
+                    stroke: {
+                        color: "rgba(252,175,131,0.5)",
+                        width: 2
                     },
-                    "text": "Test",
+                    text: "Test",
                     "offset-x": 0,
                     "offset-y": 20,
-                    "font": "18px fantasy"
+                    font: "18px fantasy"
                 }
             };
             var style = converter.fromJson(baseline);
@@ -3891,17 +3828,17 @@ define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports"
         });
         base_15.it("Star Tests", function () {
             var baseline = {
-                "star": {
-                    "fill": {
-                        "color": "rgba(54,47,234,1)"
+                star: {
+                    fill: {
+                        color: "rgba(54,47,234,1)"
                     },
-                    "stroke": {
-                        "color": "rgba(75,92,105,0.85)",
-                        "width": 4
+                    stroke: {
+                        color: "rgba(75,92,105,0.85)",
+                        width: 4
                     },
-                    "radius": 9,
-                    "radius2": 0,
-                    "points": 6
+                    radius: 9,
+                    radius2: 0,
+                    points: 6
                 }
             };
             var style = converter.fromJson(baseline);
@@ -3918,10 +3855,10 @@ define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports"
         });
         base_15.it("Fill Test", function () {
             var baseline = {
-                "fill": {
-                    "gradient": {
-                        "type": "linear(200,0,201,0)",
-                        "stops": "rgba(255,0,0,.1) 0%;rgba(255,0,0,0.8) 100%"
+                fill: {
+                    gradient: {
+                        type: "linear(200,0,201,0)",
+                        stops: "rgba(255,0,0,.1) 0%;rgba(255,0,0,0.8) 100%"
                     }
                 }
             };
@@ -3934,10 +3871,10 @@ define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports"
         });
         base_15.it("Stroke Test", function () {
             var baseline = {
-                "stroke": {
-                    "color": "orange",
-                    "width": 2,
-                    "lineDash": Dashes.longdashdotdot
+                stroke: {
+                    color: "orange",
+                    width: 2,
+                    lineDash: Dashes.longdashdotdot
                 }
             };
             var style = converter.fromJson(baseline);
@@ -3949,20 +3886,20 @@ define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports"
         });
         base_15.it("Text Test", function () {
             var baseline = {
-                "text": {
-                    "fill": {
-                        "color": "rgba(75,92,85,0.85)"
+                text: {
+                    fill: {
+                        color: "rgba(75,92,85,0.85)"
                     },
-                    "stroke": {
-                        "color": "rgba(255,255,255,1)",
-                        "width": 5
+                    stroke: {
+                        color: "rgba(255,255,255,1)",
+                        width: 5
                     },
                     "offset-x": 5,
                     "offset-y": 10,
                     offsetX: 15,
                     offsetY: 20,
-                    "text": "fantasy light",
-                    "font": "18px serif"
+                    text: "fantasy light",
+                    font: "18px serif"
                 }
             };
             var style = converter.fromJson(baseline);
@@ -3978,91 +3915,91 @@ define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports"
     base_15.describe("OL Basic shapes", function () {
         base_15.it("cross, square, diamond, star, triangle, x", function () {
             var cross = {
-                "star": {
-                    "opacity": 0.5,
-                    "fill": {
-                        "color": "red"
+                star: {
+                    opacity: 0.5,
+                    fill: {
+                        color: "red"
                     },
-                    "stroke": {
-                        "color": "black",
-                        "width": 2
+                    stroke: {
+                        color: "black",
+                        width: 2
                     },
-                    "points": 4,
-                    "radius": 10,
-                    "radius2": 0,
-                    "angle": 0
+                    points: 4,
+                    radius: 10,
+                    radius2: 0,
+                    angle: 0
                 }
             };
             var square = {
-                "star": {
-                    "fill": {
-                        "color": "red"
+                star: {
+                    fill: {
+                        color: "red"
                     },
-                    "stroke": {
-                        "color": "black",
-                        "width": 2
+                    stroke: {
+                        color: "black",
+                        width: 2
                     },
-                    "points": 4,
-                    "radius": 10,
-                    "angle": 0.7853981633974483
+                    points: 4,
+                    radius: 10,
+                    angle: 0.7853981633974483
                 }
             };
             var diamond = {
-                "star": {
-                    "fill": {
-                        "color": "red"
+                star: {
+                    fill: {
+                        color: "red"
                     },
-                    "stroke": {
-                        "color": "black",
-                        "width": 2
+                    stroke: {
+                        color: "black",
+                        width: 2
                     },
-                    "points": 4,
-                    "radius": 10,
-                    "angle": 0
+                    points: 4,
+                    radius: 10,
+                    angle: 0
                 }
             };
             var star = {
-                "star": {
-                    "fill": {
-                        "color": "red"
+                star: {
+                    fill: {
+                        color: "red"
                     },
-                    "stroke": {
-                        "color": "black",
-                        "width": 2
+                    stroke: {
+                        color: "black",
+                        width: 2
                     },
-                    "points": 5,
-                    "radius": 10,
-                    "radius2": 4,
-                    "angle": 0
+                    points: 5,
+                    radius: 10,
+                    radius2: 4,
+                    angle: 0
                 }
             };
             var triangle = {
-                "star": {
-                    "fill": {
-                        "color": "red"
+                star: {
+                    fill: {
+                        color: "red"
                     },
-                    "stroke": {
-                        "color": "black",
-                        "width": 2
+                    stroke: {
+                        color: "black",
+                        width: 2
                     },
-                    "points": 3,
-                    "radius": 10,
-                    "angle": 0
+                    points: 3,
+                    radius: 10,
+                    angle: 0
                 }
             };
             var x = {
-                "star": {
-                    "fill": {
-                        "color": "red"
+                star: {
+                    fill: {
+                        color: "red"
                     },
-                    "stroke": {
-                        "color": "black",
-                        "width": 2
+                    stroke: {
+                        color: "black",
+                        width: 2
                     },
-                    "points": 4,
-                    "radius": 10,
-                    "radius2": 0,
-                    "angle": 0.7853981633974483
+                    points: 4,
+                    radius: 10,
+                    radius2: 0,
+                    angle: 0.7853981633974483
                 }
             };
             var crossJson = converter.toJson(converter.fromJson(cross));
@@ -4088,11 +4025,10 @@ define("node_modules/ol3-symbolizer/tests/ol3-symbolizer", ["require", "exports"
         });
     });
     base_15.describe("OL NEXT", function () {
-        base_15.it("NEXT", function () {
-        });
+        base_15.it("NEXT", function () { });
     });
 });
-define("node_modules/ol3-symbolizer/tests/ags-symbolizer", ["require", "exports", "node_modules/ol3-symbolizer/tests/base", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ags-symbolizer", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, base_16, ags_symbolizer_2, ol3_symbolizer_3) {
+define("node_modules/ol3-symbolizer/tests/ags-symbolizer", ["require", "exports", "node_modules/ol3-fun/tests/base", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ags-symbolizer", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, base_16, ags_symbolizer_2, ol3_symbolizer_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var fromJson = (function () {
@@ -4110,66 +4046,46 @@ define("node_modules/ol3-symbolizer/tests/ags-symbolizer", ["require", "exports"
     base_16.describe("esriSMS Tests", function () {
         base_16.it("esriSMSCircle", function () {
             var baseline = {
-                "color": [
-                    255,
-                    255,
-                    255,
-                    64
-                ],
-                "size": 12,
-                "angle": 0,
-                "xoffset": 0,
-                "yoffset": 0,
-                "type": "esriSMS",
-                "style": "esriSMSCircle",
-                "outline": {
-                    "color": [
-                        0,
-                        0,
-                        0,
-                        255
-                    ],
-                    "width": 1,
-                    "type": "esriSLS",
-                    "style": "esriSLSSolid"
+                color: [255, 255, 255, 64],
+                size: 12,
+                angle: 0,
+                xoffset: 0,
+                yoffset: 0,
+                type: "esriSMS",
+                style: "esriSMSCircle",
+                outline: {
+                    color: [0, 0, 0, 255],
+                    width: 1,
+                    type: "esriSLS",
+                    style: "esriSLSSolid"
                 }
             };
             var style = fromJson(baseline);
             var circleJson = toJson(style);
-            var expectedRadius = (baseline.size * 4 / 3) / 2;
+            var expectedRadius = (baseline.size * 4) / 3 / 2;
             base_16.shouldEqual(circleJson.circle.radius, expectedRadius, "circleJson radius is 33% larger than specified in the ags style (see StyleConverter.asWidth)");
             base_16.shouldEqual(circleJson.circle.fill.color, rgba(baseline.color), "circleJson fill color");
             base_16.shouldEqual(circleJson.circle.fill.pattern, null, "circleJson fill pattern is solid");
             base_16.shouldEqual(circleJson.circle.stroke.color, rgba(baseline.outline.color), "circleJson stroke color");
-            base_16.shouldEqual(circleJson.circle.stroke.width, baseline.outline.width * 4 / 3, "circleJson stroke width");
+            base_16.shouldEqual(circleJson.circle.stroke.width, (baseline.outline.width * 4) / 3, "circleJson stroke width");
             base_16.shouldEqual(circleJson.circle.stroke.lineCap, undefined, "circleJson stroke lineCap");
             base_16.shouldEqual(circleJson.circle.stroke.lineDash, undefined, "circleJson stroke lineDash");
             base_16.shouldEqual(circleJson.circle.stroke.lineJoin, undefined, "circleJson stroke lineJoin");
         });
         base_16.it("esriSMSCross", function () {
             var baseline = {
-                "color": [
-                    255,
-                    255,
-                    255,
-                    64
-                ],
-                "size": 12,
-                "angle": 0,
-                "xoffset": 0,
-                "yoffset": 0,
-                "type": "esriSMS",
-                "style": "esriSMSCross",
-                "outline": {
-                    "color": [
-                        0,
-                        0,
-                        0,
-                        255
-                    ],
-                    "width": 1,
-                    "type": "esriSLS",
-                    "style": "esriSLSSolid"
+                color: [255, 255, 255, 64],
+                size: 12,
+                angle: 0,
+                xoffset: 0,
+                yoffset: 0,
+                type: "esriSMS",
+                style: "esriSMSCross",
+                outline: {
+                    color: [0, 0, 0, 255],
+                    width: 1,
+                    type: "esriSLS",
+                    style: "esriSLSSolid"
                 }
             };
             var json = toJson(fromJson(baseline));
@@ -4181,18 +4097,13 @@ define("node_modules/ol3-symbolizer/tests/ags-symbolizer", ["require", "exports"
     base_16.describe("esriSLS Tests", function () {
         base_16.it("esriSLSShortDash esriLCSSquare esriLJSRound", function () {
             var baseline = {
-                "type": "esriSLS",
-                "style": "esriSLSShortDash",
-                "color": [
-                    152,
-                    230,
-                    0,
-                    255
-                ],
-                "width": 1,
-                "cap": "esriLCSSquare",
-                "join": "esriLJSRound",
-                "miterLimit": 9.75
+                type: "esriSLS",
+                style: "esriSLSShortDash",
+                color: [152, 230, 0, 255],
+                width: 1,
+                cap: "esriLCSSquare",
+                join: "esriLJSRound",
+                miterLimit: 9.75
             };
             var style = fromJson(baseline);
             var json = toJson(style);
@@ -4200,18 +4111,13 @@ define("node_modules/ol3-symbolizer/tests/ags-symbolizer", ["require", "exports"
         });
         base_16.it("esriSLSDash esriLCSButt esriLJSBevel", function () {
             var baseline = {
-                "type": "esriSLS",
-                "style": "esriSLSDash",
-                "color": [
-                    152,
-                    230,
-                    0,
-                    255
-                ],
-                "width": 1,
-                "cap": "esriLCSButt",
-                "join": "esriLJSBevel",
-                "miterLimit": 9.75
+                type: "esriSLS",
+                style: "esriSLSDash",
+                color: [152, 230, 0, 255],
+                width: 1,
+                cap: "esriLCSButt",
+                join: "esriLJSBevel",
+                miterLimit: 9.75
             };
             var style = fromJson(baseline);
             var json = toJson(style);
@@ -4219,18 +4125,13 @@ define("node_modules/ol3-symbolizer/tests/ags-symbolizer", ["require", "exports"
         });
         base_16.it("esriSLSSolid esriLCSRound esriLJSMiter", function () {
             var baseline = {
-                "type": "esriSLS",
-                "style": "esriSLSSolid",
-                "color": [
-                    152,
-                    230,
-                    0,
-                    255
-                ],
-                "width": 1,
-                "cap": "esriLCSRound",
-                "join": "esriLJSMiter",
-                "miterLimit": 9.75
+                type: "esriSLS",
+                style: "esriSLSSolid",
+                color: [152, 230, 0, 255],
+                width: 1,
+                cap: "esriLCSRound",
+                join: "esriLJSMiter",
+                miterLimit: 9.75
             };
             var style = fromJson(baseline);
             var json = toJson(style);
