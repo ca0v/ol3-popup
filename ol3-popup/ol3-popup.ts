@@ -5,13 +5,12 @@ import $ = require("jquery");
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
 import { default as PageNavigator } from "./paging/page-navigator";
-import { cssin, defaults, html } from "ol3-fun/ol3-fun/common";
+import { mixin, cssin, defaults, html } from "ol3-fun/ol3-fun/common";
 import { SelectInteraction } from "./interaction";
 import Symbolizer = require("ol3-symbolizer/index");
 import { IPopup } from "./@types/popup";
 import { smartpick } from "./commands/smartpick";
 import { PopupOptions } from "./@types/popup-options";
-import { mixin } from "ol3-symbolizer/ol3-symbolizer/common/mixin";
 
 const symbolizer = new Symbolizer.Symbolizer.StyleConverter();
 
