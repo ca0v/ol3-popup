@@ -12,7 +12,6 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 define("node_modules/ol3-fun/ol3-fun/common", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function uuid() {
         return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -185,7 +184,6 @@ define("node_modules/ol3-fun/ol3-fun/common", ["require", "exports"], function (
     exports.shuffle = shuffle;
 });
 define("node_modules/ol3-fun/ol3-fun/navigation", ["require", "exports", "openlayers", "jquery", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, $, common_1) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function zoomToFeature(map, feature, options) {
         var promise = $.Deferred();
@@ -231,7 +229,6 @@ define("node_modules/ol3-fun/ol3-fun/navigation", ["require", "exports", "openla
     exports.zoomToFeature = zoomToFeature;
 });
 define("node_modules/ol3-fun/ol3-fun/parse-dms", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function decDegFromMatch(m) {
         var signIndex = {
@@ -329,7 +326,6 @@ define("node_modules/ol3-fun/ol3-fun/parse-dms", ["require", "exports"], functio
     exports.parse = parse;
 });
 define("node_modules/ol3-fun/ol3-fun/slowloop", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function slowloop(functions, interval, cycles) {
         if (interval === void 0) { interval = 1000; }
@@ -363,14 +359,236 @@ define("node_modules/ol3-fun/ol3-fun/slowloop", ["require", "exports"], function
     }
     exports.slowloop = slowloop;
 });
-define("node_modules/ol3-fun/index", ["require", "exports", "node_modules/ol3-fun/ol3-fun/common", "node_modules/ol3-fun/ol3-fun/navigation", "node_modules/ol3-fun/ol3-fun/parse-dms", "node_modules/ol3-fun/ol3-fun/slowloop"], function (require, exports, common_2, navigation_1, parse_dms_1, slowloop_1) {
-    "use strict";
+define("node_modules/ol3-fun/ol3-fun/is-primitive", ["require", "exports"], function (require, exports) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function isPrimitive(a) {
+        switch (typeof a) {
+            case "boolean":
+                return true;
+            case "number":
+                return true;
+            case "object":
+                return null === a;
+            case "string":
+                return true;
+            case "symbol":
+                return true;
+            case "undefined":
+                return true;
+            default:
+                throw "unknown type: " + typeof a;
+        }
+    }
+    exports.isPrimitive = isPrimitive;
+});
+define("node_modules/ol3-fun/ol3-fun/is-cyclic", ["require", "exports", "node_modules/ol3-fun/ol3-fun/is-primitive"], function (require, exports, is_primitive_1) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function isCyclic(a) {
+        if (is_primitive_1.isPrimitive(a))
+            return false;
+        var test = function (o, history) {
+            if (is_primitive_1.isPrimitive(o))
+                return false;
+            if (0 <= history.indexOf(o)) {
+                return true;
+            }
+            return Object.keys(o).some(function (k) { return test(o[k], [o].concat(history)); });
+        };
+        return Object.keys(a).some(function (k) { return test(a[k], [a]); });
+    }
+    exports.isCyclic = isCyclic;
+});
+define("node_modules/ol3-fun/ol3-fun/deep-extend", ["require", "exports", "node_modules/ol3-fun/ol3-fun/is-cyclic", "node_modules/ol3-fun/ol3-fun/is-primitive"], function (require, exports, is_cyclic_1, is_primitive_2) {
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function extend(a, b, trace, history) {
+        if (trace === void 0) { trace = []; }
+        if (history === void 0) { history = []; }
+        if (!b) {
+            b = a;
+            a = {};
+        }
+        var merger = new Merger(trace, history);
+        return merger.deepExtend(a, b);
+    }
+    exports.extend = extend;
+    function isUndefined(a) {
+        return typeof a === "undefined";
+    }
+    function isArray(val) {
+        return Array.isArray(val);
+    }
+    function isHash(val) {
+        return !is_primitive_2.isPrimitive(val) && !canClone(val) && !isArray(val);
+    }
+    function canClone(val) {
+        if (val instanceof Date)
+            return true;
+        if (val instanceof RegExp)
+            return true;
+        return false;
+    }
+    function clone(val) {
+        if (val instanceof Date)
+            return new Date(val.getTime());
+        if (val instanceof RegExp)
+            return new RegExp(val.source);
+        throw "unclonable type encounted: " + typeof val;
+    }
+    var Merger = (function () {
+        function Merger(trace, history) {
+            this.trace = trace;
+            this.history = history;
+        }
+        Merger.prototype.deepExtend = function (target, source) {
+            var _this = this;
+            if (target === source)
+                return target;
+            if (!target || (!isHash(target) && !isArray(target))) {
+                throw "first argument must be an object";
+            }
+            if (!source || (!isHash(source) && !isArray(source))) {
+                throw "second argument must be an object";
+            }
+            if (typeof source === "function") {
+                return target;
+            }
+            this.push(source);
+            if (isArray(source)) {
+                if (!isArray(target)) {
+                    throw "attempting to merge an array into a non-array";
+                }
+                this.merge("id", target, source);
+                return target;
+            }
+            else if (isArray(target)) {
+                throw "attempting to merge a non-array into an array";
+            }
+            Object.keys(source).forEach(function (k) { return _this.mergeChild(k, target, source[k]); });
+            return target;
+        };
+        Merger.prototype.cloneArray = function (val) {
+            var _this = this;
+            this.push(val);
+            return val.map(function (v) { return (isArray(v) ? _this.cloneArray(v) : canClone(v) ? clone(v) : v); });
+        };
+        Merger.prototype.push = function (a) {
+            if (is_primitive_2.isPrimitive(a))
+                return;
+            if (-1 < this.history.indexOf(a)) {
+                if (is_cyclic_1.isCyclic(a)) {
+                    throw "circular reference detected";
+                }
+            }
+            else
+                this.history.push(a);
+        };
+        Merger.prototype.mergeChild = function (key, target, sourceValue) {
+            var targetValue = target[key];
+            if (sourceValue === targetValue)
+                return;
+            if (is_primitive_2.isPrimitive(sourceValue)) {
+                this.trace.push({
+                    key: key,
+                    target: target,
+                    was: targetValue,
+                    value: sourceValue
+                });
+                target[key] = sourceValue;
+                return;
+            }
+            if (canClone(sourceValue)) {
+                sourceValue = clone(sourceValue);
+                this.trace.push({
+                    key: key,
+                    target: target,
+                    was: targetValue,
+                    value: sourceValue
+                });
+                target[key] = sourceValue;
+                return;
+            }
+            if (isArray(sourceValue)) {
+                if (isArray(targetValue)) {
+                    this.deepExtend(targetValue, sourceValue);
+                    return;
+                }
+                sourceValue = this.cloneArray(sourceValue);
+                this.trace.push({
+                    key: key,
+                    target: target,
+                    was: targetValue,
+                    value: sourceValue
+                });
+                target[key] = sourceValue;
+                return;
+            }
+            if (!isHash(sourceValue)) {
+                throw "unexpected source type: " + typeof sourceValue;
+            }
+            if (!isHash(targetValue)) {
+                var traceIndex = this.trace.length;
+                try {
+                    sourceValue = this.deepExtend({}, sourceValue);
+                }
+                finally {
+                    this.trace.splice(traceIndex, this.trace.length - traceIndex);
+                }
+                this.trace.push({
+                    key: key,
+                    target: target,
+                    was: targetValue,
+                    value: sourceValue
+                });
+                target[key] = sourceValue;
+                return;
+            }
+            this.deepExtend(targetValue, sourceValue);
+            return;
+        };
+        Merger.prototype.merge = function (key, target, source) {
+            var _this = this;
+            if (!isArray(target))
+                throw "target must be an array";
+            if (!isArray(source))
+                throw "input must be an array";
+            if (!source.length)
+                return target;
+            var hash = {};
+            target.forEach(function (item, i) {
+                if (!item[key])
+                    return;
+                hash[item[key]] = i;
+            });
+            source.forEach(function (sourceItem, i) {
+                var sourceKey = sourceItem[key];
+                var targetIndex = hash[sourceKey];
+                if (isUndefined(sourceKey)) {
+                    if (isHash(target[i]) && !!target[i][key]) {
+                        throw "cannot replace an identified array item with a non-identified array item";
+                    }
+                    _this.mergeChild(i, target, sourceItem);
+                    return;
+                }
+                if (isUndefined(targetIndex)) {
+                    _this.mergeChild(target.length, target, sourceItem);
+                    return;
+                }
+                _this.mergeChild(targetIndex, target, sourceItem);
+                return;
+            });
+            return target;
+        };
+        return Merger;
+    }());
+});
+define("node_modules/ol3-fun/index", ["require", "exports", "node_modules/ol3-fun/ol3-fun/common", "node_modules/ol3-fun/ol3-fun/navigation", "node_modules/ol3-fun/ol3-fun/parse-dms", "node_modules/ol3-fun/ol3-fun/slowloop", "node_modules/ol3-fun/ol3-fun/deep-extend"], function (require, exports, common_2, navigation_1, parse_dms_1, slowloop_1, deep_extend_1) {
     var index = {
         asArray: common_2.asArray,
         cssin: common_2.cssin,
         debounce: common_2.debounce,
         defaults: common_2.defaults,
         doif: common_2.doif,
+        deepExtend: deep_extend_1.extend,
         getParameterByName: common_2.getParameterByName,
         getQueryParameters: common_2.getQueryParameters,
         html: common_2.html,
@@ -384,15 +602,16 @@ define("node_modules/ol3-fun/index", ["require", "exports", "node_modules/ol3-fu
         slowloop: slowloop_1.slowloop,
         dms: {
             parse: parse_dms_1.parse,
+            fromDms: function (dms) { return parse_dms_1.parse(dms); },
+            fromLonLat: function (o) { return parse_dms_1.parse(o); }
         },
         navigation: {
-            zoomToFeature: navigation_1.zoomToFeature,
-        },
+            zoomToFeature: navigation_1.zoomToFeature
+        }
     };
     return index;
 });
 define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"], function (require, exports, ol, $) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function getInteriorPoint(geom) {
         if (geom.getInteriorPoint)
@@ -622,7 +841,6 @@ define("ol3-popup/paging/paging", ["require", "exports", "openlayers", "jquery"]
     exports.Paging = Paging;
 });
 define("ol3-popup/paging/page-navigator", ["require", "exports", "openlayers"], function (require, exports, ol) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var classNames = {
         prev: 'btn-prev',
@@ -690,7 +908,6 @@ define("ol3-popup/paging/page-navigator", ["require", "exports", "openlayers"], 
     exports.default = PageNavigator;
 });
 define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_3) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dispose = function (handlers) {
         return handlers.forEach(function (h) { return (h instanceof Function ? h() : ol.Observable.unByKey(h)); });
@@ -858,7 +1075,6 @@ define("ol3-popup/interaction", ["require", "exports", "openlayers", "node_modul
     exports.SelectInteraction = SelectInteraction;
 });
 define("node_modules/ol3-symbolizer/ol3-symbolizer/common/assign", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function assign(obj, prop, value) {
         if (value === null)
@@ -885,7 +1101,6 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/common/assign", ["require", "
     exports.assign = assign;
 });
 define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-cross", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Shapeshifter = (function () {
         function Shapeshifter() {
@@ -948,7 +1163,6 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-cross", ["r
     exports.Shapeshifter = Shapeshifter;
 });
 define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-square", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Shapeshifter = (function () {
         function Shapeshifter() {
@@ -1013,7 +1227,6 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-square", ["
     exports.Shapeshifter = Shapeshifter;
 });
 define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-diamond", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Shapeshifter = (function () {
         function Shapeshifter() {
@@ -1078,7 +1291,6 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-diamond", [
     exports.Shapeshifter = Shapeshifter;
 });
 define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-triangle", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Shapeshifter = (function () {
         function Shapeshifter() {
@@ -1143,7 +1355,6 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-triangle", 
     exports.Shapeshifter = Shapeshifter;
 });
 define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-x", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Shapeshifter = (function () {
         function Shapeshifter() {
@@ -1206,7 +1417,6 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-x", ["requi
     exports.Shapeshifter = Shapeshifter;
 });
 define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["require", "exports", "openlayers", "node_modules/ol3-symbolizer/ol3-symbolizer/common/assign", "node_modules/ol3-fun/index", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-cross", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-square", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-diamond", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-triangle", "node_modules/ol3-symbolizer/ol3-symbolizer/format/plugins/as-x"], function (require, exports, ol, assign_1, index_1, as_cross_1, as_square_1, as_diamond_1, as_triangle_1, as_x_1) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var StyleConverter = (function () {
         function StyleConverter() {
@@ -1650,7 +1860,6 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", ["req
     exports.StyleConverter = StyleConverter;
 });
 define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ags-symbolizer", ["require", "exports", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, Symbolizer) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.StyleConverter();
     var styleMap = {
@@ -1976,14 +2185,12 @@ define("node_modules/ol3-symbolizer/ol3-symbolizer/format/ags-symbolizer", ["req
     exports.StyleConverter = StyleConverter;
 });
 define("node_modules/ol3-symbolizer/index", ["require", "exports", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ags-symbolizer", "node_modules/ol3-symbolizer/ol3-symbolizer/format/ol3-symbolizer"], function (require, exports, Symbolizer, ags_symbolizer_1, ol3_symbolizer_1) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Symbolizer = Symbolizer;
     exports.AgsStyleConverter = ags_symbolizer_1.StyleConverter;
     exports.StyleConverter = ol3_symbolizer_1.StyleConverter;
 });
 define("ol3-popup/commands/smartpick", ["require", "exports"], function (require, exports) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function smartpick(popup, targetPosition, threshold) {
         if (!targetPosition) {
@@ -2029,7 +2236,6 @@ define("ol3-popup/commands/smartpick", ["require", "exports"], function (require
     exports.smartpick = smartpick;
 });
 define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/paging/paging", "ol3-popup/paging/page-navigator", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/interaction", "node_modules/ol3-symbolizer/index", "ol3-popup/commands/smartpick"], function (require, exports, ol, paging_1, page_navigator_1, common_4, interaction_1, Symbolizer, smartpick_1) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
     var css = "\n.ol-popup {\n}\n\n.ol-popup.hidden {\n    display: none;\n}\n\n.ol-popup-element.docked {\n    position:absolute;\n    bottom:0;\n    top:0;\n    left:0;\n    right:0;\n    width:auto;\n    height:auto;\n    pointer-events: all;\n}\n\n.ol-popup-element.docked:after {\n    display:none;\n}\n\n.ol-popup-element.docked .pages {\n    max-height: inherit;\n    overflow: auto;\n    height: calc(100% - 60px);\n}\n\n.ol-popup-element.docked .pagination {\n    position: absolute;\n    bottom: 0;\n}\n\n.ol-popup .pagination .btn-prev::after {\n    content: \"\u21E6\"; \n}\n\n.ol-popup .pagination .btn-next::after {\n    content: \"\u21E8\"; \n}\n\n.ol-popup .pagination.hidden {\n    display: none;\n}\n\n.ol-popup-element .pagination .btn-prev::after {\n    content: \"\u21E6\"; \n}\n\n.ol-popup-element .pagination .btn-next::after {\n    content: \"\u21E8\"; \n}\n\n.ol-popup-element .pagination.hidden {\n    display: none;\n}\n\n.ol-popup-element .ol-popup-closer {\n    border: none;\n    background: transparent;\n    color: inherit;\n    position: absolute;\n    top: 0;\n    right: 0;\n    text-decoration: none;\n}\n    \n.ol-popup-element .ol-popup-closer:after {\n    content:'\u2716';\n}\n\n.ol-popup .ol-popup-docker {\n    border: none;\n    background: transparent;\n    color: inherit;\n    text-decoration: none;\n    position: absolute;\n    top: 0;\n    right: 20px;\n}\n\n.ol-popup .ol-popup-docker:after {\n    content:'\u25A1';\n}\n\n.popup-indicator {\n\tcolor: inherit;\n\tfont-size: 2em;\n\tfont-family: monospace;\n}\n";
@@ -2484,7 +2690,6 @@ define("ol3-popup/ol3-popup", ["require", "exports", "openlayers", "ol3-popup/pa
     exports.Popup = Popup;
 });
 define("examples/extras/feature-creator", ["require", "exports", "openlayers", "node_modules/ol3-symbolizer/index"], function (require, exports, ol, index_2) {
-    "use strict";
     var symbolizer = new index_2.Symbolizer.StyleConverter();
     function random(center, scale) {
         if (scale === void 0) { scale = 1000; }
@@ -2632,7 +2837,6 @@ define("examples/extras/feature-creator", ["require", "exports", "openlayers", "
     return FeatureCreator;
 });
 define("examples/activate", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_1, common_5, FeatureCreator) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.map .toggle-active {\n    position: absolute;\n    top: 1em;\n    left: 3em;\n    z-index: 1;\n}\n";
     var popupCss = "\n.ol-popup {\n    background-color: white;\n    padding: 4px;\n    padding-top: 24px;\n    border: 1px solid rgba(0, 0, 0, 1);\n}\n.pagination {\n    min-width: 160px;\n}\n.pagination .page-num {\n    min-width: 100px;\n    display: inline-block;\n    text-align: center; \n}\n.pagination .arrow.btn-next {\n    float: right;\n}";
@@ -2674,7 +2878,6 @@ define("examples/activate", ["require", "exports", "openlayers", "ol3-popup/ol3-
     exports.run = run;
 });
 define("examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-popup/ol3-popup", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, $, ol3_popup_2, common_6) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
     var css_popup = "\n\n.dock-container {\n    position: absolute;\n    top: 20px;\n    right: 20px;\n    width: 200px;\n    height: 200px;\n    border: 1px solid rgba(0,0,0,0.05);\n    display: inline-block;\n    padding: 20px;\n    background: transparent;\n    pointer-events: none;\n}\n\n.ol-popup {\n    width: 300px;\n    min-height: 50px;\n    background: white;\n    color: black;\n    border: 4px solid black;\n    border-radius: 12px;\n}\n\n.ol-popup:after {\n    border-top-color: black;\n}\n\n.ol-popup .ol-popup-content {\n    padding: 0;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 36px;\n    overflow: hidden;\n    display: block;\n}\n\n.ol-popup .pagination button {\n    border:none;\n    background:transparent;\n}\n\n.ol-popup .ol-popup-docker {\n    width: 24px;\n    height: 24px;\n    text-align: center;\n}\n\n.ol-popup-element .ol-popup-closer {\n    width: 24px;\n    height: 24px;    \n    text-align: center;\n    border-top-right-radius: 8px;\n}\n\n.ol-popup-element .ol-popup-closer:hover {\n    background-color: red;\n    color: white;\n}\n\n.ol-popup .ol-popup-docker:hover {\n    background-color: #999;\n    color: white;\n}\n\n.ol-popup .ol-popup-content > *:first-child {\n    margin-right: 40px;\n}\n\n.ol-popup .arrow.active:hover {\n    background-color: #999;\n    color: white;    \n}\n\n";
@@ -2742,7 +2945,6 @@ define("examples/docking", ["require", "exports", "openlayers", "jquery", "ol3-p
     exports.run = run;
 });
 define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_3, Symbolizer, common_7, FeatureCreator) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n";
@@ -2826,7 +3028,6 @@ define("examples/multi", ["require", "exports", "openlayers", "ol3-popup/ol3-pop
     exports.run = run;
 });
 define("examples/overlay", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common"], function (require, exports, ol, common_8) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n.map {\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\n.ol-control.simple-infobox {\n    top: 1em;\n    left: 25%;\n    max-width: 50%;\n  }\n\n.simple-popup {\n    border: 1px solid black;\n    border-radius: 4px;\n    padding: 10px;\n    background-color: rgba(80, 80, 80, 0.5);\n    color: rgb(250, 250, 250);\n    max-width: 120px;\n}\n\n.simple-popup-arrow {\n    color: black;\n    font-size: 36px;\n}\n\n.simple-popup-down-arrow:after {\n    content: \"\u21E9\";\n    position: relative;\n    top: -8px;\n}\n\n.simple-popup-up-arrow:after {\n    content: \"\u21E7\";\n    position: relative;\n    top: 10px;\n}\n\n.simple-popup-left-arrow:after {\n    content: \"\u21E6\";\n}\n\n.simple-popup-right-arrow:after {\n    content: \"\u21E8\";\n}\n\n";
     var html = "\n<div class=\"map\"></div>\n";
@@ -2877,7 +3078,6 @@ define("examples/overlay", ["require", "exports", "openlayers", "node_modules/ol
     exports.run = run;
 });
 define("examples/extras/map-maker", ["require", "exports", "openlayers"], function (require, exports, ol) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function MapMaker(mapContainer) {
         return new ol.Map({
@@ -2892,7 +3092,6 @@ define("examples/extras/map-maker", ["require", "exports", "openlayers"], functi
     exports.MapMaker = MapMaker;
 });
 define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "examples/extras/feature-creator", "node_modules/ol3-fun/index", "jquery", "examples/extras/map-maker", "node_modules/ol3-fun/ol3-fun/slowloop"], function (require, exports, ol, ol3_popup_4, FeatureCreator, index_3, $, map_maker_1, slowloop_2) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\n";
     function circle(radius, points) {
@@ -3000,7 +3199,6 @@ define("examples/paging", ["require", "exports", "openlayers", "ol3-popup/ol3-po
     exports.run = run;
 });
 define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/ol3-popup", "node_modules/ol3-symbolizer/index", "node_modules/ol3-fun/ol3-fun/common", "examples/extras/feature-creator"], function (require, exports, ol, ol3_popup_5, Symbolizer, common_9, FeatureCreator) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var symbolizer = new Symbolizer.Symbolizer.StyleConverter();
     function setStyle(feature, json) {
@@ -3077,7 +3275,6 @@ define("examples/style-offset", ["require", "exports", "openlayers", "ol3-popup/
     exports.run = run;
 });
 define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3-fun/ol3-fun/common", "ol3-popup/ol3-popup", "examples/extras/feature-creator"], function (require, exports, ol, common_10, ol3_popup_6, FeatureCreator) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var css = "\nhead, body, .map {\n    padding: 0;\n    margin: 0;\n    position: absolute;\n    top: 0;\n    left: 0;\n    right: 0;\n    bottom: 0;\n}\n\nbody { \n    margin-top: 0;\n    margin-left: 1px;\n}\n\nbody * {\n    -moz-box-sizing: border-box;\n    -webkit-box-sizing: border-box;\n    box-sizing: border-box;\n}\n\n";
     var html = "\n<div class=\"map\"></div>\n";
@@ -3158,7 +3355,6 @@ define("examples/simple", ["require", "exports", "openlayers", "node_modules/ol3
     exports.run = run;
 });
 define("examples/index", ["require", "exports", "node_modules/ol3-fun/index", "examples/activate", "examples/docking", "examples/multi", "examples/overlay", "examples/paging", "examples/style-offset", "examples/simple"], function (require, exports, index_4) {
-    "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function run() {
         var l = window.location;
