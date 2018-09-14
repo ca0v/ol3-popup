@@ -1,18 +1,22 @@
 {
 	"compilerOptions": {
+		"allowJs": false,
 		"module": "amd",
 		"target": "es5",
 		"declaration": true,
 		"noImplicitAny": true,
-		"removeComments": true,
 		"noImplicitReturns": true,
+		"noImplicitThis": true,
+		"noImplicitUseStrict": true,
+		"removeComments": true,
 		"outFile": "built/index.max.js",
 		"sourceMap": true,
-		"moduleResolution": "node",
+		"moduleResolution": "classic",
 		"baseUrl": "./node_modules",
 		"paths": {
 			"ol3-popup": ["../ol3-popup/ol3-popup.ts"]
-		}
+		},
+		"lib": ["es2015", "es2015.promise", "dom", "es2015.iterable", "es2015.proxy", "es2015.reflect"]
 	},
 	"include": ["index.ts", "ol3-popup/**/*.ts"]
 }
