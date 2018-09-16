@@ -1,6 +1,6 @@
 import ol = require("openlayers");
 import { describe, it, should, shouldEqual, slowloop, stringify } from "ol3-fun/tests/base";
-import { range, cssin, html } from "ol3-fun/ol3-fun/common";
+import { range, cssin, html } from "ol3-fun/index";
 import { Popup, DEFAULT_OPTIONS, DIAMONDS, TRIANGLES } from "../../index";
 import { MapMaker } from "../../examples/extras/map-maker";
 import { Positions } from "../../ol3-popup/@types/popup-options";

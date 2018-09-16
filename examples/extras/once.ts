@@ -1,3 +1,5 @@
+import $ = require("jquery");
+
 export function once<T>(
 	map: {
 		once: Function;

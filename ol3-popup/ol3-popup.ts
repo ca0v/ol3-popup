@@ -1,11 +1,10 @@
 /**
  * OpenLayers 3 Popup Overlay.
  */
-import $ = require("jquery");
 import ol = require("openlayers");
 import { Paging } from "./paging/paging";
 import { default as PageNavigator } from "./paging/page-navigator";
-import { mixin, cssin, defaults, html } from "ol3-fun/ol3-fun/common";
+import { mixin, cssin, defaults, html } from "ol3-fun/index";
 import { SelectInteraction } from "./interaction";
 import Symbolizer = require("ol3-symbolizer/index");
 import { IPopup } from "./@types/popup";
